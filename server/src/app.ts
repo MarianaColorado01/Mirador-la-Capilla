@@ -14,6 +14,11 @@ export function createApp(db: DB) {
   app.use(cors());
   app.use(express.json());
 
+  // Abrir http://IP:3000 en un navegador muestra que el servidor está vivo.
+  app.get('/', (_req, res) => {
+    res.json({ ok: true, business: getSettings(db).businessName, version: VERSION, endpoints: ['/health', '/auth/profiles', '/auth/login', '/products'] });
+  });
+
   // La app lo usa en /setup para probar la conexión antes de guardarla (RF-01).
   app.get('/health', (_req, res) => {
     const body: HealthResponse = { ok: true, business: getSettings(db).businessName, version: VERSION, time: new Date().toISOString() };

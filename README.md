@@ -34,9 +34,12 @@ npm run server       # servidor en el puerto 3000; muestra la IP y un QR
 En otra terminal:
 
 ```bash
-cp app/.env.example app/.env.local   # pon la IP que mostró el servidor
-npm run app                          # Metro de Expo; escanea su QR con Expo Go
+npm run app          # Metro de Expo; escanea su QR con Expo Go
 ```
+
+La app usa sola la IP del PC donde corre Metro, con el puerto 3000. Solo si el servidor corre en otro PC, copia `app/.env.example` a `app/.env.local`, escribe su dirección y reinicia Metro con `npx expo start -c`.
+
+Si la app no conecta, abre `http://<IP del PC>:3000/health` en el navegador del celular. Si tampoco carga ahí, el problema es la red: el celular no está en el mismo Wi-Fi, el firewall de Windows bloquea Node o la red aísla a los dispositivos entre sí.
 
 Los datos de ejemplo se cargan solos la primera vez. Hay seis perfiles (Ana, Luis, Operador, Preparador, Cajero y Dueño), todos con el **PIN de prueba 1234**.
 
