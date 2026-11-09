@@ -14,7 +14,7 @@ Funciona **sin internet**: un PC en la caja corre el servidor y la base de datos
 
 | Carpeta | Qué contiene |
 |---|---|
-| `app/` | App móvil: React Native + Expo SDK 58 + TypeScript + Expo Router |
+| `app/` | App móvil: React Native + Expo SDK 57 + TypeScript + Expo Router |
 | `server/` | Servidor local: Express 5, SQLite (better-sqlite3), Socket.IO, JWT |
 | `shared/` | Tipos y reglas que usan los dos, por ejemplo el cálculo del cobro (sección 4.3) |
 | `documentacion/` | Requerimientos (PDF), arquitectura, wireframes, prototipo navegable y láminas de mockups |
@@ -22,7 +22,7 @@ Funciona **sin internet**: un PC en la caja corre el servidor y la base de datos
 ## Requisitos
 
 - Node.js 20.19 o superior (desarrollado con Node 24)
-- Expo Go o una build de desarrollo en un celular Android, en el mismo Wi-Fi que el PC
+- Expo Go compatible con el SDK 57, o una build de desarrollo, en un celular Android conectado al mismo Wi-Fi que el PC
 
 ## Puesta en marcha
 
