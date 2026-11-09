@@ -1,0 +1,933 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bar POS Wireframes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --page:#D8DBDF; --page-ink:#111214; --page-ink2:#4A4F57;
+  --bg:#ECEEF0; --face:#FFFFFF; --face2:#F4F5F7; --line:#C9CED4; --line2:#DEE1E5;
+  --ink:#0E0F11; --ink2:#41464E; --ink3:#626872;
+  --green:#12753B; --orange:#B24A06; --red:#BE2528; --amber:#875B00;
+  --green-bg:#E2F2E8; --orange-bg:#FBE8D9; --red-bg:#FAE2E2; --amber-bg:#FFF1C7;
+  --inv:#0E0F11; --on-inv:#FFFFFF;
+  --scrim:rgba(14,15,17,.48);
+  /* the board itself never changes colour: flaps stay black in daylight */
+  --shell:#111214; --shell2:#1C1D20; --shell-line:#34363B; --shell-ink:#F2F2F2; --shell-ink2:#AEB4BC;
+  --cell:#18191C; --cell-ink:#F2F2F2; --cell-split:#000;
+  --c-green:#45D483; --c-orange:#FF8F33; --c-red:#FF5C54; --c-amber:#FFC53D;
+  --steel:#B6BBC2;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --page:#060607; --page-ink:#F2F2F2; --page-ink2:#A9AFB7;
+    --bg:#0D0D0F; --face:#18181B; --face2:#121214; --line:#2F3136; --line2:#24262A;
+    --ink:#F2F2F2; --ink2:#BCC1C8; --ink3:#9298A1;
+    --green:#45D483; --orange:#FF8F33; --red:#FF6B63; --amber:#FFC53D;
+    --green-bg:rgba(69,212,131,.13); --orange-bg:rgba(255,143,51,.14); --red-bg:rgba(255,92,84,.14); --amber-bg:rgba(255,197,61,.13);
+    --inv:#F2F2F2; --on-inv:#0D0D0F; --scrim:rgba(0,0,0,.62);
+    --shell:#000000; --shell2:#141416; --shell-line:#2A2C30;
+    --cell:#222327; --cell-split:#0D0D0F;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+    --page:#060607; --page-ink:#F2F2F2; --page-ink2:#A9AFB7;
+    --bg:#0D0D0F; --face:#18181B; --face2:#121214; --line:#2F3136; --line2:#24262A;
+    --ink:#F2F2F2; --ink2:#BCC1C8; --ink3:#9298A1;
+    --green:#45D483; --orange:#FF8F33; --red:#FF6B63; --amber:#FFC53D;
+    --green-bg:rgba(69,212,131,.13); --orange-bg:rgba(255,143,51,.14); --red-bg:rgba(255,92,84,.14); --amber-bg:rgba(255,197,61,.13);
+    --inv:#F2F2F2; --on-inv:#0D0D0F; --scrim:rgba(0,0,0,.62);
+    --shell:#000000; --shell2:#141416; --shell-line:#2A2C30;
+    --cell:#222327; --cell-split:#0D0D0F;
+    color-scheme: dark;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--page);color:var(--page-ink);font:400 15px/1.45 Roboto,system-ui,sans-serif;font-variant-numeric:tabular-nums}
+::selection{background:var(--c-amber);color:#111}
+:focus-visible{outline:2px solid var(--c-amber);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.cond{font-family:"Barlow Condensed",Roboto,sans-serif}
+svg.i{width:22px;height:22px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+svg.i.s{width:18px;height:18px}
+
+/* ---------- page chrome ---------- */
+.top{background:var(--shell);color:var(--shell-ink);border-bottom:1px solid var(--shell-line)}
+.top-in{max-width:1680px;margin:0 auto;padding:28px 24px 0}
+.top h1{margin:0 0 6px}
+.top .lede{color:var(--shell-ink2);max-width:72ch;margin:14px 0 0}
+.top-bar{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between;padding:20px 0 0}
+.seg{display:inline-flex;border:1px solid var(--shell-line);border-radius:6px;overflow:hidden}
+.seg button{all:unset;cursor:pointer;padding:0 16px;min-height:40px;display:flex;align-items:center;gap:6px;font:600 15px/1 "Barlow Condensed";letter-spacing:.1em;text-transform:uppercase;color:var(--shell-ink2)}
+.seg button[aria-pressed="true"]{background:var(--shell-ink);color:var(--shell)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font:600 14px/1 "Barlow Condensed";letter-spacing:.1em;text-transform:uppercase;color:var(--shell-ink2)}
+.legend span{display:inline-flex;align-items:center;gap:8px}
+.legend i{width:22px;height:6px;border-radius:1px;display:inline-block}
+.rolenav{display:flex;gap:2px;overflow-x:auto;margin-top:22px;scrollbar-width:none}
+.rolenav::-webkit-scrollbar{display:none}
+.rolenav a{flex:none;color:var(--shell-ink2);text-decoration:none;padding:12px 16px;font:600 16px/1 "Barlow Condensed";letter-spacing:.12em;text-transform:uppercase;border-bottom:3px solid transparent}
+.rolenav a:hover{color:var(--shell-ink)}
+.rolenav a.on{color:var(--shell-ink);border-color:var(--c-amber)}
+
+main{max-width:1680px;margin:0 auto;padding:8px 24px 80px}
+.role{padding-top:48px;scroll-margin-top:8px}
+.role-h{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px 24px;justify-content:space-between;border-bottom:1px solid var(--frame,var(--line));padding-bottom:14px;margin-bottom:24px}
+.role-h h2{margin:0}
+.role-h p{margin:6px 0 0;color:var(--page-ink2);max-width:76ch}
+.role-h .tabs-note{font:600 14px/1.3 "Barlow Condensed";letter-spacing:.08em;text-transform:uppercase;color:var(--page-ink2)}
+.grid{display:flex;flex-wrap:wrap;gap:40px 28px;align-items:flex-start}
+
+.shot{width:392px;max-width:100%}
+.cap{display:flex;align-items:baseline;gap:10px;margin:0 0 10px}
+.cap b{font:700 18px/1.1 "Barlow Condensed";letter-spacing:.06em;text-transform:uppercase}
+.cap code{font:500 12px/1 ui-monospace,Consolas,monospace;color:var(--page-ink2)}
+.rfs{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.rfs a{font:600 13px/1 "Barlow Condensed";letter-spacing:.06em;color:var(--page-ink2);border:1px solid color-mix(in srgb,var(--page-ink2) 45%,transparent);border-radius:3px;padding:5px 6px;text-decoration:none}
+.rfs a:hover{color:var(--page-ink);border-color:var(--page-ink)}
+.shot .why{font-size:13px;color:var(--page-ink2);margin:8px 0 0;line-height:1.4}
+
+/* ---------- phone ---------- */
+.ph{position:relative;background:var(--bg);color:var(--ink);border-radius:30px;overflow:hidden;border:1px solid color-mix(in srgb,var(--steel) 55%,transparent);box-shadow:0 18px 40px -18px rgba(0,0,0,.45);display:flex;flex-direction:column}
+.ph.fixed{height:820px}
+.sb{height:30px;background:var(--shell);color:var(--shell-ink);display:flex;align-items:center;justify-content:space-between;padding:0 22px;font:500 13px/1 Roboto}
+.sb span{display:flex;gap:5px;align-items:center}
+.sb svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2}
+.appbar{background:var(--shell);color:var(--shell-ink);display:flex;align-items:center;gap:8px;min-height:60px;padding:4px 8px 4px 4px}
+.ib{all:unset;width:48px;height:48px;display:grid;place-items:center;border-radius:24px;cursor:pointer;flex:none}
+.ib:hover{background:rgba(255,255,255,.08)}
+.appbar h3{flex:1;margin:0;font:600 23px/1.05 "Barlow Condensed";letter-spacing:.05em;text-transform:uppercase;min-width:0}
+.strip{background:var(--shell2);color:var(--shell-ink2);display:flex;justify-content:space-between;align-items:center;padding:0 16px;height:34px;font:600 13px/1 "Barlow Condensed";letter-spacing:.12em;text-transform:uppercase;border-bottom:1px solid var(--shell-line)}
+.lamp{display:inline-flex;align-items:center;gap:7px}
+.lamp i{width:8px;height:8px;border-radius:50%;background:var(--c-green);box-shadow:0 0 0 3px rgba(69,212,131,.18)}
+.lamp.warn i{background:var(--c-amber);box-shadow:0 0 0 3px rgba(255,197,61,.2);animation:blink 1.2s steps(2) infinite}
+.lamp.off i{background:var(--c-red);box-shadow:0 0 0 3px rgba(255,92,84,.2)}
+.lamp.ok{color:var(--c-green)} .lamp.warn{color:var(--c-amber)} .lamp.off{color:var(--c-red)}
+@keyframes blink{50%{opacity:.35}}
+.body{flex:1;padding:16px;display:flex;flex-direction:column;gap:16px}
+.foot{padding:12px 16px 14px;background:var(--face);border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.gest{height:22px;display:grid;place-items:center;background:var(--face)}
+.gest::after{content:"";width:108px;height:4px;border-radius:2px;background:var(--ink3);opacity:.6}
+
+/* ---------- flaps (signature) ---------- */
+.flap{display:inline-flex;gap:2px;vertical-align:middle;font-family:"Barlow Condensed";font-weight:600;line-height:1}
+.flap .c{font-style:normal;position:relative;display:inline-grid;place-items:center;min-width:.62em;height:1.22em;padding:0 .06em;background:var(--cell);color:var(--cell-ink);border-radius:2px;text-transform:uppercase}
+.flap .c::after{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:var(--cell-split);opacity:.85}
+.flap .c.sp{background:transparent;min-width:.3em}
+.flap.xl{font-size:44px} .flap.lg{font-size:30px} .flap.md{font-size:21px} .flap.sm{font-size:15px}
+.flap.g .c{color:var(--c-green)} .flap.o .c{color:var(--c-orange)} .flap.r .c{color:var(--c-red)} .flap.a .c{color:var(--c-amber)}
+
+/* ---------- type ---------- */
+.h{font:600 20px/1.15 "Barlow Condensed";letter-spacing:.04em;text-transform:uppercase;margin:0}
+.h.sm{font-size:16px;letter-spacing:.1em;color:var(--ink2)}
+.t{margin:0;color:var(--ink2);font-size:14px}
+.t.s{font-size:13px;color:var(--ink3)}
+.lbl{font:600 13px/1 "Barlow Condensed";letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)}
+.num{font-variant-numeric:tabular-nums;font-weight:500}
+.strike{text-decoration:line-through;text-decoration-thickness:1.5px;color:var(--ink3)}
+
+/* ---------- board rows ---------- */
+.brd{background:var(--face);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.brd-h{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 14px;background:var(--face2);border-bottom:1px solid var(--line)}
+.row{display:flex;align-items:center;gap:12px;padding:12px 14px;min-height:52px;border-top:1px solid var(--line2)}
+.row:first-child{border-top:0}
+.brd-h + .row{border-top:0}
+.row .grow{flex:1;min-width:0}
+.row .grow > *{margin:0}
+.row .r{text-align:right}
+.row.void{background:var(--red-bg)}
+.row.void .nm{color:var(--red);text-decoration:line-through}
+.row.sel{background:var(--face2);box-shadow:inset 3px 0 0 var(--ink)}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:8px 0;font-size:15px}
+.kv + .kv{border-top:1px solid var(--line2)}
+.kv .k{color:var(--ink2)}
+.kv.tot{padding-top:12px;align-items:center}
+.kv.tot .k{font:600 18px/1 "Barlow Condensed";letter-spacing:.08em;text-transform:uppercase;color:var(--ink)}
+
+/* ---------- state tags ---------- */
+.tag{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 8px;border-radius:3px;font:700 13px/1 "Barlow Condensed";letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;border:1px solid currentColor}
+.tag.g{color:var(--green);background:var(--green-bg)} .tag.o{color:var(--orange);background:var(--orange-bg)}
+.tag.r{color:var(--red);background:var(--red-bg)} .tag.a{color:var(--amber);background:var(--amber-bg)}
+.tag.n{color:var(--ink2);background:var(--face2)} .tag.k{color:var(--on-inv);background:var(--inv);border-color:var(--inv)}
+
+/* ---------- controls (Material 3 shapes, board voice) ---------- */
+.btn{all:unset;box-sizing:border-box;cursor:pointer;min-height:48px;padding:0 18px;border-radius:6px;display:flex;align-items:center;justify-content:center;gap:8px;font:600 17px/1 "Barlow Condensed";letter-spacing:.09em;text-transform:uppercase;text-align:center}
+.btn.p{background:var(--inv);color:var(--on-inv)}
+.btn.p:hover{filter:brightness(1.15)}
+.btn.o{border:1px solid var(--ink3);color:var(--ink)}
+.btn.o:hover{background:var(--face2)}
+.btn.d{background:var(--red);color:#fff}
+.btn.t{color:var(--ink);min-height:44px;padding:0 10px}
+.btn[aria-disabled="true"]{background:var(--face2);color:var(--ink3);border:1px dashed var(--line);cursor:not-allowed;filter:none}
+.btn.sm{min-height:40px;font-size:15px;padding:0 12px}
+.btns{display:flex;gap:10px}
+.btns > *{flex:1}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{all:unset;cursor:pointer;min-height:36px;padding:0 12px;border:1px solid var(--line);border-radius:6px;display:inline-flex;align-items:center;gap:6px;font:600 15px/1 "Barlow Condensed";letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);background:var(--face)}
+.chip[aria-pressed="true"]{background:var(--inv);color:var(--on-inv);border-color:var(--inv)}
+.chip .n{opacity:.7}
+.segc{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--face)}
+.segc button{all:unset;cursor:pointer;flex:1;min-height:42px;display:flex;align-items:center;justify-content:center;gap:6px;font:600 15px/1 "Barlow Condensed";letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);border-left:1px solid var(--line)}
+.segc button:first-child{border-left:0}
+.segc button[aria-pressed="true"]{background:var(--inv);color:var(--on-inv)}
+.fld{display:flex;flex-direction:column;gap:6px}
+.fld label,.fld .lb{font:500 13px/1.2 Roboto;color:var(--ink2)}
+.inp{min-height:48px;border:1px solid var(--line);background:var(--face);border-radius:6px;display:flex;align-items:center;gap:8px;padding:0 12px;font-size:16px;color:var(--ink)}
+.inp .ph-t{color:var(--ink3)}
+.inp.focus{border:2px solid var(--ink);padding:0 11px}
+.inp.err{border:2px solid var(--red);padding:0 11px}
+.inp.ro{background:var(--face2);color:var(--ink2)}
+.inp.ta{align-items:flex-start;padding-top:12px;min-height:72px}
+.help{font-size:12.5px;color:var(--ink3);display:flex;justify-content:space-between;gap:8px}
+.help.err{color:var(--red);font-weight:500;justify-content:flex-start;align-items:flex-start;gap:6px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sw{width:52px;height:32px;border-radius:16px;background:var(--line);position:relative;flex:none}
+.sw::after{content:"";position:absolute;top:4px;left:4px;width:24px;height:24px;border-radius:50%;background:var(--face);box-shadow:0 1px 2px rgba(0,0,0,.3)}
+.sw.on{background:var(--inv)} .sw.on::after{left:24px;background:var(--on-inv)}
+.radio{width:20px;height:20px;border-radius:50%;border:2px solid var(--ink3);flex:none;position:relative}
+.radio.on{border-color:var(--ink)} .radio.on::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--ink)}
+.chk{width:20px;height:20px;border-radius:3px;border:2px solid var(--ink3);flex:none;display:grid;place-items:center}
+.chk.on{background:var(--inv);border-color:var(--inv);color:var(--on-inv)}
+.counter{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--face)}
+.counter button{all:unset;cursor:pointer;width:44px;height:44px;display:grid;place-items:center;color:var(--ink)}
+.counter button[aria-disabled="true"]{color:var(--ink3);opacity:.45;cursor:not-allowed}
+.counter .v{min-width:40px;height:44px;display:grid;place-items:center;border-left:1px solid var(--line);border-right:1px solid var(--line);font:600 22px/1 "Barlow Condensed"}
+
+/* banners & feedback */
+.ban{display:flex;gap:10px;padding:12px 14px;border-radius:8px;border:1px solid;font-size:14px;line-height:1.4}
+.ban b{display:block;font-weight:500;margin-bottom:2px}
+.ban p{margin:0;color:var(--ink2)}
+.ban.g{border-color:color-mix(in srgb,var(--green) 40%,transparent);background:var(--green-bg)} .ban.g svg{color:var(--green)}
+.ban.a{border-color:color-mix(in srgb,var(--amber) 45%,transparent);background:var(--amber-bg)} .ban.a svg{color:var(--amber)}
+.ban.r{border-color:color-mix(in srgb,var(--red) 40%,transparent);background:var(--red-bg)} .ban.r svg{color:var(--red)}
+.ban.n{border-color:var(--line);background:var(--face)}
+.snack{position:absolute;left:12px;right:12px;bottom:96px;background:var(--shell);color:var(--shell-ink);border-radius:6px;padding:12px 8px 12px 16px;display:flex;align-items:center;gap:8px;font-size:14px;box-shadow:0 8px 20px -6px rgba(0,0,0,.5);z-index:3}
+.snack .btn{color:var(--c-amber);min-height:40px}
+.scrim{position:absolute;inset:0;background:var(--scrim);z-index:4}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--face);border-radius:18px 18px 0 0;z-index:5;padding:10px 16px 18px;display:flex;flex-direction:column;gap:14px;box-shadow:0 -10px 30px -10px rgba(0,0,0,.4)}
+.sheet .grab{width:36px;height:4px;border-radius:2px;background:var(--ink3);opacity:.5;margin:2px auto 0}
+.dialog{position:absolute;left:24px;right:24px;top:50%;transform:translateY(-50%);background:var(--face);border-radius:18px;z-index:5;padding:22px 20px 14px;display:flex;flex-direction:column;gap:12px;box-shadow:0 20px 40px -10px rgba(0,0,0,.5)}
+.dialog .acts{display:flex;justify-content:flex-end;gap:4px;margin-top:4px}
+.fab{position:absolute;right:16px;bottom:96px;z-index:2;display:flex;align-items:center;gap:10px;height:56px;padding:0 20px 0 16px;border-radius:14px;background:var(--inv);color:var(--on-inv);font:600 18px/1 "Barlow Condensed";letter-spacing:.08em;text-transform:uppercase;box-shadow:0 6px 16px -4px rgba(0,0,0,.45)}
+.nav{display:flex;background:var(--face);border-top:1px solid var(--line);padding:8px 4px 4px}
+.nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:2px 0 6px;color:var(--ink2);text-decoration:none;font:600 13px/1 "Barlow Condensed";letter-spacing:.08em;text-transform:uppercase}
+.nav a span.pill{width:60px;height:32px;border-radius:16px;display:grid;place-items:center}
+.nav a.on{color:var(--ink)} .nav a.on span.pill{background:var(--inv);color:var(--on-inv)}
+
+/* tables (mesas) */
+.mesas{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mesa{all:unset;cursor:pointer;background:var(--face);border:1px solid var(--line);border-radius:8px;overflow:hidden;display:flex;flex-direction:column}
+.mesa .top-m{display:flex;justify-content:space-between;align-items:flex-start;padding:12px 12px 6px}
+.mesa .meta{padding:0 12px 12px;font-size:13px;color:var(--ink2);min-height:38px}
+.mesa .band{height:28px;display:flex;align-items:center;padding:0 12px;font:700 13px/1 "Barlow Condensed";letter-spacing:.14em;text-transform:uppercase;color:#fff}
+.band.g{background:var(--green)} .band.o{background:var(--orange)} .band.r{background:var(--red)}
+:root[data-theme="dark"] .band.g, :root[data-theme="dark"] .band.o, :root[data-theme="dark"] .band.r{color:#0D0D0F}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .band{color:#0D0D0F}}
+
+/* elapsed bar: length is the wait */
+.wait{height:6px;background:var(--line2);border-radius:1px;overflow:hidden;position:relative}
+.wait i{position:absolute;left:0;top:0;bottom:0;background:var(--ink2);transition:width .3s steps(3)}
+.wait.a i{background:var(--amber)} .wait.r i{background:var(--red)}
+.ticks{display:flex;justify-content:space-between;font:600 11px/1 "Barlow Condensed";letter-spacing:.08em;color:var(--ink3);margin-top:3px}
+
+/* product */
+.pc{display:flex;gap:12px;align-items:center;padding:10px 12px;border-top:1px solid var(--line2);min-height:64px}
+.pc:first-child{border-top:0}
+.thumb{width:48px;height:48px;border-radius:6px;background:var(--face2);border:1px solid var(--line);display:grid;place-items:center;color:var(--ink3);flex:none;overflow:hidden}
+.thumb.img{background:linear-gradient(160deg,#C9A23F,#7A5C14)}
+.thumb.img2{background:linear-gradient(160deg,#8F1D22,#3E0B0E)}
+.thumb.img3{background:linear-gradient(160deg,#D8DEE4,#8F99A4)}
+.pc.out{opacity:.62}
+.add{all:unset;cursor:pointer;width:44px;height:44px;border-radius:6px;border:1px solid var(--line);display:grid;place-items:center}
+
+/* skeleton */
+.sk{background:linear-gradient(90deg,var(--line2) 0,var(--face2) 40%,var(--line2) 80%);background-size:300% 100%;border-radius:4px;animation:sk 1.4s linear infinite}
+@keyframes sk{to{background-position:-200% 0}}
+
+/* map */
+.map{position:relative;height:330px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:#E6E3D8}
+:root[data-theme="dark"] .map{background:#1E2124}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .map{background:#1E2124}}
+.map svg.streets{position:absolute;inset:0;width:100%;height:100%}
+.pin{position:absolute;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;gap:2px}
+.pin .pl{font:700 12px/1 "Barlow Condensed";letter-spacing:.08em;text-transform:uppercase;background:var(--shell);color:var(--shell-ink);padding:4px 6px;border-radius:3px;white-space:nowrap}
+.me{position:absolute;width:18px;height:18px;border-radius:50%;background:#2F7BF6;border:3px solid #fff;transform:translate(-50%,-50%);box-shadow:0 0 0 10px rgba(47,123,246,.22)}
+.mapctl{position:absolute;right:10px;display:flex;flex-direction:column;gap:8px}
+.mapctl .ib{background:var(--face);color:var(--ink);border:1px solid var(--line);border-radius:8px;width:44px;height:44px}
+.attr{position:absolute;left:6px;bottom:4px;font-size:10px;color:#333;background:rgba(255,255,255,.75);padding:1px 4px;border-radius:2px}
+
+/* drawer */
+.drawer{position:absolute;left:0;top:0;bottom:0;width:316px;background:var(--face);z-index:5;display:flex;flex-direction:column;border-radius:0 18px 18px 0;box-shadow:10px 0 30px -10px rgba(0,0,0,.45)}
+.drawer .dh{background:var(--shell);color:var(--shell-ink);padding:46px 20px 18px}
+.dl{display:flex;align-items:center;gap:14px;min-height:52px;padding:0 20px;color:var(--ink);font-size:15px;font-weight:500;border-radius:0 26px 26px 0;margin-right:12px}
+.dl.on{background:var(--inv);color:var(--on-inv)}
+.dsec{padding:14px 20px 6px}
+
+/* keypad */
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.keys button{all:unset;cursor:pointer;height:52px;border-radius:6px;background:var(--face);border:1px solid var(--line);display:grid;place-items:center;font:600 24px/1 "Barlow Condensed"}
+.dots{display:flex;gap:14px;justify-content:center;padding:6px 0}
+.dots i{width:14px;height:14px;border-radius:50%;border:2px solid var(--ink2)}
+.dots i.f{background:var(--ink);border-color:var(--ink)}
+
+/* steps */
+.steps{display:flex;gap:4px}
+.steps div{flex:1}
+.steps .bar{height:6px;background:var(--line2)}
+.steps .on .bar{background:var(--ink)}
+.steps .cur .bar{background:var(--amber)}
+.steps .lbl{display:block;margin-top:6px}
+
+/* chart */
+.chart{display:flex;align-items:flex-end;gap:8px;height:150px;padding:8px 0 0}
+.chart .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end}
+.chart .b{width:100%;background:var(--ink2);border-radius:2px 2px 0 0}
+.chart .b.hi{background:var(--c-amber)}
+.hbar{height:8px;background:var(--line2);border-radius:1px;overflow:hidden}
+.hbar i{display:block;height:100%;background:var(--ink2)}
+
+/* coverage */
+.cov{columns:3 300px;column-gap:28px;margin-top:8px}
+.cov div{break-inside:avoid;display:grid;grid-template-columns:62px 1fr;gap:8px;padding:8px 0;border-bottom:1px solid color-mix(in srgb,var(--page-ink2) 25%,transparent);font-size:14px}
+.cov b{font:700 15px/1.3 "Barlow Condensed";letter-spacing:.06em}
+.cov .scr{display:flex;flex-wrap:wrap;gap:4px 8px;margin-top:4px}
+.cov .scr a{color:var(--page-ink);font:600 13px/1.2 "Barlow Condensed";letter-spacing:.05em;text-transform:uppercase}
+.cov .pr{font:600 12px/1 "Barlow Condensed";letter-spacing:.1em;text-transform:uppercase;color:var(--page-ink2)}
+.cov .miss{color:#e33}
+footer{max-width:1680px;margin:0 auto;padding:0 24px 48px;color:var(--page-ink2);font-size:13px}
+
+@media (max-width:520px){
+  .top-in,main,footer{padding-left:16px;padding-right:16px}
+  .grid{gap:36px}
+  .shot{width:100%}
+  .flap.xl{font-size:38px}
+}
+@media (prefers-reduced-motion: reduce){
+  *{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <h1 id="title-board" aria-label="Bar POS · Mirador la Capilla"></h1>
+    <p class="lede">Wireframes v2 de la app de pedidos, cuentas, inventario y surtido. Están organizados por rol y cubren los 71 requerimientos funcionales del documento del 3 de noviembre de 2026. Cada pantalla indica su ruta de Expo Router y los RF que cubre. Los datos que aparecen son de ejemplo.</p>
+    <div class="top-bar">
+      <div class="legend" aria-label="Estados de mesa (RF-16)">
+        <span><i style="background:var(--c-green)"></i>Libre</span>
+        <span><i style="background:var(--c-orange)"></i>Ocupada</span>
+        <span><i style="background:var(--c-red)"></i>Por cobrar</span>
+        <span><i style="background:var(--c-amber)"></i>En preparación · Reconectando</span>
+      </div>
+      <div class="seg" role="group" aria-label="Tema">
+        <button type="button" data-th="dark" aria-pressed="false">Noche</button>
+        <button type="button" data-th="light" aria-pressed="false">Día</button>
+      </div>
+    </div>
+    <nav class="rolenav" id="rolenav" aria-label="Roles"></nav>
+  </div>
+</header>
+<main id="main"></main>
+<footer>Bar POS · Mirador la Capilla · Proyecto Final Móvil II · Julian Hinestroza, Mariana Colorado Esguerra. Pendiente por acordar con el docente: nombre y coordenadas reales del bar.</footer>
+
+<script>
+/* ================= helpers ================= */
+const P = {
+  menu:'<path d="M4 7h16M4 12h16M4 17h16"/>',
+  back:'<path d="M19 12H5M11 6l-6 6 6 6"/>',
+  close:'<path d="M6 6l12 12M18 6L6 18"/>',
+  search:'<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  minus:'<path d="M5 12h14"/>',
+  edit:'<path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/>',
+  check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  checkc:'<circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  alert:'<path d="M12 3l9.5 17h-19z"/><path d="M12 10v4.5M12 17.5v.5"/>',
+  info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/>',
+  x:'<circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/>',
+  qr:'<path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 14h2M14 18h2v2M18 18h2v2"/>',
+  wifi:'<path d="M2.5 9a14 14 0 0119 0M5.5 12.5a9.5 9.5 0 0113 0M8.5 16a5 5 0 017 0"/><circle cx="12" cy="19" r=".8"/>',
+  wifioff:'<path d="M3 3l18 18M8.5 16a5 5 0 017 0M5.5 12.5a9.5 9.5 0 014.6-2.5M14.5 10.2a9.5 9.5 0 014 2.3M2.5 9a14 14 0 014.3-2.8M11 5.1A14 14 0 0121.5 9"/>',
+  lock:'<rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 018 0v3"/>',
+  grid:'<rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/>',
+  glass:'<path d="M7 3h10l-1 8a4 4 0 01-8 0z"/><path d="M12 15v6M8.5 21h7"/>',
+  cash:'<rect x="3" y="6" width="18" height="12" rx="1.5"/><circle cx="12" cy="12" r="2.6"/><path d="M6.5 9v.01M17.5 15v.01"/>',
+  box:'<path d="M3.5 7.5L12 3l8.5 4.5v9L12 21l-8.5-4.5z"/><path d="M3.5 7.5L12 12l8.5-4.5M12 12v9"/>',
+  chart:'<path d="M4 20V4M4 20h16"/><path d="M8 16v-4M12 16V8M16 16v-6"/>',
+  truck:'<path d="M3 6h11v10H3zM14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/>',
+  pin:'<path d="M12 21s7-6.1 7-11.5a7 7 0 10-14 0C5 14.9 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.6 1.6 0 00-1.8-.3 1.6 1.6 0 00-1 1.5V21a2 2 0 01-4 0v-.1a1.6 1.6 0 00-1-1.5 1.6 1.6 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.6 1.6 0 00.3-1.8 1.6 1.6 0 00-1.5-1H3a2 2 0 010-4h.1a1.6 1.6 0 001.5-1 1.6 1.6 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.6 1.6 0 001.8.3H9a1.6 1.6 0 001-1.5V3a2 2 0 014 0v.1a1.6 1.6 0 001 1.5 1.6 1.6 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.6 1.6 0 00-.3 1.8V9a1.6 1.6 0 001.5 1H21a2 2 0 010 4h-.1a1.6 1.6 0 00-1.5 1z"/>',
+  users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0113 0"/><path d="M16 4.5a3.5 3.5 0 010 7M21.5 20a6.5 6.5 0 00-4-6"/>',
+  receipt:'<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/>',
+  wallet:'<path d="M4 7h15a1 1 0 011 1v11a1 1 0 01-1 1H5a1 1 0 01-1-1V6a2 2 0 012-2h11"/><path d="M16 13.5h.01"/>',
+  db:'<ellipse cx="12" cy="6" rx="7.5" ry="3"/><path d="M4.5 6v12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3"/>',
+  target:'<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>',
+  pause:'<path d="M9 5v14M15 5v14"/>',
+  play:'<path d="M7 5l12 7-12 7z"/>',
+  share:'<circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="M8.2 10.8l7.6-4.1M8.2 13.2l7.6 4.1"/>',
+  file:'<path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5"/>',
+  swap:'<path d="M7 7h12l-3-3M17 17H5l3 3"/>',
+  merge:'<path d="M6 4v5a6 6 0 006 6h6M15 12l3 3-3 3M6 20v-4"/>',
+  undo:'<path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/>',
+  note:'<path d="M5 4h14v11l-5 5H5z"/><path d="M14 20v-5h5M8.5 9h7M8.5 12.5h4"/>',
+  chev:'<path d="M9 6l6 6-6 6"/>',
+  down:'<path d="M6 9l6 6 6-6"/>',
+  bell:'<path d="M6 16V11a6 6 0 0112 0v5l1.5 2h-15z"/><path d="M10 20.5a2.2 2.2 0 004 0"/>',
+  bottle:'<path d="M10 2h4v4l1.5 3v12h-7V9L10 6z"/><path d="M8.5 13h7"/>',
+  more:'<circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>',
+  logout:'<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/>',
+  upload:'<path d="M12 16V4M7 9l5-5 5 5M4 20h16"/>',
+  download:'<path d="M12 4v12M7 11l5 5 5-5M4 20h16"/>',
+  split:'<path d="M12 3v18M4 7h5M4 12h5M4 17h5M15 7h5M15 12h5M15 17h5"/>',
+  filter:'<path d="M4 5h16l-6 7.5V19l-4 2v-8.5z"/>',
+  backspace:'<path d="M8 5h12v14H8l-5-7z"/><path d="M11.5 9.5l5 5M16.5 9.5l-5 5"/>',
+  gps:'<circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="7.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22"/>',
+};
+const ic=(n,c='i')=>`<svg class="${c}" viewBox="0 0 24 24" aria-hidden="true">${P[n]||''}</svg>`;
+const $=n=>'$'+String(n).replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+const flap=(s,cls='md',extra='')=>`<span class="flap ${cls}" ${extra}><span class="sr">${s}</span>${[...String(s)].map(ch=>ch===' '?'<i class="c sp" aria-hidden="true"></i>':`<i class="c" aria-hidden="true">${ch}</i>`).join('')}</span>`;
+const tag=(t,c='n')=>`<span class="tag ${c}">${t}</span>`;
+const btn=(t,c='p',i='',dis=false,extra='')=>`<button type="button" class="btn ${c}" ${dis?'aria-disabled="true"':''} ${extra}>${i?ic(i):''}${t}</button>`;
+const fld=(l,v,{ph=false,state='',help='',err='',ro=false,icon='',ta=false,right=''}={})=>`<div class="fld"><span class="lb">${l}</span><div class="inp ${state} ${ro?'ro':''} ${ta?'ta':''}">${icon?ic(icon):''}<span style="flex:1" class="${ph?'ph-t':''}">${v}</span>${right}</div>${err?`<div class="help err">${ic('alert','i s')}<span>${err}</span></div>`:help?`<div class="help">${help}</div>`:''}</div>`;
+const kv=(k,v,cls='')=>`<div class="kv ${cls}"><span class="k">${k}</span><span class="num">${v}</span></div>`;
+const counter=(v,minDis=false,maxDis=false)=>`<span class="counter" role="group" aria-label="Cantidad"><button type="button" aria-label="Restar" ${minDis?'aria-disabled="true"':''}>${ic('minus')}</button><span class="v">${v}</span><button type="button" aria-label="Sumar" ${maxDis?'aria-disabled="true"':''}>${ic('plus')}</button></span>`;
+const ban=(c,i,t,p)=>`<div class="ban ${c}">${ic(i)}<div><b>${t}</b><p>${p}</p></div></div>`;
+const chips=(arr,on=0)=>`<div class="chips">${arr.map((a,i)=>`<button type="button" class="chip" aria-pressed="${i===on}">${a}</button>`).join('')}</div>`;
+const segc=(arr,on=0)=>`<div class="segc" role="group">${arr.map((a,i)=>`<button type="button" aria-pressed="${i===on}">${a}</button>`).join('')}</div>`;
+const lamp=c=>({ok:'<span class="lamp ok"><i></i>Conectado</span>',warn:'<span class="lamp warn"><i></i>Reconectando</span>',off:'<span class="lamp off"><i></i>Sin conexión</span>'}[c]);
+const NAVS={
+  todo:[['Mesas','grid'],['Barra','glass'],['Caja','cash']],
+  caja:[['Mesas','grid'],['Caja','cash']],
+  dueno:[['Mesas','grid'],['Barra','glass'],['Caja','cash'],['Inventario','box']],
+};
+const nav=(set,on)=>set?`<nav class="nav" aria-label="Pestañas">${NAVS[set].map(([t,i])=>`<a href="#" class="${t===on?'on':''}"><span class="pill">${ic(i)}</span>${t}</a>`).join('')}</nav>`:'';
+function phone({title,left='menu',who='',conn='ok',body='',foot='',navset=null,navon='',overlay='',fab='',fixed=false,nostrip=false}){
+  return `<div class="ph ${fixed?'fixed':''}">
+  <div class="sb"><span>19:58</span><span>${ic('wifi')}<svg viewBox="0 0 24 24"><path d="M3 20h2v-3H3zM8 20h2v-6H8zM13 20h2v-9h-2zM18 20h2V8h-2z"/></svg><svg viewBox="0 0 24 24"><rect x="2" y="7" width="18" height="10" rx="2"/><path d="M22 10v4"/></svg></span></div>
+  <div class="appbar">${left?`<button class="ib" type="button" aria-label="${left==='menu'?'Abrir menú':left==='back'?'Volver':'Cerrar'}">${ic(left)}</button>`:'<span style="width:12px"></span>'}<h3>${title}</h3></div>
+  ${nostrip?'':`<div class="strip"><span>${who}</span>${lamp(conn)}</div>`}
+  <div class="body" ${fab?'style="padding-bottom:92px"':''}>${body}</div>
+  ${foot?`<div class="foot">${foot}</div>`:''}
+  ${nav(navset,navon)}
+  <div class="gest"></div>
+  ${fab}${overlay}
+</div>`;
+}
+
+/* ================= RF catalogue ================= */
+const RF={
+1:['Ingresar IP/puerto o escanear QR y probar conexión','Alta'],2:['Conservar la dirección del servidor','Alta'],3:['Indicador de conexión permanente','Alta'],4:['Configurar negocio, impuesto, propina y modo un solo operador','Alta'],
+5:['Inicio de sesión con perfil y PIN','Alta'],6:['Tabs y Drawer según rol','Alta'],7:['Crear, editar y desactivar usuarios','Alta'],8:['Bloqueo tras intentos fallidos','Media'],9:['Cierre por inactividad','Media'],
+10:['Catálogo en tarjetas con imagen alternativa','Alta'],11:['Buscar y filtrar productos; sin resultados','Alta'],12:['Detalle de producto; id inexistente','Alta'],13:['Crear y editar producto validado','Alta'],14:['Desactivar producto','Alta'],15:['Administrar categorías','Media'],
+16:['Mapa de mesas por color de estado','Alta'],17:['Abrir mesa sin duplicar cuenta','Alta'],18:['Cuenta de mesa con rondas; id inexistente','Alta'],19:['Pedir la cuenta: mesa por cobrar','Alta'],20:['Mover o unir cuentas','Alta'],21:['Reabrir cuenta por cobrar','Alta'],22:['Crear, numerar y desactivar mesas','Media'],
+23:['Armar ronda por categoría o búsqueda','Alta'],24:['Contador + / − con límite de stock','Alta'],25:['Nota por ítem (100 caracteres)','Alta'],26:['Ronda en construcción persistente','Alta'],27:['Confirmar ronda en transacción e idempotente','Alta'],28:['Agregar rondas mostrando lo consumido','Alta'],29:['Modo un solo operador: directo a entregada','Alta'],30:['Cambiar estado de la ronda','Alta'],31:['Cola de barra en tiempo real','Media'],32:['Aviso al mesero: ronda lista','Media'],
+33:['Editar ronda en estado tomado','Alta'],34:['Anular ítem en preparación o listo','Alta'],35:['Anular ítem entregado (solo dueño, merma)','Alta'],36:['Ítem anulado tachado y avisado','Alta'],37:['Registro de usuario, fecha y motivo','Alta'],
+38:['Cuentas por cobrar','Alta'],39:['Cálculo de subtotal, descuento, propina, impuesto y total','Alta'],40:['Validaciones de descuento y propina','Alta'],41:['Método de pago y cambio','Alta'],42:['Factura consecutiva y mesa liberada','Alta'],43:['Historial y detalle de facturas','Alta'],44:['Anular factura con ajuste de stock','Media'],45:['Factura en PDF y compartir','Baja'],46:['Dividir cuenta en varios pagos','Baja'],
+47:['Stock con mínimos primero','Alta'],48:['Ajustes manuales de inventario','Alta'],49:['Historial de movimientos','Alta'],50:['Aviso de stock bajo','Media'],51:['Sugerencia de surtido','Media'],
+52:['Registrar y editar proveedores','Alta'],53:['Registrar compra con ítems','Alta'],54:['Compra sube stock y actualiza costo','Alta'],55:['Historial de compras filtrable','Alta'],56:['Reporte de compras por proveedor','Baja'],
+57:['Registrar gastos adicionales','Media'],58:['Resumen hoy, semana o mes','Media'],59:['Gráfica de ventas, más vendidos, por mesero','Media'],60:['Margen por producto','Media'],
+61:['Mapa OSM + Leaflet con bar y proveedores','Alta'],62:['Permiso de ubicación y posición del dispositivo','Alta'],63:['Centrar en ubicación actual','Alta'],64:['Activar, pausar y reanudar seguimiento','Alta'],65:['Permiso denegado, GPS apagado, mapa caído','Alta'],66:['Ver proveedor en el mapa','Media'],
+67:['Sin conexión: deshabilitar confirmaciones','Alta'],68:['Carga, error con Reintentar y vacío','Alta'],69:['Persistencia en servidor','Alta'],70:['Eventos en tiempo real','Media'],71:['Respaldo diario, exportar y restaurar','Media'],
+};
+
+/* ================= screens ================= */
+const S=[]; const add=(role,id,name,route,rf,html,why='')=>S.push({role,id,name,route,rf,html,why});
+
+/* ---------- ACCESO ---------- */
+add('acceso','A1','Conexión al servidor','/setup',[1,2,3,68],phone({title:'Conectar',left:'',who:'Primer inicio',conn:'off',
+ body:`
+  <div><h4 class="h">Servidor del local</h4><p class="t" style="margin-top:6px">El PC de caja muestra su IP y un código QR. La app no usa internet, solo el Wi-Fi del local.</p></div>
+  <div class="two">${fld('Dirección IP','192.168.1.50',{state:'focus'})}${fld('Puerto','3000')}</div>
+  ${btn('Probar conexión','o','wifi')}
+  <div class="brd"><div class="row">${ic('checkc')}<div class="grow"><p style="font-weight:500">Respondió en 38 ms</p><p class="t s">Servidor «Mirador la Capilla» · versión 1.0</p></div>${tag('OK','g')}</div></div>
+  <div style="display:flex;align-items:center;gap:10px;color:var(--ink3)"><span style="flex:1;height:1px;background:var(--line)"></span><span class="lbl">o</span><span style="flex:1;height:1px;background:var(--line)"></span></div>
+  ${btn('Escanear QR del PC de caja','o','qr')}`,
+ foot:`${btn('Guardar y continuar','p','check')}<p class="t s" style="text-align:center">La dirección queda guardada en este celular.</p>`}),
+ 'La conexión se prueba antes de guardar. El indicador rojo de la barra superior cambia apenas responde el servidor.');
+
+add('acceso','A2','Conexión fallida','/setup',[1,68,67],phone({title:'Conectar',left:'',who:'Primer inicio',conn:'off',
+ body:`
+  <div class="two">${fld('Dirección IP','192.168.1.5O',{state:'err',err:'Escribe una IP válida, por ejemplo 192.168.1.50'})}${fld('Puerto','3000')}</div>
+  ${btn('Probar conexión','o','wifi',true)}
+  ${ban('r','wifioff','No hubo respuesta de 192.168.1.60:3000','Revisa que el PC de caja esté encendido y que este celular esté en el Wi-Fi del local.')}
+  ${btn('Reintentar','o','undo')}`,
+ foot:`${btn('Guardar y continuar','p','',true)}<p class="t s" style="text-align:center">No se guarda una dirección que no respondió.</p>`}));
+
+add('acceso','A3','Perfil y PIN','/login',[5,6],phone({title:'¿Quién atiende?',left:'',who:'Mirador la Capilla',conn:'ok',
+ body:`
+  <div class="brd">
+   ${[['Ana','Mesero',1],['Luis','Mesero'],['Operador','Todo en uno · L–S'],['Preparador','Barra'],['Cajero','Caja'],['Dueño','Dueño']].map(([n,r,s])=>`<div class="row ${s?'sel':''}"><span class="radio ${s?'on':''}"></span><div class="grow"><p style="font-weight:500">${n}</p></div><span class="lbl">${r}</span></div>`).join('')}
+  </div>
+  <div><p class="lb t" style="text-align:center">PIN de Ana</p><div class="dots" aria-label="2 de 4 dígitos"><i class="f"></i><i class="f"></i><i></i><i></i></div></div>
+  <div class="keys">${[1,2,3,4,5,6,7,8,9].map(n=>`<button type="button">${n}</button>`).join('')}<span></span><button type="button">0</button><button type="button" aria-label="Borrar">${ic('backspace')}</button></div>`,
+ foot:btn('Ingresar como Ana','p','',true)}),'El servidor valida el PIN contra el hash y devuelve el token con el rol. Las pestañas y el menú cambian según ese rol.');
+
+add('acceso','A4','Perfil bloqueado','/login',[8,37],phone({title:'Perfil bloqueado',left:'back',who:'Ana · Mesero',conn:'ok',
+ body:`
+  <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px 0 6px">${ic('lock')}<span class="lbl">Disponible en</span>${flap('04:52','xl a','data-count')}</div>
+  ${ban('a','alert','3 intentos de PIN fallidos','El dueño define en Ajustes cuántos intentos se permiten y cuánto dura el bloqueo.')}
+  <div class="brd"><div class="row"><div class="grow"><p class="t">Intento 3 · 19:56 · desde este celular</p></div></div></div>`,
+ foot:`${btn('Elegir otro perfil','o','users')}<p class="t s" style="text-align:center">Otros perfiles pueden ingresar mientras tanto.</p>`}));
+
+add('acceso','A5','Sesión cerrada por inactividad','/login',[9,26],phone({title:'Sesión cerrada',left:'',who:'Ana · Mesero',conn:'ok',
+ body:`
+  <p class="t">La sesión se cerró tras <b>10 minutos</b> sin uso. El tiempo se configura en Ajustes.</p>
+  ${ban('g','checkc','Tu ronda sigue guardada','Mesa 5 · 3 ítems · $17.000. La encuentras al volver a ingresar.')}
+  <div><p class="lb t" style="text-align:center">PIN de Ana</p><div class="dots"><i></i><i></i><i></i><i></i></div></div>
+  <div class="keys">${[1,2,3,4,5,6,7,8,9].map(n=>`<button type="button">${n}</button>`).join('')}<span></span><button type="button">0</button><button type="button" aria-label="Borrar">${ic('backspace')}</button></div>`,
+ foot:btn('Cambiar de perfil','t')}));
+
+add('acceso','A6','Menú lateral por rol','(drawer)/_layout',[6,61],phone({title:'Mesas',who:'Dueño',conn:'ok',fixed:true,navset:'dueno',navon:'Mesas',
+ body:`<div class="mesas">${['01','02','03','04'].map(n=>`<div class="mesa"><div class="top-m">${flap(n,'lg')}</div><div class="meta"></div><div class="band g">Libre</div></div>`).join('')}</div>`,
+ overlay:`<div class="scrim"></div><div class="drawer"><div class="dh"><div style="margin-bottom:10px">${flap('MIRADOR','sm')}</div><p class="h" style="color:var(--shell-ink)">Dueño</p><p style="margin:2px 0 0;color:var(--shell-ink2);font-size:13px">Acceso a todas las pantallas</p></div>
+  <div style="padding:8px 0;overflow:auto">
+   <div class="dl on">${ic('chart')}Resumen del negocio</div>
+   <div class="dl">${ic('receipt')}Facturas</div>
+   <div class="dl">${ic('truck')}Proveedores y compras</div>
+   <div class="dl">${ic('wallet')}Gastos</div>
+   <div class="dl">${ic('pin')}Ubicación</div>
+   <div class="dsec lbl">Administración</div>
+   <div class="dl">${ic('users')}Usuarios</div>
+   <div class="dl">${ic('gear')}Ajustes</div>
+   <div class="dl">${ic('db')}Respaldos</div>
+   <div class="dl" style="margin-top:6px">${ic('logout')}Cerrar sesión</div>
+  </div></div>`}),'Mesero y Barra solo ven Ubicación y Cerrar sesión. Caja suma Facturas. El servidor rechaza cualquier acción que el rol no tenga permitida.');
+
+/* ---------- MESERO ---------- */
+const mesaTile=(n,st,meta)=>{const m={g:'Libre',o:'Ocupada',r:'Por cobrar'};return `<button type="button" class="mesa"><div class="top-m">${flap(n,'xl','data-flip')}${st==='o'&&meta.includes('lista')?tag('Lista','g'):''}</div><div class="meta">${meta}</div><div class="band ${st}">${m[st]}</div></button>`};
+const mapaBody=(extra='')=>`${extra}
+  ${chips(['Todas <span class="n">8</span>','Libres <span class="n">3</span>','Ocupadas <span class="n">3</span>','Por cobrar <span class="n">2</span>'])}
+  <div class="mesas">
+   ${mesaTile('01','g','Disponible')}
+   ${mesaTile('02','o','Ana · $63.000<br>Ronda 2 lista')}
+   ${mesaTile('03','r','Luis · $10.000<br>Pidió la cuenta 19:41')}
+   ${mesaTile('04','o','Luis · $5.000<br>34 min abierta')}
+   ${mesaTile('05','g','Disponible')}
+   ${mesaTile('06','r','Ana · $22.000<br>Pidió la cuenta 19:55')}
+   ${mesaTile('07','o','Ana · $12.000<br>8 min abierta')}
+   ${mesaTile('08','g','Disponible')}
+  </div>`;
+add('mesero','M1','Mapa de mesas','(tabs)/mesas',[16,3,32,70,6],phone({title:'Mesas',who:'Ana · Mesero',conn:'ok',
+ body:mapaBody(),
+ fab:`<div class="fab">${ic('plus')}Abrir mesa</div>`,
+ overlay:`<div class="snack" style="bottom:22px">${ic('bell')}<span style="flex:1">Ronda 2 de Mesa 2 está lista en barra</span><button class="btn t" type="button">Ver</button></div>`}),'Los colores de estado son los del RF-16. Los cambios hechos desde otro celular llegan por Socket.IO sin recargar la pantalla.');
+
+add('mesero','M2','Mesa ya abierta por otro','(tabs)/mesas',[17,70],phone({title:'Mesas',who:'Ana · Mesero',conn:'ok',fixed:true,
+ body:mapaBody(),
+ overlay:`<div class="scrim"></div><div class="dialog" role="dialog" aria-label="Mesa ocupada">${flap('04','lg o')}<p class="h">Luis ya abrió esta mesa</p><p class="t">Mesa 4 se abrió hace 1 minuto desde otro celular. No se creó una segunda cuenta.</p><div class="acts">${btn('Cerrar','t')}${btn('Ver cuenta de Mesa 4','t')}</div></div>`}),'Regla RN-01: solo una cuenta abierta por mesa. La apertura se hace en una transacción del servidor.');
+
+const itemRow=(q,n,v,{note='',st='',voidBy='',np=false}={})=>`<div class="row ${voidBy?'void':''}" style="align-items:flex-start"><span class="num" style="min-width:24px;font-weight:700">${q}×</span><div class="grow"><p class="nm">${n}</p>${note?`<p class="t s">Nota: ${note}</p>`:''}${voidBy?`<p class="t s" style="color:var(--red)">Anulado · ${voidBy}</p>`:''}</div>${np?'':`<span class="num ${voidBy?'strike':''}">${$(v)}</span>`}</div>`;
+add('mesero','M3','Cuenta de la mesa','/mesa/[id]',[18,28,19,30,36,37],phone({title:'Mesa 02',left:'back',who:'Ana · Mesero',conn:'ok',
+ body:`
+  <div class="brd"><div class="row"><div class="grow"><span class="lbl">Total acumulado</span><div style="margin-top:6px">${flap('$63.000','lg','data-flip')}</div></div>${tag('Ocupada','o')}</div></div>
+  <div class="brd">
+   <div class="brd-h"><span class="h sm">Ronda 2 · 19:51 · Ana</span>${tag('Lista','g')}</div>
+   ${itemRow(2,'Club Colombia',10000)}
+   ${itemRow(1,'Michelada',8000,{voidBy:'Cajero · 19:57 · cliente cambió de opinión'})}
+   <div class="row">${btn('Marcar entregada','o','check')}</div>
+  </div>
+  <div class="brd">
+   <div class="brd-h"><span class="h sm">Ronda 1 · 19:32 · Ana</span>${tag('Entregada','n')}</div>
+   ${itemRow(2,'Águila 330 ml',8000)}
+   ${itemRow(1,'Aguardiente 1/2',45000,{note:'sin hielo'})}
+  </div>
+  <p class="t s">Los ítems anulados no suman al total. Toca una ronda «tomada» para editarla.</p>`,
+ foot:`${btn('Agregar ronda','p','plus')}${btn('Pedir la cuenta','o','receipt')}`}),'Pedir la cuenta pasa la mesa a «por cobrar» y bloquea nuevas rondas (RN-07).');
+
+const prod=(n,cat,p,stock,{img='img',out=false,low=false}={})=>`<div class="pc ${out?'out':''}"><div class="thumb ${img}">${img?'':ic('bottle')}</div><div class="grow" style="flex:1;min-width:0"><p style="margin:0;font-weight:500">${n}</p><p class="t s" style="margin:2px 0 0">${$(p)} · ${out?'<b style="color:var(--red)">Agotado</b>':low?`<b style="color:var(--amber)">${stock} ${stock===1?'disponible':'disponibles'}</b>`:stock+' disponibles'}</p></div>${out?'':`<button type="button" class="add" aria-label="Agregar ${n}">${ic('plus')}</button>`}</div>`;
+add('mesero','M4','Tomar ronda','/mesa/[id]/ronda',[23,24,25,26,10,11,28],phone({title:'Ronda 3 · Mesa 02',left:'back',who:'Ana · Mesero',conn:'ok',
+ body:`
+  <div class="brd"><div class="row">${ic('receipt')}<div class="grow"><p class="t">Ya en la cuenta: 2 rondas · <b>$63.000</b></p></div><button class="btn t sm" type="button">Ver</button></div></div>
+  ${fld('Buscar producto','Buscar por nombre…',{ph:true,icon:'search'})}
+  ${chips(['Todas','Cervezas','Licores','Cócteles','Sin alcohol'],2)}
+  <div class="brd">
+   ${prod('Aguardiente 1/2','Licores',45000,2,{img:'img3',low:true})}
+   ${prod('Ron botella','Licores',55000,1,{img:'img2',low:true})}
+   ${prod('Tequila 1/2','Licores',70000,6,{img:''})}
+   ${prod('Mojito','Cócteles',12000,0,{img:'',out:true})}
+  </div>
+  <div class="brd">
+   <div class="brd-h"><span class="h sm">Esta ronda · 3 unidades</span>${tag('Borrador guardado','n')}</div>
+   <div class="row" style="flex-wrap:wrap"><div class="grow"><p style="font-weight:500">Club Colombia</p><p class="t s">${$(5000)} c/u · subtotal <b class="num">${$(10000)}</b></p></div>${counter(2)}</div>
+   <div class="row" style="flex-wrap:wrap"><div class="grow"><p style="font-weight:500">Aguardiente 1/2</p><p class="t s">${$(45000)} c/u · subtotal <b class="num">${$(45000)}</b></p></div>${counter(1)}
+     <div style="flex-basis:100%">${fld('Nota del ítem','sin hielo, con limón',{help:'<span>Barra la ve en la comanda</span><span>19/100</span>'})}</div></div>
+  </div>`,
+ foot:`<div class="kv tot" style="padding:0"><span class="k">Total ronda</span>${flap('$55.000','md','data-flip')}</div>${btn('Confirmar y enviar a barra','p','check')}`}),'El contador va de 1 al stock disponible. El borrador se guarda con Zustand si se cierra la app o se cae el Wi-Fi. Si un producto no tiene foto, se muestra un ícono en su lugar.');
+
+add('mesero','M5','Quitar ítem al bajar de 1','/mesa/[id]/ronda',[24],phone({title:'Ronda 3 · Mesa 02',left:'back',who:'Ana · Mesero',conn:'ok',fixed:true,
+ body:`<div class="brd"><div class="row"><div class="grow"><p style="font-weight:500">Club Colombia</p><p class="t s">${$(5000)} c/u</p></div>${counter(1)}</div><div class="row"><div class="grow"><p style="font-weight:500">Aguardiente 1/2</p><p class="t s">Máximo 2 · es todo el stock</p></div>${counter(2,false,true)}</div></div>`,
+ overlay:`<div class="scrim"></div><div class="dialog" role="dialog"><p class="h">¿Quitar Club Colombia?</p><p class="t">Al bajar de 1 el producto sale de esta ronda. Puedes volver a agregarlo desde el catálogo.</p><div class="acts">${btn('Mantener','t')}${btn('Quitar','t')}</div></div>`}),'El «+» se deshabilita al llegar al stock disponible (RN-08).');
+
+add('mesero','M6','Sin resultados y sin conexión','/mesa/[id]/ronda',[11,67,26,3],phone({title:'Ronda 3 · Mesa 02',left:'back',who:'Ana · Mesero',conn:'off',
+ body:`
+  ${ban('r','wifioff','Sin conexión con el PC de caja','Tu ronda sigue guardada en el celular. Reintentando cada 5 s; la podrás confirmar al reconectar.')}
+  ${fld('Buscar producto','tequila reposado',{state:'focus',icon:'search',right:ic('close')})}
+  ${chips(['Todas','Cervezas','Licores','Cócteles'],2)}
+  <div class="brd" style="padding:28px 18px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px">${ic('search')}<p class="h">Nada coincide con «tequila reposado»</p><p class="t">Prueba con otra palabra o quita el filtro Licores.</p>${btn('Quitar filtro','o','',false,'style="margin-top:6px"')}</div>`,
+ foot:`<div class="kv tot" style="padding:0"><span class="k">Total ronda</span><span class="num" style="font-size:20px;font-weight:700">${$(55000)}</span></div>${btn('Confirmar · sin conexión','p','',true)}`}),'Sin conexión no se habilita ninguna confirmación y la app no muestra confirmaciones falsas.');
+
+add('mesero','M7','Editar ronda tomada','/mesa/[id]',[33,37],phone({title:'Mesa 05',left:'back',who:'Ana · Mesero',conn:'ok',fixed:true,
+ body:`<div class="brd"><div class="brd-h"><span class="h sm">Ronda 1 · 19:54 · Ana</span>${tag('Tomada','k')}</div>${itemRow(3,'Águila 330 ml',12000)}${itemRow(1,'Agua 600 ml',3000)}</div>`,
+ overlay:`<div class="scrim"></div><div class="sheet" role="dialog" aria-label="Editar ítem"><div class="grab"></div><p class="h">Águila 330 ml</p>
+  <div style="display:flex;align-items:center;justify-content:space-between"><span class="t">Cantidad</span>${counter(2)}</div>
+  ${fld('Nota','bien fría',{help:'<span></span><span>9/100</span>'})}
+  ${ban('n','info','Se devuelve 1 unidad al stock','Queda un movimiento de ajuste con tu usuario y la hora.')}
+  <div class="btns">${btn('Quitar ítem','o','x')}${btn('Guardar','p')}</div></div>`}),'Solo se edita mientras la ronda está en «tomado». En los demás estados se anula desde Caja.');
+
+add('mesero','M8','Stock insuficiente al confirmar','/mesa/[id]/ronda',[27,24],phone({title:'Ronda 3 · Mesa 02',left:'back',who:'Ana · Mesero',conn:'ok',fixed:true,
+ body:`<div class="brd"><div class="row"><div class="grow"><p style="font-weight:500">Aguardiente 1/2</p></div>${counter(2)}</div></div>`,
+ overlay:`<div class="scrim"></div><div class="dialog" role="dialog"><p class="h">No se envió la ronda</p><p class="t">Mientras armabas la ronda se vendió 1 Aguardiente 1/2 en otra mesa. Ahora queda <b>1</b>.</p><div class="brd"><div class="row"><span class="grow">Aguardiente 1/2</span><span class="num">Pediste 2 · hay 1</span></div></div><div class="acts">${btn('Ajustar a 1','t')}</div></div>`}),'El servidor valida el stock en una transacción. Una clave de idempotencia evita que un doble toque cree dos rondas.');
+
+/* ---------- TODO EN UNO ---------- */
+add('todo','T1','Mesas · un solo operador','(tabs)/mesas',[29,16,6],phone({title:'Mesas',who:'Operador · Todo en uno',conn:'ok',navset:'todo',navon:'Mesas',
+ body:mapaBody(ban('a','info','Modo un solo operador','Las rondas confirmadas pasan directo a «entregada». Cobrar sigue siendo un paso aparte.')),
+ fab:`<div class="fab" style="bottom:110px">${ic('plus')}Abrir mesa</div>`}));
+
+add('todo','T2','Cuenta en modo un solo operador','/mesa/[id]',[29,18,28],phone({title:'Mesa 02',left:'back',who:'Operador · Todo en uno',conn:'ok',navset:'todo',navon:'Mesas',
+ body:`
+  <div class="brd"><div class="row"><div class="grow"><span class="lbl">Total acumulado</span><div style="margin-top:6px">${flap('$63.000','lg','data-flip')}</div></div></div></div>
+  <div class="brd"><div class="brd-h"><span class="h sm">Ronda 2 · 19:51</span>${tag('Entregada','n')}</div>${itemRow(2,'Club Colombia',10000)}</div>
+  <div class="brd"><div class="brd-h"><span class="h sm">Ronda 1 · 19:32</span>${tag('Entregada','n')}</div>${itemRow(2,'Águila 330 ml',8000)}${itemRow(1,'Aguardiente 1/2',45000)}</div>`,
+ foot:`<div class="btns">${btn('Agregar ronda','o','plus')}${btn('Cobrar','p','cash')}</div>`}),'Sin pasos intermedios por barra: la misma persona prepara y entrega.');
+
+/* ---------- BARRA ---------- */
+const comanda=(mesa,mesero,min,items,{st='Tomada',stc='k',act='Preparar',warn=false}={})=>`<div class="brd" data-ticket>
+  <div class="brd-h">${flap(mesa,'md')}<span class="h sm" style="flex:1;margin-left:4px">${mesero}</span>${tag(st,stc)}</div>
+  <div style="padding:10px 14px 0"><div style="display:flex;justify-content:space-between;align-items:baseline"><span class="lbl">Espera</span><span>${flap(String(min).padStart(2,'0'),'sm '+(warn?'r':''),'data-min="'+min+'"')} <span class="lbl">min</span></span></div><div class="wait ${warn?'r':min>6?'a':''}"><i style="width:${Math.min(min/20*100,100)}%"></i></div><div class="ticks"><span>0</span><span>10</span><span>20 min</span></div></div>
+  ${items}
+  <div class="row">${btn(act,act==='Marcar lista'?'p':'o',act==='Marcar lista'?'check':'play')}</div></div>`;
+add('barra','B1','Cola de barra','(tabs)/barra',[31,30,36,70],phone({title:'Barra',who:'Preparador · Barra',conn:'ok',
+ body:`
+  ${segc(['Pendientes · 3','Preparando · 1','Listas · 2'])}
+  ${comanda('M04','Luis',14,`${itemRow(1,'Mojito',12000,{note:'poco azúcar',np:1})}`,{warn:true})}
+  ${comanda('M02','Ana',7,`${itemRow(2,'Club Colombia',10000,{np:1})}${itemRow(1,'Michelada',8000,{voidBy:'Cajero · 19:57',np:1})}`)}
+  ${comanda('M07','Ana',2,`${itemRow(1,'Ron botella',55000,{np:1})}${itemRow(4,'Gaseosa 400 ml',12000,{note:'2 sin hielo',np:1})}`)}`,
+ overlay:`<div class="snack" style="bottom:22px">${ic('x')}<span style="flex:1">Michelada de Mesa 2 fue anulada</span></div>`}),'Las rondas se ordenan por tiempo de espera, de la más vieja a la más nueva. La barra es más larga cuanto más se espera y se pone roja a los 12 minutos. Cada ronda nueva entra sola, sin repetir las anteriores.');
+
+add('barra','B2','Preparar comanda','(tabs)/barra · detalle',[30,32],phone({title:'Mesa 04 · Ronda 1',left:'back',who:'Preparador · Barra',conn:'ok',
+ body:`
+  <div class="steps" aria-label="Estado de la ronda">${[['Tomada','on'],['Preparando','cur'],['Lista',''],['Entregada','']].map(([t,c])=>`<div class="${c}"><div class="bar"></div><span class="lbl">${t}</span></div>`).join('')}</div>
+  <div class="brd"><div class="row"><div class="grow"><span class="lbl">En preparación desde 19:46</span><div style="margin-top:6px">${flap('12:40','lg a')}</div></div></div></div>
+  <div class="brd"><div class="brd-h"><span class="h sm">Por preparar</span><span class="lbl">Luis</span></div>
+   <div class="row"><span class="chk on">${ic('check','i s')}</span><div class="grow"><p>1 × Mojito</p><p class="t s" style="color:var(--amber);font-weight:500">Nota: poco azúcar</p></div></div>
+   <div class="row"><span class="chk"></span><div class="grow"><p>2 × Águila 330 ml</p></div></div></div>
+  ${ban('n','bell','Al marcar lista, Luis recibe un aviso','La barra no cobra ni libera la mesa.')}`,
+ foot:btn('Marcar lista','p','check')}));
+
+/* ---------- CAJA ---------- */
+add('caja','C1','Cuentas por cobrar','(tabs)/caja',[38,70,6],phone({title:'Caja',who:'Cajero · Caja',conn:'ok',navset:'caja',navon:'Caja',
+ body:`
+  <div class="brd"><div class="row"><div class="grow"><span class="lbl">Por cobrar · 2 mesas</span><div style="margin-top:6px">${flap('$85.000','lg','data-flip')}</div></div></div></div>
+  ${fld('Buscar mesa','Número de mesa…',{ph:true,icon:'search'})}
+  <div class="brd">
+   <div class="brd-h"><span class="lbl">Mesa</span><span class="lbl">Subtotal</span></div>
+   ${[['06','Ana','2 rondas · desde 19:55',22000],['03','Luis','1 ronda · desde 19:41',10000],['02','Ana','2 rondas · 1 ítem anulado',63000]].map(([m,w,d,v],i)=>`<div class="row">${flap(m,'md r')}<div class="grow"><p style="font-weight:500">${w}</p><p class="t s">${d}</p></div><span class="num" style="font-weight:700">${$(v)}</span>${ic('chev','i s')}</div>`).join('')}
+  </div>
+  <p class="t s">Mesa 2 se muestra aquí porque Ana pidió la cuenta. Las ocupadas se ven en Mesas.</p>`}));
+
+add('caja','C2','Cobrar cuenta','(tabs)/caja/[mesa]',[39,40,41,42],phone({title:'Cobrar Mesa 02',left:'back',who:'Cajero · Caja',conn:'ok',navset:'caja',navon:'Caja',
+ body:`
+  <div class="brd"><div class="brd-h"><span class="h sm">2 rondas · Ana</span><button class="ib" type="button" aria-label="Acciones de la cuenta" style="width:40px;height:40px">${ic('more')}</button></div>
+   ${itemRow(2,'Águila 330 ml',8000)}${itemRow(1,'Aguardiente 1/2',45000)}${itemRow(2,'Club Colombia',10000)}${itemRow(1,'Michelada',8000,{voidBy:'19:57'})}</div>
+  <div class="two">${fld('Descuento ($)','3.000')}${fld('Propina (%)','10',{help:'Sugerida: 10 %'})}</div>
+  ${fld('Impuesto (%)','8',{ro:true,help:'Lo define el dueño en Ajustes'})}
+  <div class="brd" style="padding:4px 14px">
+   ${kv('Subtotal',$(63000))}${kv('Descuento','−'+$(3000))}${kv('Propina 10 %',$(6000))}${kv('Impuesto 8 %',$(4800))}
+   <div class="kv tot"><span class="k">Total</span>${flap('$70.800','md','data-flip')}</div></div>
+  <p class="lbl" style="margin-bottom:-6px">Método de pago</p>
+  ${segc(['Efectivo','Tarjeta','Transferencia'])}
+  <div class="two">${fld('Recibido','80.000',{state:'focus'})}<div class="fld"><span class="lb">Cambio</span><div class="inp ro" style="font-weight:700">${$(9200)}</div></div></div>`,
+ foot:`${btn('Cobrar $70.800 y facturar','p','receipt')}<button class="btn t sm" type="button">${ic('split')}Dividir en varios pagos</button>`}),'Total = (subtotal − descuento) × (1 + (propina + impuesto) / 100). Los ítems anulados no entran en el cálculo.');
+
+add('caja','C3','Cobro con errores','(tabs)/caja/[mesa]',[40,41],phone({title:'Cobrar Mesa 02',left:'back',who:'Cajero · Caja',conn:'ok',navset:'caja',navon:'Caja',
+ body:`
+  ${fld('Descuento ($)','-3000',{state:'err',err:'El descuento no puede ser negativo.'})}
+  ${fld('Descuento ($)','70.000',{state:'err',err:'El descuento no puede superar el subtotal ($63.000).'})}
+  ${fld('Propina (%)','120',{state:'err',err:'La propina debe estar entre 0 % y 100 %.'})}
+  ${fld('Propina (%)','',{ph:true,help:'Vacío cuenta como 0 %.'})}
+  ${fld('Recibido en efectivo','50.000',{state:'err',err:'Faltan $20.800: el monto recibido no cubre el total.'})}`,
+ foot:btn('Cobrar y facturar','p','',true)}),'Cada error dice qué falló y cómo corregirlo. Un campo vacío cuenta como 0.');
+
+add('caja','C4','Acciones de la cuenta','(tabs)/caja/[mesa]',[20,21,19],phone({title:'Cobrar Mesa 02',left:'back',who:'Cajero · Caja',conn:'ok',fixed:true,
+ body:`<div class="brd"><div class="row"><span class="grow">Mesa 02 · Ana</span>${tag('Por cobrar','r')}</div></div>`,
+ overlay:`<div class="scrim"></div><div class="sheet" role="dialog" aria-label="Acciones"><div class="grab"></div><p class="h">Mesa 02</p>
+  <div class="brd">
+   <div class="row">${ic('undo')}<div class="grow"><p style="font-weight:500">Reabrir cuenta</p><p class="t s">El cliente pide algo más: vuelve a «ocupada» y admite rondas.</p></div></div>
+   <div class="row">${ic('swap')}<div class="grow"><p style="font-weight:500">Mover a otra mesa</p><p class="t s">Solo mesas libres</p></div></div>
+   <div class="row" style="padding-top:0;border-top:0;gap:8px;flex-wrap:wrap">${['01','05','08'].map(n=>`<button class="chip" type="button">${flap(n,'sm g')}</button>`).join('')}</div>
+   <div class="row">${ic('merge')}<div class="grow"><p style="font-weight:500">Unir con otra cuenta</p><p class="t s">Mesa 06 · Ana · ${$(22000)}</p></div>${ic('chev','i s')}</div>
+  </div></div>`}));
+
+add('caja','C5','Anular ítem con motivo','(tabs)/caja/[mesa]',[34,35,36,37],phone({title:'Cobrar Mesa 02',left:'back',who:'Cajero · Caja',conn:'ok',fixed:true,
+ body:`<div class="brd">${itemRow(2,'Club Colombia',10000)}${itemRow(1,'Michelada',8000)}</div>`,
+ overlay:`<div class="scrim"></div><div class="sheet" role="dialog" aria-label="Anular ítem"><div class="grab"></div><div style="display:flex;justify-content:space-between;align-items:center"><p class="h">Anular 1 × Michelada</p>${tag('Preparando','a')}</div>
+  <div class="brd">${['Cliente cambió de opinión','Error al tomar el pedido','Producto en mal estado'].map((m,i)=>`<div class="row"><span class="radio ${i===0?'on':''}"></span><span class="grow">${m}</span></div>`).join('')}<div class="row"><span class="radio"></span><span class="grow">Otro motivo…</span></div></div>
+  <div style="display:flex;gap:12px;align-items:center"><div style="flex:1"><p style="margin:0;font-weight:500">Devolver al stock</p><p class="t s">Actívalo solo si no se alcanzó a preparar.</p></div><span class="sw on" role="switch" aria-checked="true"></span></div>
+  <p class="t s">Queda registrado: Cajero · 19:57 · motivo. Barra ve el ítem tachado al instante. Si la ronda ya fue entregada, solo el dueño puede anular y el producto queda como merma.</p>
+  ${btn('Anular ítem','d','x')}</div>`}));
+
+add('caja','C6','Factura emitida','/factura/[id]',[42,45,69],phone({title:'Factura emitida',left:'close',who:'Cajero · Caja',conn:'ok',navset:'caja',navon:'Caja',
+ body:`
+  ${ban('g','checkc','Pago registrado · Mesa 02 liberada','La mesa vuelve a «libre» en todos los celulares.')}
+  <div class="brd"><div class="brd-h"><span class="lbl">Factura</span>${flap('000129','md','data-flip')}</div>
+   <div style="padding:4px 14px">${kv('Fecha','04/11/2026 · 20:04')}${kv('Mesa · Mesero','02 · Ana')}${kv('Método','Efectivo')}${kv('Total',$(70800))}${kv('Recibido',$(80000))}${kv('Cambio',$(9200))}</div></div>
+  <div class="btns">${btn('PDF','o','file')}${btn('Compartir','o','share')}</div>`,
+ foot:btn('Volver a cuentas','p','back')}),'La numeración es consecutiva y sin saltos (RN-06). La factura queda guardada en el servidor y se puede consultar después de cerrar la app.');
+
+add('caja','C7','Dividir cuenta','(tabs)/caja/[mesa]/dividir',[46,41],phone({title:'Dividir Mesa 02',left:'back',who:'Cajero · Caja',conn:'ok',
+ body:`
+  <div class="brd"><div class="row"><div class="grow"><span class="lbl">Falta por pagar</span><div style="margin-top:6px">${flap('$30.800','lg a','data-flip')}</div></div><span class="t s">de ${$(70800)}</span></div></div>
+  <div class="brd"><div class="brd-h"><span class="h sm">Pago 1</span>${tag('Pagado','g')}</div><div style="padding:4px 14px">${kv('Efectivo',$(40000))}</div></div>
+  <div class="brd"><div class="brd-h"><span class="h sm">Pago 2</span>${tag('Pendiente','n')}</div><div style="padding:12px 14px;display:flex;flex-direction:column;gap:12px">${segc(['Efectivo','Tarjeta','Transferencia'],1)}${fld('Monto','30.800',{state:'focus',help:'Puedes dejar parte para un tercer pago.'})}</div></div>
+  <button class="btn t" type="button">${ic('plus')}Agregar otro pago</button>`,
+ foot:btn('Registrar pago 2','p','check')}),'La factura se emite cuando lo pagado completa el total. Prioridad Baja.');
+
+add('caja','C8','Historial de facturas','(drawer)/facturas',[43,68,69],phone({title:'Facturas',who:'Cajero · Caja',conn:'ok',
+ body:`
+  ${fld('Número o fecha','Ej. 000128 o 04/11/2026',{ph:true,icon:'search'})}
+  ${chips(['Hoy','Esta semana','Rango…'])}
+  <div class="brd">
+   ${[['000129','20:04 · Mesa 02 · Efectivo',70800,''],['000128','19:45 · Mesa 01 · Tarjeta',58300,''],['000127','19:20 · Mesa 04 · Transferencia',20000,'anulada'],['000126','18:56 · Mesa 05 · Efectivo',12000,'']].map(([n,d,v,s])=>`<div class="row ${s?'void':''}">${flap(n,'sm')}<div class="grow"><p class="t s">${d}</p>${s?tag('Anulada','r'):''}</div><span class="num ${s?'strike':''}" style="font-weight:700">${$(v)}</span>${ic('chev','i s')}</div>`).join('')}
+  </div>
+  <button class="btn o" type="button">Cargar facturas anteriores</button>`}));
+
+add('caja','C9','Detalle y anulación de factura','/factura/[id]',[43,44,37,35],phone({title:'Factura 000128',left:'back',who:'Dueño',conn:'ok',fixed:true,
+ body:`<div class="brd" style="padding:4px 14px">${kv('Fecha','04/11/2026 · 19:45')}${kv('Mesa · Mesero','01 · Ana')}${kv('Método','Tarjeta')}${kv('Total',$(58300))}</div>`,
+ overlay:`<div class="scrim"></div><div class="sheet" role="dialog" aria-label="Anular factura"><div class="grab"></div><p class="h">Anular factura 000128</p>
+  <p class="t">Se genera un ajuste de stock con referencia a 000128. La factura no se borra: queda marcada como anulada.</p>
+  ${fld('Motivo (obligatorio)','Cobro duplicado con la mesa 4',{ta:true,state:'focus'})}
+  <div class="brd"><div class="row"><span class="chk on">${ic('check','i s')}</span><span class="grow">Devolver al stock los productos no consumidos</span></div></div>
+  ${btn('Anular factura','d','x')}</div>`}),'Solo el dueño puede anular. Corregir una cuenta pagada siempre pasa por anular su factura (RN-07).');
+
+/* ---------- DUEÑO ---------- */
+const bars=[['L',620],['M',540],['X',710],['J',880],['V',1250],['S',1430],['D',980]];
+add('dueno','D1','Resumen del negocio','(drawer)/dashboard',[58,59,60,6],phone({title:'Resumen',who:'Dueño',conn:'ok',navset:'dueno',navon:'',
+ body:`
+  ${segc(['Hoy','Semana','Mes'])}
+  <div class="brd"><div class="row"><div class="grow"><span class="lbl">Utilidad estimada · hoy</span><div style="margin-top:6px">${flap('$590.000','lg g','data-flip')}</div></div></div>
+   <div style="padding:2px 14px 8px">${kv('Ventas',$(1250000))}${kv('Costo de lo vendido','−'+$(620000))}${kv('Otros gastos','−'+$(40000))}</div>
+   <div class="row" style="background:var(--face2)"><div class="grow"><p class="t s">Gasto en surtido · se reporta aparte</p></div><span class="num">${$(288000)}</span></div></div>
+  <div class="brd"><div class="brd-h"><span class="h sm">Ventas por día · miles</span><span class="lbl">Semana</span></div>
+   <div class="chart" style="padding:12px 14px 10px;height:170px">${bars.map(([d,v],i)=>`<div class="col"><span class="lbl" style="font-size:11px">${v}</span><div class="b ${i===5?'hi':''}" style="height:${v/1430*100}%"></div><span class="lbl">${d}</span></div>`).join('')}</div></div>
+  <div class="brd"><div class="brd-h"><span class="h sm">Más vendidos</span><span class="lbl">Unid.</span></div>
+   ${[['Águila 330 ml',48],['Club Colombia',30],['Aguardiente 1/2',8]].map(([n,u])=>`<div class="row"><div class="grow"><p>${n}</p><div class="hbar" style="margin-top:6px"><i style="width:${u/48*100}%"></i></div></div><span class="num">${u}</span></div>`).join('')}</div>
+  <div class="brd"><div class="brd-h"><span class="h sm">Ventas por mesero</span></div>${kv('<span style="padding-left:14px">Ana</span>',$(750000)+'<span style="padding-right:14px"></span>')}${kv('<span style="padding-left:14px">Luis</span>',$(500000)+'<span style="padding-right:14px"></span>')}</div>
+  <div class="brd"><div class="brd-h"><span class="h sm">Margen por producto</span><span class="lbl">Precio − costo</span></div>
+   ${[['Ron botella',17000],['Aguardiente 1/2',15000],['Michelada',4500],['Club Colombia',2000],['Águila 330 ml',1500]].map(([n,m])=>`<div class="row"><span class="grow">${n}</span><span class="num">${$(m)}</span></div>`).join('')}</div>`}),'Utilidad = ventas − costo de lo vendido − otros gastos. El surtido no se resta porque ya entra como costo de lo vendido.');
+
+add('dueno','D2','Inventario y alertas','(tabs)/inventario',[47,50,51,70],phone({title:'Inventario',who:'Dueño',conn:'ok',navset:'dueno',navon:'Inventario',
+ body:`
+  ${ban('r','bell','2 productos bajo el mínimo','Aguardiente 1/2 y Ron botella. Aviso enviado a las 19:58.')}
+  ${fld('Buscar','Producto o categoría…',{ph:true,icon:'search'})}
+  ${chips(['Todos','Bajo mínimo <span class="n">2</span>','Inactivos'])}
+  <div class="brd"><div class="brd-h"><span class="lbl">Producto</span><span class="lbl">Stock / mín.</span></div>
+   ${[['Aguardiente 1/2','Licores',2,5,'r'],['Ron botella','Licores',1,3,'r'],['Club Colombia','Cervezas',30,10,''],['Águila 330 ml','Cervezas',48,12,''],['Agua 600 ml','Sin alcohol',24,6,'']].map(([n,c,s,m,w])=>`<div class="row ${w?'void':''}" style="${w?'':''}"><div class="grow"><p style="font-weight:500">${n}</p><p class="t s">${c}</p></div>${flap(String(s).padStart(2,'0'),'sm '+w)}<span class="t s">/ ${m}</span>${ic('chev','i s')}</div>`).join('')}</div>
+  <div class="brd"><div class="brd-h"><span class="h sm">Sugerencia de surtido</span>${tag('Según ventas','n')}</div>
+   ${[['Aguardiente 1/2','pedir 12','vendió 8 hoy'],['Ron botella','pedir 6','stock 1'],['Águila 330 ml','pedir 48','más vendido']].map(([n,q,w])=>`<div class="row"><div class="grow"><p>${n}</p><p class="t s">${w}</p></div><span class="num" style="font-weight:700">${q}</span></div>`).join('')}
+   <div class="row">${btn('Crear compra con esto','o','truck')}</div></div>`,
+ fab:`<div class="fab" style="bottom:110px">${ic('plus')}Ajuste</div>`}),'Los productos en o bajo el mínimo van primero y en rojo. Las filas de stock bajo usan el mismo tratamiento que una fila cancelada del tablero.');
+
+add('dueno','D3','Detalle de producto','/producto/[id]',[12,49,60,37,14],phone({title:'Aguardiente 1/2',left:'back',who:'Dueño',conn:'ok',
+ body:`
+  <div style="display:flex;gap:14px;align-items:center"><div class="thumb img3" style="width:72px;height:72px"></div><div><p style="margin:0;font-weight:500">Licores</p><p class="t s">Activo · visible al tomar pedidos</p></div></div>
+  <div class="two"><div class="brd"><div class="row" style="flex-direction:column;align-items:flex-start;gap:6px"><span class="lbl">Stock</span>${flap('02','lg r')}</div></div><div class="brd"><div class="row" style="flex-direction:column;align-items:flex-start;gap:6px"><span class="lbl">Mínimo</span>${flap('05','lg')}</div></div></div>
+  <div class="brd" style="padding:4px 14px">${kv('Precio de venta',$(45000))}${kv('Último costo',$(30000))}${kv('Margen',$(15000)+' · 33 %')}</div>
+  <div class="brd"><div class="brd-h"><span class="h sm">Movimientos</span><span class="lbl">Quién</span></div>
+   ${[['−1','Salida · Ronda 2 Mesa 07','20:01','Ana'],['−1','Salida · Ronda 1 Mesa 02','19:32','Ana'],['+12','Entrada · Compra C-018','09/10 · 10:15','Dueño'],['−1','Ajuste · botella rota','08/10 · 23:40','Dueño']].map(([q,d,t,u])=>`<div class="row"><span class="num" style="min-width:34px;font-weight:700;color:${q[0]==='+'?'var(--green)':'var(--ink)'}">${q}</span><div class="grow"><p>${d}</p><p class="t s">${t}</p></div><span class="lbl">${u}</span></div>`).join('')}</div>`,
+ foot:`<div class="btns">${btn('Ajustar stock','o')}${btn('Editar','p','edit')}</div>`}),'Mesero, Barra y Caja solo ven precio, stock y mínimo. El costo, el margen y los movimientos son exclusivos del dueño.');
+
+add('dueno','D4','Estados de carga y error','/producto/[id]',[12,18,68],phone({title:'Producto',left:'back',who:'Dueño',conn:'ok',
+ body:`
+  <span class="lbl">Cargando · esqueleto</span>
+  <div class="brd" style="padding:14px;display:flex;flex-direction:column;gap:10px"><div class="sk" style="height:18px;width:60%"></div><div class="sk" style="height:12px;width:40%"></div><div class="sk" style="height:44px"></div></div>
+  <span class="lbl">Error · Reintentar</span>
+  <div class="brd" style="padding:18px;display:flex;flex-direction:column;gap:10px;align-items:flex-start">${ic('wifioff')}<p class="h">No se pudo cargar</p><p class="t">El servidor tardó demasiado en responder.</p>${btn('Reintentar','o','undo')}</div>
+  <span class="lbl">No encontrado · /producto/999</span>
+  <div class="brd" style="padding:18px;display:flex;flex-direction:column;gap:10px;align-items:flex-start">${flap('404','md r')}<p class="h">Producto no encontrado</p><p class="t">Puede que el enlace sea viejo. El mismo mensaje se usa para /mesa/[id] y /factura/[id].</p>${btn('Volver al catálogo','p','back')}</div>`}),'Es un solo componente, StateView, que reciben todas las pantallas que consultan el servidor (TanStack Query).');
+
+add('dueno','D5','Formulario de producto','/producto/[id]/editar',[13,14,15],phone({title:'Nuevo producto',left:'close',who:'Dueño',conn:'ok',
+ body:`
+  ${fld('Nombre *','',{state:'err',ph:true,err:'Escribe el nombre del producto.'})}
+  <div class="fld"><span class="lb">Categoría</span><div class="inp"><span style="flex:1">Cócteles</span>${ic('down')}</div><button class="btn t sm" type="button" style="align-self:flex-start;padding:0">Administrar categorías</button></div>
+  <div class="two">${fld('Precio de venta *','0',{state:'err',err:'Debe ser mayor que 0.'})}${fld('Costo *','4.500')}</div>
+  ${fld('Stock mínimo','-1',{state:'err',err:'Debe ser 0 o más.'})}
+  <div class="brd"><div class="row"><div class="grow"><p style="font-weight:500">Producto activo</p><p class="t s">Si lo desactivas no se borra; deja de aparecer al tomar pedidos.</p></div><span class="sw on" role="switch" aria-checked="true"></span></div></div>
+  ${ban('n','info','El stock no se edita aquí','Usa Compras o Ajustar stock: el número solo cambia con movimientos.')}`,
+ foot:`<div class="btns">${btn('Cancelar','o')}${btn('Guardar','p','',true)}</div>`}),'Los mensajes de validación aparecen debajo de cada campo con problemas.');
+
+add('dueno','D6','Categorías','(drawer)/ajustes/categorias',[15],phone({title:'Categorías',left:'back',who:'Dueño',conn:'ok',
+ body:`
+  <div class="brd">${[['Cervezas',4,1],['Licores',6,1],['Cócteles',3,1],['Sin alcohol',3,1],['Snacks',0,0]].map(([n,c,a])=>`<div class="row ${a?'':'void'}"><div class="grow"><p class="${a?'':'nm'}" style="font-weight:500">${n}</p><p class="t s">${c} productos</p></div>${a?'':tag('Inactiva','r')}<button class="ib" type="button" aria-label="Renombrar">${ic('edit')}</button></div>`).join('')}</div>
+  <div class="two" style="grid-template-columns:1fr auto;align-items:end">${fld('Nueva categoría','Ej. Vinos',{ph:true})}${btn('Crear','p','plus')}</div>`}));
+
+add('dueno','D7','Ajustar stock','(tabs)/inventario/ajuste',[48,37],phone({title:'Ajustar stock',left:'close',who:'Dueño',conn:'ok',
+ body:`
+  <div class="fld"><span class="lb">Producto</span><div class="inp"><span style="flex:1">Ron botella</span>${ic('down')}</div><div class="help">Stock actual 1 · mínimo 3</div></div>
+  <p class="lbl" style="margin-bottom:-6px">Tipo</p>${segc(['Entrada','Salida','Ajuste'],1)}
+  ${fld('Cantidad','1',{state:'focus',help:'Solo números enteros'})}
+  ${fld('Motivo *','Botella rota durante el turno',{ta:true})}
+  <div class="brd"><div class="row"><span class="grow t">Stock después del ajuste</span>${flap('00','md r')}</div></div>`,
+ foot:btn('Registrar salida','p','check')}),'Regla RN-02: el stock nunca se edita a mano, todo cambio es un movimiento.');
+
+add('dueno','D8','Registrar compra','/compra/nueva',[53,54,37],phone({title:'Nueva compra',left:'close',who:'Dueño',conn:'ok',
+ body:`
+  <div class="two"><div class="fld"><span class="lb">Proveedor</span><div class="inp"><span style="flex:1">Distribuidora X</span>${ic('down')}</div></div>${fld('Fecha','04/11/2026')}</div>
+  <div class="brd"><div class="brd-h"><span class="h sm">Águila 330 ml</span><button class="ib" type="button" aria-label="Quitar">${ic('close')}</button></div><div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px"><div class="two">${fld('Cantidad','24')}${fld('Costo unitario','2.500')}</div><div class="kv" style="padding:0"><span class="k">Total ítem</span><b class="num">${$(60000)}</b></div></div></div>
+  <div class="brd"><div class="brd-h"><span class="h sm">Ron botella</span><button class="ib" type="button" aria-label="Quitar">${ic('close')}</button></div><div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px"><div class="two">${fld('Cantidad','1,5',{state:'err',err:'Usa un número entero.'})}${fld('Costo unitario','38.000')}</div></div></div>
+  ${btn('Agregar producto','o','plus')}
+  ${ban('n','info','Al guardar','Sube el stock de cada producto y actualiza su último costo. Las ventas anteriores conservan su costo.')}`,
+ foot:`<div class="kv tot" style="padding:0"><span class="k">Total compra</span>${flap('$60.000','md','data-flip')}</div>${btn('Guardar compra','p','',true)}`}));
+
+add('dueno','D9','Compras y reporte por proveedor','(drawer)/proveedores/compras',[55,56],phone({title:'Compras',left:'back',who:'Dueño',conn:'ok',
+ body:`
+  <div class="two"><div class="fld"><span class="lb">Proveedor</span><div class="inp"><span style="flex:1">Todos</span>${ic('down')}</div></div>${fld('Desde – hasta','01/11 – 04/11')}</div>
+  <div class="brd">${[['C-019','04/11 · Distribuidora X','2 ítems',98000],['C-018','02/11 · Distribuidora X','2 ítems',288000],['C-017','01/11 · Bebidas del Norte','5 ítems',146000]].map(([n,d,i,v])=>`<div class="row">${flap(n,'sm')}<div class="grow"><p>${d}</p><p class="t s">${i}</p></div><b class="num">${$(v)}</b>${ic('chev','i s')}</div>`).join('')}</div>
+  <div class="brd"><div class="brd-h"><span class="h sm">Reporte por proveedor</span>${tag('Nov.','n')}</div>
+   ${[['Distribuidora X',386000,72],['Bebidas del Norte',146000,28]].map(([n,v,p])=>`<div class="row"><div class="grow"><p>${n}</p><div class="hbar" style="margin-top:6px"><i style="width:${p}%"></i></div></div><b class="num">${$(v)}</b></div>`).join('')}
+   <div class="row">${btn('Exportar reporte PDF','o','file')}</div></div>`}));
+
+add('dueno','D10','Proveedores','(drawer)/proveedores',[52,68],phone({title:'Proveedores',who:'Dueño',conn:'ok',
+ body:`
+  ${fld('Buscar','Nombre o teléfono…',{ph:true,icon:'search'})}
+  <div class="brd">${[['Distribuidora X','300 000 0101','Cervezas y licores · entrega martes'],['Bebidas del Norte','300 000 0102','Gaseosas y agua']].map(([n,t,d])=>`<div class="row"><div class="grow"><p style="font-weight:500">${n}</p><p class="t s">${t} · ${d}</p></div>${ic('chev','i s')}</div>`).join('')}</div>
+  <p class="t s">Datos de ejemplo.</p>`,
+ fab:`<div class="fab" style="bottom:40px">${ic('plus')}Proveedor</div>`}));
+
+const streets=`<svg class="streets" viewBox="0 0 360 330" preserveAspectRatio="none" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-linecap="round" style="color:var(--line)"><path d="M-10 250 C 80 210, 140 220, 200 160 S 320 80, 380 60" stroke-width="14"/><path d="M60 -10 C 80 80, 110 140, 120 340" stroke-width="8"/><path d="M200 160 L 260 340" stroke-width="8"/><path d="M-10 90 L 380 140" stroke-width="5"/><path d="M280 -10 L 300 340" stroke-width="5"/></g><path d="M-10 250 C 80 210, 140 220, 200 160 S 320 80, 380 60" stroke="#F2C66B" stroke-width="7" fill="none"/></svg>`;
+const pinM=(x,y,label,c)=>`<div class="pin" style="left:${x}%;top:${y}%">${label?`<span class="pl">${label}</span>`:''}<svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><path d="M12 22s7-6.4 7-12a7 7 0 10-14 0c0 5.6 7 12 7 12z" fill="${c}" stroke="#fff" stroke-width="1.5"/><circle cx="12" cy="10" r="2.6" fill="#fff"/></svg></div>`;
+add('dueno','D11','Detalle de proveedor','/proveedores/[id]',[52,66,55],phone({title:'Distribuidora X',left:'back',who:'Dueño',conn:'ok',
+ body:`
+  <div class="brd" style="padding:4px 14px">${kv('Teléfono','300 000 0101')}${kv('Dirección','Vía principal, km 3')}${kv('Notas','Entrega martes y viernes')}${kv('Última compra','04/11 · '+$(98000))}</div>
+  <div class="map" style="height:170px">${streets}${pinM(62,52,'Distribuidora X','#2F2F35')}<span class="attr">© OpenStreetMap</span></div>
+  ${btn('Ver en el mapa','o','pin')}
+  <p class="t s">Solo se marca la ubicación. No se dibuja una línea recta como si fuera una ruta.</p>`,
+ foot:`<div class="btns">${btn('Compras','o','receipt')}${btn('Editar','p','edit')}</div>`}));
+
+add('dueno','D12','Ubicación','(drawer)/ubicacion',[61,62,63,64],phone({title:'Ubicación',who:'Dueño',conn:'ok',
+ body:`
+  <div class="map" style="height:400px">${streets}
+   ${pinM(46,58,'Mirador la Capilla','#BE2528')}
+   ${pinM(70,30,'Distribuidora X','#2F2F35')}
+   ${pinM(18,22,'Bebidas del Norte','#2F2F35')}
+   <span class="me" style="left:40%;top:74%" aria-label="Tu ubicación"></span>
+   <div class="mapctl" style="top:10px"><button class="ib" type="button" aria-label="Centrar en mi ubicación">${ic('gps')}</button><button class="ib" type="button" aria-label="Acercar">${ic('plus')}</button><button class="ib" type="button" aria-label="Alejar">${ic('minus')}</button></div>
+   <span class="attr">© OpenStreetMap · Leaflet</span></div>
+  <div class="brd"><div class="row"><span class="me" style="position:static;transform:none;box-shadow:none;width:14px;height:14px"></span><div class="grow"><p style="font-weight:500">Seguimiento activo</p><p class="t s">Precisión 8 m · actualizado 19:58:12</p></div>${btn('Pausar','o','pause',false,'style="min-height:40px"')}</div></div>
+  <div class="chips" style="gap:14px"><span class="lbl" style="display:flex;gap:6px;align-items:center"><i style="width:10px;height:10px;border-radius:50%;background:#BE2528;display:inline-block"></i>Bar</span><span class="lbl" style="display:flex;gap:6px;align-items:center"><i style="width:10px;height:10px;border-radius:50%;background:#2F2F35;display:inline-block"></i>Proveedor</span><span class="lbl" style="display:flex;gap:6px;align-items:center"><i style="width:10px;height:10px;border-radius:50%;background:#2F7BF6;display:inline-block"></i>Este celular</span></div>
+  <p class="t s">Coordenadas del bar pendientes de confirmar con el docente.</p>`}),'El permiso de ubicación en primer plano se pide solo al entrar a esta pantalla. La suscripción se libera al salir.');
+
+add('dueno','D13','Ubicación sin permiso o sin GPS','(drawer)/ubicacion',[65,62],phone({title:'Ubicación',who:'Mesero · Ana',conn:'ok',
+ body:`
+  <div class="brd" style="padding:16px;display:flex;flex-direction:column;gap:10px;align-items:flex-start">${ic('pin')}<p class="h">Sin permiso de ubicación</p><p class="t">Puedes ver el bar y los proveedores, pero no tu posición. Al volver de Ajustes se revisa el permiso otra vez.</p>${btn('Abrir ajustes del celular','p','gear')}</div>
+  <div class="brd" style="padding:16px;display:flex;flex-direction:column;gap:10px;align-items:flex-start">${ic('gps')}<p class="h">GPS apagado</p><p class="t">Activa la ubicación del celular para centrar el mapa en ti.</p>${btn('Reintentar','o','undo')}</div>
+  <div class="brd" style="padding:16px;display:flex;flex-direction:column;gap:10px;align-items:flex-start">${ic('alert')}<p class="h">El mapa no cargó</p><p class="t">OpenStreetMap necesita datos para descargar el mapa. Lo demás de la app sigue funcionando en la red local.</p>${btn('Reintentar','o','undo')}</div>`}));
+
+add('dueno','D14','Gastos adicionales','(drawer)/gastos',[57],phone({title:'Gastos',who:'Dueño',conn:'ok',
+ body:`
+  ${segc(['Hoy','Semana','Mes'])}
+  <div class="brd"><div class="row"><div class="grow"><span class="lbl">Otros gastos · hoy</span><div style="margin-top:6px">${flap('$40.000','lg','data-flip')}</div></div></div>
+   ${[['Hielo','18:20',10000],['Gas','16:05',15000],['Servicios','09:00',15000]].map(([n,t,v])=>`<div class="row"><div class="grow"><p>${n}</p><p class="t s">${t}</p></div><b class="num">${$(v)}</b></div>`).join('')}</div>
+  <div class="brd"><div class="brd-h"><span class="h sm">Registrar gasto</span></div><div style="padding:12px 14px;display:flex;flex-direction:column;gap:12px">
+   ${fld('Concepto','Hielo para el segundo turno')}
+   <div class="two">${fld('Monto','0',{state:'err',err:'Debe ser mayor que 0.'})}${fld('Fecha','04/11/2026')}</div>
+   ${btn('Registrar gasto','p','plus',true)}</div></div>`}),'Estos gastos se restan de la utilidad estimada en el Resumen.');
+
+add('dueno','D15','Usuarios','(drawer)/usuarios',[7,8],phone({title:'Usuarios',who:'Dueño',conn:'ok',
+ body:`
+  <div class="brd">${[['Ana','Mesero',''],['Luis','Mesero',''],['Operador','Todo en uno',''],['Preparador','Barra',''],['Cajero','Caja','Bloqueado 04:52'],['Pedro','Mesero','Inactivo']].map(([n,r,s])=>`<div class="row ${s==='Inactivo'?'void':''}"><div class="grow"><p class="${s==='Inactivo'?'nm':''}" style="font-weight:500">${n}</p><p class="t s">${r}</p></div>${s?tag(s,s==='Inactivo'?'r':'a'):''}<button class="ib" type="button" aria-label="Editar ${n}">${ic('edit')}</button></div>`).join('')}</div>
+  <div class="brd"><div class="brd-h"><span class="h sm">Nuevo usuario</span></div><div style="padding:12px 14px;display:flex;flex-direction:column;gap:12px">
+   ${fld('Nombre','Camila')}
+   <div class="fld"><span class="lb">Rol</span>${segc(['Mesero','Barra','Caja','Todo en uno'])}</div>
+   <div class="two">${fld('PIN (4 dígitos)','••••')}${fld('Confirmar PIN','•••',{state:'err',err:'Los PIN no coinciden.'})}</div>
+   ${btn('Crear usuario','p','plus',true)}</div></div>`}),'Desactivar un usuario no lo borra: su historial queda. Desde aquí también se puede desbloquear un perfil.');
+
+add('dueno','D16','Ajustes del negocio','(drawer)/ajustes',[4,8,9,22,2],phone({title:'Ajustes',who:'Dueño',conn:'ok',
+ body:`
+  <div class="brd"><div class="brd-h"><span class="h sm">Negocio</span></div><div style="padding:12px 14px;display:flex;flex-direction:column;gap:12px">
+   ${fld('Nombre visible','Mirador la Capilla')}
+   <div class="two">${fld('Impuesto (%)','8')}${fld('Propina sugerida (%)','10')}</div></div></div>
+  <div class="brd"><div class="row"><div class="grow"><p style="font-weight:500">Modo un solo operador</p><p class="t s">Rondas directo a «entregada». Úsalo de lunes a sábado.</p></div><span class="sw on" role="switch" aria-checked="true"></span></div></div>
+  <div class="brd"><div class="brd-h"><span class="h sm">Seguridad</span></div><div style="padding:12px 14px;display:flex;flex-direction:column;gap:12px">
+   <div class="two">${fld('Intentos de PIN','3')}${fld('Bloqueo (min)','5')}</div>
+   ${fld('Cerrar sesión tras (min sin uso)','10')}</div></div>
+  <div class="brd"><div class="brd-h"><span class="h sm">Mesas · 8 activas</span><button class="btn t sm" type="button">${ic('plus')}Mesa</button></div>
+   ${[['01','Terraza'],['02','Terraza'],['09','Salón · inactiva']].map(([n,z])=>`<div class="row ${z.includes('inactiva')?'void':''}">${flap(n,'sm')}<span class="grow t">${z}</span><button class="ib" type="button" aria-label="Editar mesa ${n}">${ic('edit')}</button></div>`).join('')}</div>
+  <div class="brd"><div class="row">${ic('wifi')}<div class="grow"><p style="font-weight:500">Servidor</p><p class="t s">192.168.1.50:3000 · guardado en este celular</p></div><button class="btn t sm" type="button">Cambiar</button></div></div>`,
+ foot:btn('Guardar ajustes','p','check')}));
+
+add('dueno','D17','Respaldos','(drawer)/ajustes/respaldos',[71,69],phone({title:'Respaldos',left:'back',who:'Dueño',conn:'ok',
+ body:`
+  <div class="brd"><div class="row"><div class="grow"><p style="font-weight:500">Copia automática diaria</p><p class="t s">En el PC de caja · todos los días a las 03:00</p></div><span class="sw on" role="switch" aria-checked="true"></span></div>
+   <div class="row">${ic('checkc')}<div class="grow"><p>Última copia: hoy 03:00</p><p class="t s">bar-pos_2026-11-04.db · 2,4 MB</p></div></div></div>
+  ${btn('Exportar copia ahora','o','download')}
+  <div class="brd"><div class="brd-h"><span class="h sm">Restaurar</span></div>
+   ${[['2026-11-04','03:00'],['2026-11-03','03:00'],['2026-11-02','03:00']].map(([d,t],i)=>`<div class="row ${i===1?'sel':''}"><span class="radio ${i===1?'on':''}"></span><span class="grow">${d} · ${t}</span></div>`).join('')}</div>
+  ${ban('r','alert','Restaurar reemplaza los datos actuales','Las ventas, compras y movimientos posteriores al 03/11 03:00 se pierden. Antes de restaurar se guarda una copia del estado actual.')}`,
+ foot:btn('Restaurar copia del 03/11','d','upload')}));
+
+/* ================= render ================= */
+const ROLES=[
+ ['acceso','Acceso compartido','Pantallas comunes a todos los perfiles: conexión con el servidor local, perfil y PIN, seguridad y el menú lateral.','Sin pestañas'],
+ ['mesero','Mesero','Domingo con varios celulares: atender mesas, tomar rondas, editar lo que aún está «tomado» y recibir el aviso cuando barra termina.','Pestañas: ninguna (solo Mesas) · menú lateral: Ubicación'],
+ ['todo','Todo en uno · L–S','De lunes a sábado una sola persona atiende, prepara y cobra. Las rondas pasan directo a «entregada».','Pestañas: Mesas · Barra · Caja'],
+ ['barra','Barra','La cola de comandas en tiempo real, con el tiempo de espera de cada una dibujado como una barra.','Pestañas: ninguna (solo Barra) · menú lateral: Ubicación'],
+ ['caja','Caja','Cuentas por cobrar, cálculo y validación del cobro, factura, mover, unir, reabrir, anular y dividir.','Pestañas: Mesas · Caja · menú lateral: Facturas, Ubicación'],
+ ['dueno','Dueño','Todo lo anterior, más inventario, productos, surtido, proveedores, gastos, resumen, mapa, usuarios, ajustes y respaldos.','Pestañas: Mesas · Barra · Caja · Inventario · menú lateral completo'],
+];
+const main=document.getElementById('main'), rn=document.getElementById('rolenav');
+ROLES.forEach(([k,name,desc,tabs])=>{
+  const list=S.filter(s=>s.role===k);
+  rn.insertAdjacentHTML('beforeend',`<a href="#r-${k}">${name} · ${list.length}</a>`);
+  main.insertAdjacentHTML('beforeend',`<section class="role" id="r-${k}"><div class="role-h"><div><h2>${flap(name.toUpperCase().replace(' · L–S',''),'md')}</h2><p>${desc}</p></div><span class="tabs-note">${tabs}</span></div>
+   <div class="grid">${list.map(s=>`<article class="shot" id="${s.id}"><div class="cap"><b>${s.id} · ${s.name}</b><code>${s.route}</code></div>${s.html}${s.why?`<p class="why">${s.why}</p>`:''}<div class="rfs">${s.rf.sort((a,b)=>a-b).map(n=>`<a href="#rf-${n}" title="${RF[n][0]}">RF-${String(n).padStart(2,'0')}</a>`).join('')}</div></article>`).join('')}</div></section>`);
+});
+/* coverage */
+const cov=Object.keys(RF).map(Number).map(n=>{const sc=S.filter(s=>s.rf.includes(n));return `<div id="rf-${n}"><b>RF-${String(n).padStart(2,'0')}</b><span>${RF[n][0]} <span class="pr">· ${RF[n][1]}</span><span class="scr">${sc.length?sc.map(s=>`<a href="#${s.id}">${s.id}</a>`).join(''):'<span class="miss">Sin pantalla</span>'}</span></span></div>`}).join('');
+const covered=Object.keys(RF).filter(n=>S.some(s=>s.rf.includes(+n))).length;
+rn.insertAdjacentHTML('beforeend',`<a href="#r-cov">Cobertura RF</a>`);
+main.insertAdjacentHTML('beforeend',`<section class="role" id="r-cov"><div class="role-h"><div><h2>${flap('COBERTURA','md')}</h2><p>Cada requerimiento funcional con las pantallas que lo resuelven. ${covered} de 71 cubiertos, ${S.length} pantallas.</p></div></div><div class="cov">${cov}</div></section>`);
+document.getElementById('title-board').innerHTML=flap('BAR POS','lg')+' <span style="display:inline-block;width:10px"></span>'+flap('MIRADOR LA CAPILLA','lg a');
+
+/* theme */
+const root=document.documentElement, tb=[...document.querySelectorAll('[data-th]')];
+const sysDark=()=>matchMedia('(prefers-color-scheme: dark)').matches;
+function setTheme(t,save){root.dataset.theme=t;tb.forEach(b=>b.setAttribute('aria-pressed',b.dataset.th===t));if(save){try{localStorage.setItem('barpos-theme',t)}catch(e){}}}
+let saved=null;try{saved=localStorage.getItem('barpos-theme')}catch(e){}
+setTheme(saved||(sysDark()?'dark':'light'),false);
+tb.forEach(b=>b.addEventListener('click',()=>setTheme(b.dataset.th,true)));
+
+/* role nav highlight */
+const secs=[...document.querySelectorAll('section.role')], links=[...rn.querySelectorAll('a')];
+const io2=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){links.forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+e.target.id))}}),{rootMargin:'-30% 0px -60% 0px'});
+secs.forEach(s=>io2.observe(s));
+</script>
+<script>
+/* ---- signature: split-flap cascade ---- */
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const CH='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ$.:';
+function cascade(el,target){
+  const cells=[...el.querySelectorAll('.c:not(.sp)')]; const chars=[...String(target)].filter(c=>c!==' ');
+  const sr=el.querySelector('.sr'); if(sr) sr.textContent=target;
+  if(RM){cells.forEach((c,i)=>c.textContent=chars[i]??'');return}
+  cells.forEach((c,i)=>{
+    const fin=chars[i]??''; let n=0; const steps=2+((i*7)%3);
+    setTimeout(function tick(){ if(n<steps){c.textContent=CH[(Math.random()*CH.length)|0];n++;setTimeout(tick,90)} else c.textContent=fin },i*45);
+  });
+}
+const seen=new WeakSet();
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting&&!seen.has(e.target)){seen.add(e.target);cascade(e.target,e.target.querySelector('.sr').textContent)}}),{threshold:.6});
+document.querySelectorAll('[data-flip]').forEach(el=>io.observe(el));
+/* barra: waits keep counting, live */
+setInterval(()=>{document.querySelectorAll('[data-min]').forEach(el=>{let m=Math.min(+el.dataset.min+1,59);el.dataset.min=m;cascade(el,String(m).padStart(2,'0'));const card=el.closest('[data-ticket]');const w=card&&card.querySelector('.wait');if(w){w.querySelector('i').style.width=Math.min(m/20*100,100)+'%';w.className='wait '+(m>=12?'r':m>6?'a':'');if(m>=12)el.className='flap sm r'}})},9000);
+/* lock countdown */
+(function(){const el=document.querySelector('[data-count]');if(!el)return;let s=292;setInterval(()=>{s=Math.max(0,s-1);const v=String((s/60)|0).padStart(2,'0')+':'+String(s%60).padStart(2,'0');{const cells=[...el.querySelectorAll('.c')];[...v].forEach((ch,i)=>{if(cells[i]&&cells[i].textContent!==ch)cells[i].textContent=ch})}},1000)})();
+</script>
+</body>
+</html>

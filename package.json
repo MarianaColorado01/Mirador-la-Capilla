@@ -1,0 +1,21 @@
+{
+  "name": "mirador-la-capilla",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Bar POS para Mirador La Capilla · Proyecto Final Desarrollo Móvil II",
+  "workspaces": [
+    "app",
+    "server",
+    "shared"
+  ],
+  "scripts": {
+    "server": "npm run dev -w @mirador/server",
+    "app": "npm run start -w @mirador/app",
+    "db:reset": "npm run db:reset -w @mirador/server",
+    "test": "npm run test -w @mirador/shared && npm run test -w @mirador/server",
+    "typecheck": "npm run typecheck -w @mirador/shared && npm run typecheck -w @mirador/server && npm run typecheck -w @mirador/app"
+  },
+  "engines": {
+    "node": ">=20.19"
+  }
+}

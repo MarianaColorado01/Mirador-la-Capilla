@@ -1,0 +1,16 @@
+{
+  "name": "@mirador/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Tipos y reglas compartidas entre la app y el servidor",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.3",
+    "vitest": "^5.1.0"
+  }
+}

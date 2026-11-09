@@ -1,0 +1,51 @@
+/* Piezas propias de los mockups (sobre mockup.css) */
+.ph.app{height:100%;width:100%;border-radius:38px;border:0;box-shadow:none}
+.ph.app .body{overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}
+.ph.app .body::-webkit-scrollbar{display:none}
+.ph.app .body > *{flex-shrink:0}
+.ph.app > *:not(.body){flex-shrink:0}
+.ph.app .snack{animation:snackIn .2s cubic-bezier(.2,.8,.2,1)}
+@keyframes snackIn{from{transform:translateY(16px);opacity:0}}
+.ph.app .scrim{animation:fade .18s ease-out}
+.ph.app .sheet{animation:sheetIn .24s cubic-bezier(.2,.8,.2,1)}
+.ph.app .drawer{animation:drawerIn .24s cubic-bezier(.2,.8,.2,1)}
+@keyframes fade{from{opacity:0}} @keyframes sheetIn{from{transform:translateY(100%)}} @keyframes drawerIn{from{transform:translateX(-100%)}}
+.ib.sm{width:36px;height:36px}
+.ph.app .appbar h3{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+a.dl{text-decoration:none}
+input.inp{font:inherit;font-size:16px;width:100%;outline:none;color:var(--ink)}
+input.inp:focus{border:2px solid var(--ink);padding:0 11px}
+input.inp.err{border:2px solid var(--red);padding:0 11px}
+input.inp::placeholder{color:var(--ink3)}
+.inp.search input{all:unset;flex:1;font-size:16px;color:var(--ink);min-height:46px}
+.inp.search:focus-within{border:2px solid var(--ink);padding:0 11px}
+.chips.scroll{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px}
+.chips.scroll::-webkit-scrollbar{display:none}
+.chips.scroll .chip{flex:none}
+.empty{padding:26px 18px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px}
+.empty .h{margin-top:2px}
+.thumb.mk{background:var(--face2);padding:4px}
+.add[aria-disabled="true"]{opacity:.4;cursor:not-allowed}
+.add b{font:600 18px/1 Cinzel,serif}
+.hero-mk{position:relative;border-radius:12px;overflow:hidden;background:var(--shell);padding:22px 18px 46px;color:var(--shell-ink)}
+.hero-mk svg{position:absolute;left:0;right:0;bottom:0;width:100%;height:60px}
+.hero-mk .wm{margin:0;font:600 34px/1 Cinzel,Georgia,serif;letter-spacing:.06em;color:var(--carve)}
+.hero-mk .wm2{margin:6px 0 0;font:600 15px/1 Cinzel,Georgia,serif;letter-spacing:.2em;color:var(--shell-ink2)}
+.row[data-a]:hover,.dl:hover{background:var(--face2)}
+.dl.on:hover{background:var(--inv)}
+
+/* dispositivo realista */
+.device{position:relative;width:404px;height:868px;border-radius:54px;padding:12px;background:linear-gradient(145deg,#2A2B2F,#0E0F11 60%);box-shadow:0 0 0 1.5px #3A3C41 inset,0 0 0 2px #070708,0 40px 80px -30px rgba(0,0,0,.65),0 18px 30px -18px rgba(0,0,0,.5)}
+.device::before{content:"";position:absolute;top:24px;left:50%;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:#050506;box-shadow:0 0 0 2px #1C1D20;z-index:9}
+.device::after{content:"";position:absolute;right:-4px;top:170px;width:4px;height:90px;border-radius:0 3px 3px 0;background:#2A2B2F;box-shadow:0 120px 0 #2A2B2F}
+.device .screen{position:relative;width:100%;height:100%;border-radius:42px;overflow:hidden;background:var(--bg)}
+.device.static .screen *{pointer-events:none}
+@media (max-width:520px){
+  .device{width:100%;height:auto;aspect-ratio:404/868;padding:8px;border-radius:44px}
+  .device .screen{border-radius:36px}
+}
+/* Cinzel's 1 reads as a roman I at small sizes: counters and keypad use the UI face */
+.counter .v,.keys button{font-family:"Roboto Condensed",Roboto,sans-serif;font-weight:600}
+.add b{font-family:"Roboto Condensed",Roboto,sans-serif}
+.phonewrap .device{height:min(868px,calc(100vh - 70px));min-height:640px}
+@media (max-width:980px){.phonewrap .device{height:min(868px,calc(100vh - 40px))}}
