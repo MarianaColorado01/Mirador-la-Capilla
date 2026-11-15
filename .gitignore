@@ -21,3 +21,8 @@ Carta de intención*
 
 # carpetas de trabajo de las herramientas de diseño
 documentacion/wireframes/.claude/
+
+# Expo genera estos archivos si se arranca Metro en la raíz por error (la app está en app/)
+/.expo/
+/tsconfig.json
+/expo-env.d.ts
