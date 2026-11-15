@@ -2,6 +2,7 @@
   "name": "@mirador/shared",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "Tipos y reglas compartidas entre la app y el servidor",
   "main": "src/index.ts",
   "types": "src/index.ts",

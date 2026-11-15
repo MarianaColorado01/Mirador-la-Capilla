@@ -4,6 +4,7 @@ import qrcode from 'qrcode-terminal';
 import { createApp } from './app';
 import { getSettings, openDb } from './db/index';
 import { seed } from './db/seed';
+import { noopEmit, type Emit } from './lib/events';
 import { attachRealtime } from './realtime';
 
 const PORT = Number(process.env.PORT ?? 3000);
@@ -11,9 +12,11 @@ const PORT = Number(process.env.PORT ?? 3000);
 const db = openDb();
 if (seed(db)) console.log('Base nueva: se cargaron los datos de ejemplo (PIN de prueba 1234).');
 
-const app = createApp(db);
-const http = createServer(app);
-attachRealtime(http);
+// Express necesita `emit` y Socket.IO necesita el servidor HTTP: se enlazan con una referencia.
+// (Socket.IO debe engancharse después de Express para atender él mismo /socket.io/.)
+let emitRef: Emit = noopEmit;
+const http = createServer(createApp(db, (event, payload, roles) => emitRef(event, payload, roles)));
+emitRef = attachRealtime(http).emit;
 
 // Adaptadores virtuales (WSL, Hyper-V, VirtualBox, VPN) que los celulares no pueden alcanzar.
 const VIRTUAL = /vethernet|wsl|hyper-v|virtualbox|vmware|docker|loopback|tailscale|zerotier/i;

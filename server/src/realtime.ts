@@ -1,6 +1,7 @@
 import type { Server as HttpServer } from 'node:http';
 import { Server } from 'socket.io';
-import type { Role, ServerEvents } from '@mirador/shared';
+import type { Role } from '@mirador/shared';
+import type { Emit } from './lib/events';
 import { verifyToken } from './lib/auth';
 
 /** Socket.IO con el mismo token de la API. Cada celular entra a la sala de su rol. */
@@ -24,11 +25,11 @@ export function attachRealtime(http: HttpServer) {
   });
 
   /** Emite un evento a los roles indicados (el dueño siempre lo recibe). */
-  function emit<E extends keyof ServerEvents>(event: E, payload: ServerEvents[E], roles: Role[] = ['todo', 'mesero', 'barra', 'caja']) {
+  const emit: Emit = (event, payload, roles = ['todo', 'mesero', 'barra', 'caja']) => {
     const rooms = [...new Set([...roles, 'dueno' as Role])].map((r) => `rol:${r}`);
     // Socket.IO tipa los eventos como funciones; aquí se envía el payload tal cual.
     (io.to(rooms).emit as (ev: string, p: unknown) => boolean)(event, payload);
-  }
+  };
 
   return { io, emit };
 }

@@ -1,0 +1,86 @@
+/* Lecturas que arman los objetos que ve la app. Solo SELECT; nada de reglas aquí. */
+import type { Account, BarTicket, Invoice, PaymentMethod, Round, RoundItem, RoundStatus } from '@mirador/shared';
+import type { DB } from '../db/index';
+
+interface ItemRow {
+  id: number; round_id: number; product_id: number; product_name: string; qty: number; unit_price: number; note: string | null;
+  voided_at: string | null; voided_by_name: string | null; void_reason: string | null; void_restocked: number | null;
+}
+
+const ITEMS_SQL = `SELECT i.*, p.name AS product_name, u.name AS voided_by_name
+  FROM round_items i JOIN products p ON p.id = i.product_id LEFT JOIN users u ON u.id = i.voided_by`;
+
+/** SQLite guarda 'YYYY-MM-DD HH:MM:SS' en UTC; la app recibe ISO. */
+export const iso = (s: string) => (s.includes('T') ? s : s.replace(' ', 'T') + 'Z');
+
+const toItem = (r: ItemRow): RoundItem => ({
+  id: r.id, productId: r.product_id, productName: r.product_name, qty: r.qty, unitPrice: r.unit_price, note: r.note,
+  voided: r.voided_at ? { by: r.voided_by_name ?? '', at: iso(r.voided_at), reason: r.void_reason ?? '', restocked: !!r.void_restocked } : null,
+});
+
+export function itemsOfRounds(db: DB, roundIds: number[]): Map<number, RoundItem[]> {
+  const map = new Map<number, RoundItem[]>(roundIds.map((id) => [id, []]));
+  if (!roundIds.length) return map;
+  const rows = db.prepare(`${ITEMS_SQL} WHERE i.round_id IN (${roundIds.map(() => '?').join(',')}) ORDER BY i.id`).all(...roundIds) as ItemRow[];
+  for (const r of rows) map.get(r.round_id)!.push(toItem(r));
+  return map;
+}
+
+export function subtotalOf(db: DB, accountId: number): number {
+  const { s } = db.prepare(`SELECT COALESCE(SUM(i.qty * i.unit_price), 0) AS s FROM round_items i
+    JOIN rounds r ON r.id = i.round_id WHERE r.account_id = ? AND i.voided_at IS NULL`).get(accountId) as { s: number };
+  return s;
+}
+
+export function loadAccount(db: DB, id: number): Account | null {
+  const a = db.prepare(`SELECT a.*, t.number AS table_number, u.name AS waiter, inv.id AS invoice_id
+    FROM accounts a JOIN tables t ON t.id = a.table_id JOIN users u ON u.id = a.waiter_id
+    LEFT JOIN invoices inv ON inv.account_id = a.id WHERE a.id = ?`).get(id) as
+    | { id: number; table_number: number; waiter: string; status: Account['status']; opened_at: string; invoice_id: number | null }
+    | undefined;
+  if (!a) return null;
+  const rounds = db.prepare(`SELECT r.*, u.name AS taken_by_name FROM rounds r JOIN users u ON u.id = r.taken_by
+    WHERE r.account_id = ? ORDER BY r.number`).all(id) as { id: number; number: number; status: RoundStatus; taken_by_name: string; created_at: string }[];
+  const items = itemsOfRounds(db, rounds.map((r) => r.id));
+  return {
+    id: a.id, tableNumber: a.table_number, waiter: a.waiter, status: a.status, openedAt: iso(a.opened_at),
+    subtotal: subtotalOf(db, a.id), invoiceId: a.invoice_id,
+    rounds: rounds.map<Round>((r) => ({ id: r.id, number: r.number, status: r.status, takenBy: r.taken_by_name, createdAt: iso(r.created_at), items: items.get(r.id)! })),
+  };
+}
+
+export function barQueue(db: DB, statuses: RoundStatus[]): BarTicket[] {
+  const rows = db.prepare(`SELECT r.*, a.id AS account_id, t.number AS table_number, u.name AS taken_by_name
+    FROM rounds r JOIN accounts a ON a.id = r.account_id JOIN tables t ON t.id = a.table_id JOIN users u ON u.id = r.taken_by
+    WHERE r.status IN (${statuses.map(() => '?').join(',')}) AND a.status != 'pagada'
+    ORDER BY r.created_at, r.id`).all(...statuses) as { id: number; number: number; status: RoundStatus; created_at: string; account_id: number; table_number: number; taken_by_name: string }[];
+  const items = itemsOfRounds(db, rows.map((r) => r.id));
+  return rows.map((r) => ({
+    roundId: r.id, roundNumber: r.number, accountId: r.account_id, tableNumber: r.table_number, takenBy: r.taken_by_name,
+    status: r.status, createdAt: iso(r.created_at), items: items.get(r.id)!,
+  }));
+}
+
+export function loadInvoice(db: DB, id: number): Invoice | null {
+  const v = db.prepare(`SELECT inv.*, t.number AS table_number, w.name AS waiter, c.name AS cashier, vb.name AS voided_by_name,
+      p.method, p.received, p.change
+    FROM invoices inv JOIN accounts a ON a.id = inv.account_id JOIN tables t ON t.id = a.table_id
+    JOIN users w ON w.id = a.waiter_id JOIN users c ON c.id = inv.cashier_id LEFT JOIN users vb ON vb.id = inv.voided_by
+    LEFT JOIN payments p ON p.invoice_id = inv.id WHERE inv.id = ?`).get(id) as
+    | {
+        id: number; number: number; account_id: number; table_number: number; waiter: string; cashier: string; subtotal: number; discount: number;
+        tip_percent: number; tip: number; tax_percent: number; tax: number; total: number; method: PaymentMethod; received: number | null;
+        change: number | null; created_at: string; voided_at: string | null; voided_by_name: string | null; void_reason: string | null;
+      }
+    | undefined;
+  if (!v) return null;
+  const roundIds = (db.prepare('SELECT id FROM rounds WHERE account_id = ? ORDER BY number').all(v.account_id) as { id: number }[]).map((r) => r.id);
+  const items = [...itemsOfRounds(db, roundIds).values()].flat();
+  return {
+    id: v.id, number: v.number, accountId: v.account_id, tableNumber: v.table_number, waiter: v.waiter, cashier: v.cashier,
+    subtotal: v.subtotal, discount: v.discount, tipPercent: v.tip_percent, tip: v.tip, taxPercent: v.tax_percent, tax: v.tax, total: v.total,
+    method: v.method, received: v.received, change: v.change, createdAt: iso(v.created_at),
+    voided: v.voided_at ? { at: iso(v.voided_at), by: v.voided_by_name ?? '', reason: v.void_reason ?? '' } : null,
+    items,
+  };
+}

@@ -67,7 +67,85 @@ export interface Account {
   waiter: string;
   status: AccountStatus;
   openedAt: string;
+  /** Σ de ítems no anulados de todas las rondas */
+  subtotal: number;
   rounds: Round[];
+  invoiceId: number | null;
+}
+
+/** Mapa de mesas (RF-16). */
+export interface TableSummary {
+  number: number;
+  zone: string | null;
+  status: TableStatus;
+  account: null | {
+    id: number;
+    waiter: string;
+    subtotal: number;
+    openedAt: string;
+    readyRounds: number;
+  };
+}
+
+/** Comanda en la cola de barra (RF-31). */
+export interface BarTicket {
+  roundId: number;
+  roundNumber: number;
+  accountId: number;
+  tableNumber: number;
+  takenBy: string;
+  status: RoundStatus;
+  createdAt: string;
+  items: RoundItem[];
+}
+
+/** Cuenta por cobrar en caja (RF-38). */
+export interface BillableAccount {
+  id: number;
+  tableNumber: number;
+  waiter: string;
+  subtotal: number;
+  rounds: number;
+  voidedItems: number;
+  openedAt: string;
+}
+
+export interface Invoice {
+  id: number;
+  number: number;
+  accountId: number;
+  tableNumber: number;
+  waiter: string;
+  cashier: string;
+  subtotal: number;
+  discount: number;
+  tipPercent: number;
+  tip: number;
+  taxPercent: number;
+  tax: number;
+  total: number;
+  method: PaymentMethod;
+  received: number | null;
+  change: number | null;
+  createdAt: string;
+  voided: null | { at: string; by: string; reason: string };
+  items: RoundItem[];
+}
+
+export interface CreateRoundRequest {
+  items: { productId: number; qty: number; note?: string | null }[];
+}
+
+export interface ChargeRequest {
+  discount: string;
+  tipPercent: string;
+  method: PaymentMethod;
+  received?: string;
+}
+
+export interface VoidItemRequest {
+  reason: string;
+  restock: boolean;
 }
 
 export interface Settings {
