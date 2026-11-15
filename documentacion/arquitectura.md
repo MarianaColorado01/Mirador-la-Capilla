@@ -67,6 +67,6 @@ El diseño de referencia es `documentacion/wireframes/wireframes-mirador-tablero
 
 1. **Base** ✅: monorepo, esquema, semilla, login con PIN, productos, QR.
 2. **Proceso principal:** mesas, rondas con transacción e idempotencia, barra, pedir cuenta, cobro y factura. En la app: setup, login, mesas, ronda, cuenta y cobro.
-3. **Tiempo real y sin conexión:** Socket.IO en las pantallas y reintento al reconectar.
+3. **Tiempo real y sin conexión** ✅: Socket.IO invalida las consultas afectadas, avisos de ronda lista y stock bajo, refresco completo al reconectar.
 4. **Funciones complementarias:** inventario, proveedores y compras, gastos, resumen, mapa.
 5. **Prioridad Baja:** respaldos, PDF, dividir cuenta, reportes.

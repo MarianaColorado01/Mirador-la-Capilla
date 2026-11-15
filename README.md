@@ -56,7 +56,7 @@ Los datos de ejemplo se cargan solos la primera vez. Hay seis perfiles (Ana, Lui
 - [x] Esquema completo de la base (mesas, cuentas, rondas, facturas, inventario, compras, gastos, auditoría)
 - [x] Cálculo del cobro compartido, con pruebas
 - [x] Proceso principal: abrir mesa, rondas, barra, cobro y factura (servidor con pruebas de RN-01 a RN-09 y pantallas en la app)
-- [ ] Tiempo real, modo sin conexión
+- [x] Tiempo real con Socket.IO (cola de barra, aviso de ronda lista, stock bajo) e indicador conectado · reconectando · sin conexión
 - [ ] Inventario, compras, gastos, resumen, mapa
 - [ ] Respaldos, PDF, dividir cuenta
 

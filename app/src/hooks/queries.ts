@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
+import { useLive } from '@/store/live';
 import { useSession } from '@/store/session';
 
 /** queryKey centralizados para invalidar con precisión (TanStack Query). */
@@ -15,8 +16,9 @@ export const keys = {
   invoice: (id: number) => ['invoice', id] as const,
 };
 
-// Mientras llega Socket.IO (fase 3), las pantallas compartidas se refrescan solas cada pocos segundos.
-const LIVE = 4000;
+// Los cambios llegan por Socket.IO (use-realtime). Esto es solo una red de seguridad
+// por si se pierde un evento: un refresco lento cada 30 s.
+const LIVE = 30000;
 
 export const useTables = () => useQuery({ queryKey: keys.tables, queryFn: api.tables, refetchInterval: LIVE });
 export const useAccount = (id: number) => useQuery({ queryKey: keys.account(id), queryFn: () => api.account(id), refetchInterval: LIVE, enabled: Number.isFinite(id) });
@@ -26,9 +28,15 @@ export const useBillable = () => useQuery({ queryKey: keys.billable, queryFn: ap
 export const useInvoice = (id: number) => useQuery({ queryKey: keys.invoice(id), queryFn: () => api.invoice(id), enabled: Number.isFinite(id) });
 export const useSettings = () => useQuery({ queryKey: keys.settings, queryFn: api.settings, staleTime: 60000 });
 
-/** RF-03: indicador de conexión con el PC de caja. */
-export function useConnection(): 'ok' | 'off' | 'checking' {
+/**
+ * RF-03: indicador de conexión con el PC de caja.
+ * ok = API y tiempo real · reconnecting = la API responde pero el canal en vivo se está
+ * reconectando · off = el servidor no responde (se bloquean las confirmaciones, RF-67).
+ */
+export function useConnection(): 'ok' | 'reconnecting' | 'off' | 'checking' {
   const url = useSession((s) => s.serverUrl);
+  const loggedIn = useSession((s) => !!s.user);
+  const socket = useLive((s) => s.socket);
   const q = useQuery({
     queryKey: keys.health(url),
     queryFn: () => api.health(url!),
@@ -37,7 +45,8 @@ export function useConnection(): 'ok' | 'off' | 'checking' {
     retry: 0,
   });
   if (q.isPending) return 'checking';
-  return q.isError ? 'off' : 'ok';
+  if (q.isError) return 'off';
+  return loggedIn && socket !== 'connected' ? 'reconnecting' : 'ok';
 }
 
 /** Tras cualquier cambio en una cuenta, se refresca todo lo que la muestra. */

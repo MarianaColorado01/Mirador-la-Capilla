@@ -13,12 +13,13 @@ export function ConnectionStrip() {
   const user = useSession((s) => s.user);
   const conn = useConnection();
   const color = conn === 'ok' ? colors.green : conn === 'off' ? colors.red : colors.amber;
+  const label = { ok: 'Conectado', reconnecting: 'Reconectando', off: 'Sin conexión', checking: 'Conectando' }[conn];
   return (
     <View style={styles.strip}>
       <Text style={styles.who}>{user ? `${user.name} · ${ROLE_LABEL[user.role]}` : 'Mirador La Capilla'}</Text>
       <View style={styles.lamp}>
         <View style={[styles.dot, { backgroundColor: color }]} />
-        <Text style={[styles.lampText, { color }]}>{conn === 'ok' ? 'Conectado' : conn === 'off' ? 'Sin conexión' : 'Conectando'}</Text>
+        <Text style={[styles.lampText, { color }]}>{label}</Text>
       </View>
     </View>
   );
