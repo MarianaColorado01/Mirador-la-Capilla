@@ -74,9 +74,18 @@ Decisiones del bloque 4.5:
 - **Historial (RF-55):** filtros opcionales `supplierId`, `from` y `to` (incluidos); fechas mal escritas o un rango invertido → 400 con `field`. Orden: fecha y id descendentes, máximo 200. El detalle trae ítems con nombre, cantidad, costo unitario y total, el usuario y la fecha de registro.
 - **App:** tras guardar una compra se invalidan `['products']` (listas, detalle, movimientos, inventario y «Qué surtir») y `['purchases']`. «Crear compra con esto» en «Qué surtir» abre `compra/nueva?surtir=1` con lo sugerido al último costo. El botón «Ver en el mapa» del proveedor llega con el mapa (bloque 4.7).
 
+Decisiones del bloque 4.6:
+
+- **Gastos (RF-57):** esquema `ExpenseSchema` en `shared/src/admin.ts` (concepto obligatorio hasta 60 caracteres, monto entero > 0, fecha real y no futura; la fecha comparte la regla de compras). `POST /expenses` guarda en una transacción y audita `crear gasto`. `GET /expenses?from&to` lista el rango (ambos días incluidos, más reciente primero). No hay editar ni borrar (RN-04); la anulación con motivo queda pendiente.
+- **Qué son las ventas (RF-58):** salen solo de facturas **no anuladas**, por el día local de la factura, nunca del estado de la cuenta (una cuenta unida queda pagada sin factura y sus rondas ya están en la otra). Ventas = Σ (subtotal − descuento): la propina es del personal y el impuesto no es ingreso del bar; ambos se devuelven aparte (`tips`, `taxes`). Costo de lo vendido = Σ qty × `unit_cost` congelado de ítems no anulados de esas cuentas. Utilidad = ventas − costo de lo vendido − otros gastos (`estimatedProfit`). Gasto en surtido = Σ compras con `date` en el rango; se informa y **no** se resta (sección 4.3). Ticket promedio = ventas / número de facturas, redondeado.
+- **Rango:** `DateRangeSchema` (días locales AAAA-MM-DD, `from ≤ to`, si no 400 con `field: to`). Las fechas de SQLite están en UTC: se agrupa con `date(x, 'localtime')`. La app calcula el rango con `periodRange` de shared: Hoy; **7 días = los últimos 7 contando hoy**; Mes = del día 1 del mes actual a hoy.
+- **Un solo endpoint (RF-59):** `GET /reports/summary` trae también `byDay` (solo días con ventas; la app rellena los demás con 0), `topProducts` (10 más vendidos por cantidad, importe = qty × precio antes del descuento de la factura) y `byWaiter` (mesero de la cuenta, ventas y número de facturas).
+- **Margen (RF-60):** se calcula en la app con `margin` (precio − costo) de `GET /products?all=1` y el % sobre el precio; lista de productos activos ordenable por pesos o por %.
+- **App:** la gráfica son barras con `View` (altura proporcional a la venta más alta, `accessibilityLabel` por barra, total del rango en texto; con más de 7 días solo se rotula cada 5.º día). Las claves del Resumen cuelgan de `['reports']` y se invalidan al guardar una compra o un gasto, al cobrar o mover cuentas (`useInvalidateFloor`) y al anular una factura.
+
 | inventory | `POST /inventory/adjustments` `{productId, type, qty, reason}` · `GET /inventory/suggestions` (dueño); el listado usa `GET /products?all=1` y el historial `GET /products/:id/movements?type` ✅ | 47–51 |
 | suppliers / purchases | `GET /suppliers` · `GET /suppliers/:id` · `POST /suppliers` `{name, phone?, notes?, address?, lat?, lng?}` · `PATCH /suppliers/:id` (lo mismo + `active`) · `POST /purchases` `{supplierId, date, items: [{productId, qty, unitCost}]}` · `GET /purchases?supplierId&from&to` · `GET /purchases/:id` (dueño) ✅ · `GET /reports/purchases-by-supplier` (RF-56, Baja, pendiente) | 52–56 |
-| expenses / reports | `POST/GET /expenses` · `GET /reports/summary?from&to` | 57–60 |
+| expenses / reports | `POST /expenses` `{concept, amount, date}` · `GET /expenses?from&to` · `GET /reports/summary?from&to` (dueño) ✅; el margen (RF-60) usa `GET /products?all=1` | 57–60 |
 | settings / users | `GET /settings` (todos) · `PATCH /settings` (dueño) · `GET /users` · `POST /users` `{name, role, pin}` · `PATCH /users/:id` `{name?, role?, pin?, active?}` (dueño) ✅ | 04, 07 |
 | backups | `GET/POST /backups` · `POST /backups/:id/restore` | 71 |
 
@@ -105,6 +114,8 @@ login.tsx                   perfil y PIN
 (drawer)/mesas.tsx          crear mesas, zona, desactivar (dueño, RF-22)
 (drawer)/proveedores.tsx    lista de proveedores, nuevo proveedor y registrar compra (dueño, RF-52)
 (drawer)/compras.tsx        historial de compras por proveedor y fechas (dueño, RF-55)
+(drawer)/dashboard.tsx      Resumen: Hoy / 7 días / Mes, utilidad, gráfica por día, más vendidos, por mesero y margen (dueño, RF-58 a RF-60)
+(drawer)/gastos.tsx         registrar gasto y lista por período (dueño, RF-57)
 mesa/[id].tsx               cuenta de la mesa
 mesa/[id]/ronda.tsx         tomar ronda
 cobro/[id].tsx              cobrar
@@ -119,7 +130,7 @@ compra/[id].tsx             detalle de una compra (dueño, RF-55)
 
 El cierre por inactividad (RF-09) lo hace `hooks/use-idle-logout.ts`: el View raíz captura cada toque (`onStartShouldSetResponderCapture`) y reinicia un temporizador de `idleLogoutMinutes`; al volver del segundo plano revisa el tiempo real transcurrido.
 
-Para el resto de la fase 4 están previstas las pantallas de ubicación, gastos y resumen (se agregan como entradas del menú lateral). El Drawer viene incluido en `expo-router/drawer` desde el SDK 56: no hubo que instalar paquetes.
+Para el resto de la fase 4 está prevista la pantalla de ubicación (se agrega como entradas del menú lateral). El Drawer viene incluido en `expo-router/drawer` desde el SDK 56: no hubo que instalar paquetes.
 
 Librerías previstas: Axios con instancia central y TanStack Query para la red, Zustand con persistencia para la sesión y la ronda en construcción, NativeWind, `expo-camera` para el QR y `expo-location` con Leaflet en WebView para el mapa. Instálalas siempre con `npx expo install` para que coincidan con el SDK.
 

@@ -14,6 +14,8 @@ type Icon = keyof typeof MaterialCommunityIcons.glyphMap;
  * y súmala aquí; el servidor igual niega lo que el rol no puede hacer (RN-09).
  */
 const ENTRIES: { name: string; title: string; icon: Icon; roles: Role[] }[] = [
+  { name: 'dashboard', title: 'Resumen', icon: 'chart-bar', roles: ['dueno'] },
+  { name: 'gastos', title: 'Gastos', icon: 'cash-minus', roles: ['dueno'] },
   { name: 'facturas', title: 'Facturas', icon: 'receipt', roles: ['todo', 'caja', 'dueno'] },
   { name: 'productos', title: 'Productos', icon: 'bottle-wine-outline', roles: ['dueno'] },
   { name: 'categorias', title: 'Categorías', icon: 'shape-outline', roles: ['dueno'] },

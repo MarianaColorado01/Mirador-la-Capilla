@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { calculateBill, estimatedProfit } from './billing';
+import { periodRange } from './admin';
 
 const base = { subtotal: 63000, taxPercent: 8, method: 'efectivo' as const };
 
@@ -47,4 +48,13 @@ describe('calculateBill (sección 4.3)', () => {
 
 it('utilidad estimada del ejemplo del documento', () => {
   expect(estimatedProfit(1250000, 620000, 40000)).toBe(590000);
+});
+
+describe('periodRange (RF-58)', () => {
+  const now = new Date(2026, 2, 3, 15, 0); // 3 de marzo, hora local
+  it('hoy, últimos 7 días y mes en curso con fechas locales', () => {
+    expect(periodRange('hoy', now)).toEqual({ from: '2026-03-03', to: '2026-03-03' });
+    expect(periodRange('semana', now)).toEqual({ from: '2026-02-25', to: '2026-03-03' });
+    expect(periodRange('mes', now)).toEqual({ from: '2026-03-01', to: '2026-03-03' });
+  });
 });

@@ -247,6 +247,40 @@ export interface ManagedUser extends Profile {
   active: boolean;
 }
 
+/** RF-57: gasto adicional. `date` es el día local AAAA-MM-DD. */
+export interface Expense {
+  id: number;
+  concept: string;
+  amount: number;
+  date: string;
+  user: string;
+  createdAt: string;
+}
+
+/**
+ * RF-58 / RF-59: resumen de un rango. Solo cuentan las facturas no anuladas. `sales` = subtotal − descuento:
+ * la propina es del personal y el impuesto no es ingreso, por eso van aparte. `purchases` (gasto en surtido)
+ * se informa pero no se resta: ya entra como costo de lo vendido (sección 4.3).
+ */
+export interface ReportSummary {
+  from: string;
+  to: string;
+  sales: number;
+  tips: number;
+  taxes: number;
+  costOfSales: number;
+  purchases: number;
+  otherExpenses: number;
+  profit: number;
+  invoiceCount: number;
+  averageTicket: number;
+  /** Solo los días con ventas; la app rellena los demás con 0. */
+  byDay: { date: string; sales: number }[];
+  /** Importe = cantidad × precio, antes del descuento de la factura. */
+  topProducts: { productId: number; name: string; qty: number; amount: number }[];
+  byWaiter: { waiterId: number; name: string; sales: number; invoices: number }[];
+}
+
 export interface HealthResponse {
   ok: true;
   business: string;

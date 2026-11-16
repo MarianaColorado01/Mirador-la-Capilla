@@ -86,6 +86,7 @@ function VoidInvoiceSheet({ invoiceId, number, onClose }: { invoiceId: number; n
       qc.invalidateQueries({ queryKey: keys.invoice(invoiceId) });
       qc.invalidateQueries({ queryKey: ['invoices'] });
       qc.invalidateQueries({ queryKey: keys.products });
+      qc.invalidateQueries({ queryKey: keys.reports }); // la factura anulada sale del Resumen
       onClose();
     },
   });

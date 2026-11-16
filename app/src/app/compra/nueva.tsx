@@ -72,6 +72,8 @@ function PurchaseForm({ suppliers, catalog, initial, supplierId }: { suppliers: 
       // El stock y el último costo cambiaron: productos, inventario y «Qué surtir» cuelgan de ['products'].
       qc.invalidateQueries({ queryKey: keys.products });
       qc.invalidateQueries({ queryKey: ['purchases'] });
+      // RF-58: el gasto en surtido del Resumen cambia.
+      qc.invalidateQueries({ queryKey: keys.reports });
       router.replace({ pathname: '/compra/[id]', params: { id: String(p.id), fresh: '1' } });
     },
   });

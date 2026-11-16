@@ -1,3 +1,5 @@
+import type { Period } from '@mirador/shared';
+
 /** 70800 → "$70.800" (sin depender de Intl, que Hermes no trae completo). */
 export function money(n: number): string {
   const sign = n < 0 ? '−' : '';
@@ -21,3 +23,11 @@ export function dateTime(iso: string): string {
   const d = new Date(iso);
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} · ${clock(iso)}`;
 }
+
+/** Selector Hoy / 7 días / Mes de Gastos y Resumen (RF-57, RF-58); el rango sale de `periodRange`. */
+export const PERIOD_OPTIONS: { value: Period; label: string }[] = [
+  { value: 'hoy', label: 'Hoy' },
+  { value: 'semana', label: '7 días' },
+  { value: 'mes', label: 'Mes' },
+];
+export const PERIOD_TEXT: Record<Period, string> = { hoy: 'hoy', semana: 'últimos 7 días', mes: 'este mes' };

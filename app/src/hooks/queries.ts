@@ -1,6 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { StockMovement } from '@mirador/shared';
-import { api, ApiError, type PurchaseFilter } from '@/services/api';
+import { api, ApiError, type DateRange, type PurchaseFilter } from '@/services/api';
 import { useLive } from '@/store/live';
 import { useSession } from '@/store/session';
 
@@ -29,6 +29,10 @@ export const keys = {
   // Todo lo de compras cuelga de ['purchases'].
   purchases: (f: PurchaseFilter) => ['purchases', f] as const,
   purchase: (id: number) => ['purchases', 'detail', id] as const,
+  expenses: (r: DateRange) => ['expenses', r] as const,
+  // Todo lo del Resumen cuelga de ['reports']: invalidarla tras compras, gastos y cobros.
+  reports: ['reports'] as const,
+  summary: (r: DateRange) => ['reports', 'summary', r] as const,
 };
 
 // Los cambios llegan por Socket.IO (use-realtime). Esto es solo una red de seguridad
@@ -59,6 +63,8 @@ const validId = (id: number) => Number.isInteger(id) && id > 0;
 export const useSuppliers = () => useQuery({ queryKey: keys.suppliers, queryFn: api.suppliers });
 export const useSupplier = (id: number) => useQuery({ queryKey: keys.supplier(id), queryFn: () => api.supplier(id), enabled: validId(id), retry: no404 });
 export const usePurchases = (f: PurchaseFilter) => useQuery({ queryKey: keys.purchases(f), queryFn: () => api.purchases(f), placeholderData: keepPreviousData });
+export const useExpenses = (r: DateRange) => useQuery({ queryKey: keys.expenses(r), queryFn: () => api.expenses(r), placeholderData: keepPreviousData });
+export const useSummary = (r: DateRange) => useQuery({ queryKey: keys.summary(r), queryFn: () => api.summary(r), placeholderData: keepPreviousData });
 export const usePurchase = (id: number) => useQuery({ queryKey: keys.purchase(id), queryFn: () => api.purchase(id), enabled: validId(id), retry: no404 });
 
 /**
@@ -90,6 +96,7 @@ export function useInvalidateFloor() {
     qc.invalidateQueries({ queryKey: keys.bar });
     qc.invalidateQueries({ queryKey: keys.billable });
     qc.invalidateQueries({ queryKey: keys.products });
+    qc.invalidateQueries({ queryKey: keys.reports });
     if (accountId) qc.invalidateQueries({ queryKey: keys.account(accountId) });
   };
 }

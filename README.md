@@ -62,7 +62,8 @@ Los datos de ejemplo se cargan solos la primera vez. Hay seis perfiles (Ana, Lui
 - [x] Catálogo: detalle de producto con id inexistente (RF-12), crear/editar/desactivar productos con formulario validado (RF-13, RF-14), categorías (RF-15), mesas (RF-22) y mapper DTO → modelo en la app
 - [x] Inventario: pestaña con stock y qué surtir (RF-47, RF-51), ajustes manuales con conteo físico (RF-48), historial filtrable (RF-49) y aviso de stock bajo al dueño (RF-50)
 - [x] Proveedores y compras: crear, editar y desactivar proveedores (RF-52), registrar compra que sube el stock y actualiza el último costo en una transacción (RF-53, RF-54) e historial filtrable por proveedor y fechas con detalle (RF-55)
-- [ ] Gastos, resumen, mapa
+- [x] Gastos y resumen: registrar y listar gastos (RF-57), resumen Hoy / 7 días / Mes con ventas, costo de lo vendido, surtido aparte, otros gastos y utilidad estimada (RF-58), gráfica por día, más vendidos y ventas por mesero (RF-59) y margen por producto (RF-60)
+- [ ] Mapa
 - [ ] Respaldos, PDF, dividir cuenta
 
 Ver [documentacion/arquitectura.md](documentacion/arquitectura.md) para el plan por fases.

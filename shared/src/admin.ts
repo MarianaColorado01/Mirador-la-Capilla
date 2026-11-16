@@ -120,15 +120,43 @@ export const PurchaseItemSchema = z.object({
   unitCost: pesos('costo'),
 });
 
+const pastDate = z
+  .string({ error: 'Escribe la fecha' })
+  .refine(isDate, 'Escribe una fecha válida como AAAA-MM-DD')
+  .refine((v) => v <= localDate(), 'La fecha no puede ser futura');
+
 /** RF-53: compra con proveedor, fecha no futura y al menos un ítem. El total lo calcula el servidor. */
 export const PurchaseSchema = z.object({
   supplierId: z.number({ error: 'Elige un proveedor' }).int().positive('Elige un proveedor'),
-  date: z
-    .string({ error: 'Escribe la fecha' })
-    .refine(isDate, 'Escribe una fecha válida como AAAA-MM-DD')
-    .refine((v) => v <= localDate(), 'La fecha no puede ser futura'),
+  date: pastDate,
   items: z.array(PurchaseItemSchema, { error: 'Agrega al menos un producto' }).min(1, 'Agrega al menos un producto'),
 });
+
+/** RF-57: gasto adicional (hielo, gas, servicios) con concepto, monto entero > 0 y fecha no futura. */
+export const ExpenseSchema = z.object({
+  concept: z.string({ error: 'Escribe el concepto' }).trim().min(1, 'Escribe el concepto').max(60, 'Máximo 60 caracteres'),
+  amount: pesos('monto'),
+  date: pastDate,
+});
+
+/** Rango de fechas locales AAAA-MM-DD, ambos días incluidos (sección 4.3: desde ≤ hasta). */
+export const DateRangeSchema = z
+  .object({
+    from: z.string({ error: 'Falta la fecha inicial' }).refine(isDate, 'Escribe la fecha inicial como AAAA-MM-DD'),
+    to: z.string({ error: 'Falta la fecha final' }).refine(isDate, 'Escribe la fecha final como AAAA-MM-DD'),
+  })
+  .refine((r) => r.from <= r.to, { message: 'La fecha final no puede ser anterior a la inicial', path: ['to'] });
+
+export const PERIODS = ['hoy', 'semana', 'mes'] as const;
+export type Period = (typeof PERIODS)[number];
+
+/** RF-58: hoy; semana = los últimos 7 días contando hoy; mes = del día 1 del mes actual a hoy. */
+export function periodRange(p: Period, now = new Date()): { from: string; to: string } {
+  const start = new Date(now);
+  if (p === 'semana') start.setDate(now.getDate() - 6);
+  if (p === 'mes') start.setDate(1);
+  return { from: localDate(start), to: localDate(now) };
+}
 
 /** Primer mensaje de error por campo, para mostrarlo bajo cada campo del formulario. */
 export function fieldErrors(error: z.ZodError | undefined): Record<string, string> {

@@ -1,7 +1,7 @@
 import { AxiosError, create, type AxiosInstance } from 'axios';
 import type {
-  Account, BarTicket, BillableAccount, Category, ChargeRequest, CreateRoundRequest, EditItemRequest, HealthResponse, Invoice, InvoiceListItem, ManagedUser, Profile,
-  Purchase, PurchaseListItem, Role, RoundStatus, SessionUser, Settings, StockMovement, StockSuggestion, Supplier, TableAdmin, TableSummary, VoidItemRequest,
+  Account, BarTicket, BillableAccount, Category, ChargeRequest, CreateRoundRequest, EditItemRequest, Expense, HealthResponse, Invoice, InvoiceListItem, ManagedUser, Profile,
+  Purchase, PurchaseListItem, ReportSummary, Role, RoundStatus, SessionUser, Settings, StockMovement, StockSuggestion, Supplier, TableAdmin, TableSummary, VoidItemRequest,
 } from '@mirador/shared';
 import { useSession } from '@/store/session';
 import { toProductModel, type ProductDTO } from './mappers';
@@ -15,6 +15,9 @@ export type SupplierBody = Omit<Supplier, 'id' | 'active'>;
 export type PurchaseBody = { supplierId: number; date: string; items: { productId: number; qty: number; unitCost: number }[] };
 /** Filtros del historial de compras (RF-55); vacío = sin filtro. */
 export type PurchaseFilter = { supplierId?: number; from?: string; to?: string };
+
+/** Rango de días locales AAAA-MM-DD, ambos incluidos (RF-57, RF-58). */
+export type DateRange = { from: string; to: string };
 
 /** Instancia central de Axios; la baseURL sale de la dirección guardada (RF-01). */
 function client(): AxiosInstance {
@@ -77,6 +80,9 @@ export const api = {
   purchases: (f: PurchaseFilter) => call<PurchaseListItem[]>((c) => c.get('/purchases', { params: f })),
   purchase: (id: number) => call<Purchase>((c) => c.get(`/purchases/${id}`)),
   createPurchase: (body: PurchaseBody) => call<Purchase>((c) => c.post('/purchases', body)),
+  expenses: (r: DateRange) => call<Expense[]>((c) => c.get('/expenses', { params: r })),
+  createExpense: (body: { concept: string; amount: number; date: string }) => call<Expense>((c) => c.post('/expenses', body)),
+  summary: (r: DateRange) => call<ReportSummary>((c) => c.get('/reports/summary', { params: r })),
   tablesAdmin: () => call<TableAdmin[]>((c) => c.get('/tables/all')),
   createTable: (body: { number: number; zone?: string | null }) => call<TableAdmin>((c) => c.post('/tables', body)),
   updateTable: (id: number, body: Partial<{ zone: string | null; active: boolean }>) => call<TableAdmin>((c) => c.patch(`/tables/${id}`, body)),
