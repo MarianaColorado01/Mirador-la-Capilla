@@ -67,8 +67,15 @@ Decisiones del bloque 4.4:
 - **Aviso de stock bajo (RF-50):** `crossedMin(antes, después, mínimo)` en `server/src/lib/stock.ts` lo usan confirmar ronda, editar ítem y ajuste manual. Se emite `stock:bajo` con roles `[]` (solo el dueño) únicamente cuando el stock cruza el mínimo hacia abajo, una vez.
 - **Sugerencia de surtido (RF-51):** entran los activos en o bajo el mínimo y los 5 más vendidos en 7 días. Vendido = ítems no anulados de cuentas con factura no anulada (por fecha de factura); una cuenta unida no tiene factura y sus rondas ya están en la destino, así que nada se cuenta dos veces. Sugerido = max(2 × mínimo, vendido en 7 días) − stock; si da 0 o menos no se muestra.
 
+Decisiones del bloque 4.5:
+
+- **Proveedores (RF-52):** esquemas `SupplierSchema`/`SupplierUpdateSchema` en `shared/src/admin.ts`: nombre obligatorio; teléfono (solo números, espacios, + y -), notas y dirección opcionales (vacío = null); latitud −90..90 y longitud −180..180, las dos o ninguna (en PATCH se mandan juntas). Desactivar es `active: false` (RN-04); un proveedor inactivo no recibe compras. Se audita como `crear/editar proveedor`.
+- **Compras (RF-53, RF-54):** esquema `PurchaseSchema` (proveedor, fecha AAAA-MM-DD real y no futura según la fecha local, al menos un ítem) y `PurchaseItemSchema` (cantidad entera > 0, costo unitario entero > 0). `POST /purchases` hace todo en una transacción: compra, ítems, una `entrada` en `stock_movements` por ítem con referencia `compra:<id>` y motivo «Compra a <proveedor>» (RN-02), `products.stock` sube y `products.cost` pasa al costo de la compra. Los ítems de ronda guardan su `unit_cost` congelado (RN-03), así que nada vendido cambia. El total lo calcula el servidor (se ignora el del cliente). Un proveedor inactivo → 400 `field: supplierId`; un producto inactivo o inexistente → 400 `field: items.<n>.productId` y no queda nada guardado. Se audita como `crear compra`. No emite eventos: el stock solo sube.
+- **Historial (RF-55):** filtros opcionales `supplierId`, `from` y `to` (incluidos); fechas mal escritas o un rango invertido → 400 con `field`. Orden: fecha y id descendentes, máximo 200. El detalle trae ítems con nombre, cantidad, costo unitario y total, el usuario y la fecha de registro.
+- **App:** tras guardar una compra se invalidan `['products']` (listas, detalle, movimientos, inventario y «Qué surtir») y `['purchases']`. «Crear compra con esto» en «Qué surtir» abre `compra/nueva?surtir=1` con lo sugerido al último costo. El botón «Ver en el mapa» del proveedor llega con el mapa (bloque 4.7).
+
 | inventory | `POST /inventory/adjustments` `{productId, type, qty, reason}` · `GET /inventory/suggestions` (dueño); el listado usa `GET /products?all=1` y el historial `GET /products/:id/movements?type` ✅ | 47–51 |
-| suppliers / purchases | CRUD de `/suppliers` · `POST/GET /purchases` · `GET /reports/purchases-by-supplier` | 52–56 |
+| suppliers / purchases | `GET /suppliers` · `GET /suppliers/:id` · `POST /suppliers` `{name, phone?, notes?, address?, lat?, lng?}` · `PATCH /suppliers/:id` (lo mismo + `active`) · `POST /purchases` `{supplierId, date, items: [{productId, qty, unitCost}]}` · `GET /purchases?supplierId&from&to` · `GET /purchases/:id` (dueño) ✅ · `GET /reports/purchases-by-supplier` (RF-56, Baja, pendiente) | 52–56 |
 | expenses / reports | `POST/GET /expenses` · `GET /reports/summary?from&to` | 57–60 |
 | settings / users | `GET /settings` (todos) · `PATCH /settings` (dueño) · `GET /users` · `POST /users` `{name, role, pin}` · `PATCH /users/:id` `{name?, role?, pin?, active?}` (dueño) ✅ | 04, 07 |
 | backups | `GET/POST /backups` · `POST /backups/:id/restore` | 71 |
@@ -96,6 +103,8 @@ login.tsx                   perfil y PIN
 (drawer)/productos.tsx      lista de productos con inactivos, búsqueda y categoría (dueño, RF-13/14)
 (drawer)/categorias.tsx     crear, renombrar, desactivar categorías (dueño, RF-15)
 (drawer)/mesas.tsx          crear mesas, zona, desactivar (dueño, RF-22)
+(drawer)/proveedores.tsx    lista de proveedores, nuevo proveedor y registrar compra (dueño, RF-52)
+(drawer)/compras.tsx        historial de compras por proveedor y fechas (dueño, RF-55)
 mesa/[id].tsx               cuenta de la mesa
 mesa/[id]/ronda.tsx         tomar ronda
 cobro/[id].tsx              cobrar
@@ -103,11 +112,14 @@ factura/[id].tsx            factura (el dueño la anula, RF-44)
 producto/[id].tsx           detalle (RF-12); se abre desde Productos o con pulsación larga en la ronda
 producto/editar.tsx         crear producto, o editar/desactivar con ?id= (dueño, RF-13/14)
 producto/ajuste.tsx         entrada, salida o conteo físico con ?id= (dueño, RF-48)
+proveedor/[id].tsx          detalle y edición de proveedor; /proveedor/nuevo para crear (dueño, RF-52)
+compra/nueva.tsx            registrar compra con ?supplierId= o ?surtir=1 (dueño, RF-53/54)
+compra/[id].tsx             detalle de una compra (dueño, RF-55)
 ```
 
 El cierre por inactividad (RF-09) lo hace `hooks/use-idle-logout.ts`: el View raíz captura cada toque (`onStartShouldSetResponderCapture`) y reinicia un temporizador de `idleLogoutMinutes`; al volver del segundo plano revisa el tiempo real transcurrido.
 
-Para el resto de la fase 4 están previstas las pantallas de proveedores, ubicación, gastos y resumen (se agregan como entradas del menú lateral), además de `compra/nueva.tsx`. El Drawer viene incluido en `expo-router/drawer` desde el SDK 56: no hubo que instalar paquetes.
+Para el resto de la fase 4 están previstas las pantallas de ubicación, gastos y resumen (se agregan como entradas del menú lateral). El Drawer viene incluido en `expo-router/drawer` desde el SDK 56: no hubo que instalar paquetes.
 
 Librerías previstas: Axios con instancia central y TanStack Query para la red, Zustand con persistencia para la sesión y la ronda en construcción, NativeWind, `expo-camera` para el QR y `expo-location` con Leaflet en WebView para el mapa. Instálalas siempre con `npx expo install` para que coincidan con el SDK.
 

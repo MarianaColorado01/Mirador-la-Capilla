@@ -65,6 +65,35 @@ export interface StockSuggestion {
   lowStock: boolean;
 }
 
+/** RF-52: proveedor. Las coordenadas van las dos o ninguna (se usan en el mapa, RF-61). */
+export interface Supplier {
+  id: number;
+  name: string;
+  phone: string | null;
+  notes: string | null;
+  address: string | null;
+  lat: number | null;
+  lng: number | null;
+  active: boolean;
+}
+
+/** RF-55: compra en el historial. `date` es el día de la compra (AAAA-MM-DD). */
+export interface PurchaseListItem {
+  id: number;
+  supplierId: number;
+  supplierName: string;
+  date: string;
+  total: number;
+  itemCount: number;
+  user: string;
+  createdAt: string;
+}
+
+/** RF-53 / RF-55: compra con sus ítems; `total` de cada ítem = qty × unitCost. */
+export interface Purchase extends PurchaseListItem {
+  items: { id: number; productId: number; name: string; qty: number; unitCost: number; total: number }[];
+}
+
 /** RF-22: mesa en la administración del dueño; `busy` = tiene cuenta abierta o por cobrar. */
 export interface TableAdmin {
   id: number;

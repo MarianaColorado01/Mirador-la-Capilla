@@ -1,5 +1,5 @@
 /* Lecturas que arman los objetos que ve la app. Solo SELECT; nada de reglas aquí. */
-import type { Account, BarTicket, Invoice, PaymentMethod, Round, RoundItem, RoundStatus } from '@mirador/shared';
+import type { Account, BarTicket, Invoice, PaymentMethod, Purchase, PurchaseListItem, Round, RoundItem, RoundStatus } from '@mirador/shared';
 import type { DB } from '../db/index';
 
 interface ItemRow {
@@ -83,4 +83,26 @@ export function loadInvoice(db: DB, id: number): Invoice | null {
     voided: v.voided_at ? { at: iso(v.voided_at), by: v.voided_by_name ?? '', reason: v.void_reason ?? '' } : null,
     items,
   };
+}
+
+type PurchaseRow = { id: number; supplier_id: number; supplier_name: string; date: string; total: number; item_count: number; user: string; created_at: string };
+
+/** RF-55: compras con proveedor, usuario y número de ítems. `where` usa parámetros con nombre. */
+export function listPurchases(db: DB, where: string, params: Record<string, unknown>): PurchaseListItem[] {
+  const rows = db.prepare(`SELECT pu.id, pu.supplier_id, s.name AS supplier_name, pu.date, pu.total, u.name AS user, pu.created_at,
+      (SELECT COUNT(*) FROM purchase_items i WHERE i.purchase_id = pu.id) AS item_count
+    FROM purchases pu JOIN suppliers s ON s.id = pu.supplier_id JOIN users u ON u.id = pu.user_id
+    WHERE ${where} ORDER BY pu.date DESC, pu.id DESC LIMIT 200`).all(params) as PurchaseRow[];
+  return rows.map((r) => ({
+    id: r.id, supplierId: r.supplier_id, supplierName: r.supplier_name, date: r.date, total: r.total,
+    itemCount: r.item_count, user: r.user, createdAt: iso(r.created_at),
+  }));
+}
+
+export function loadPurchase(db: DB, id: number): Purchase | null {
+  const [head] = listPurchases(db, 'pu.id = @id', { id });
+  if (!head) return null;
+  const items = db.prepare(`SELECT i.id, i.product_id AS productId, p.name, i.qty, i.unit_cost AS unitCost, i.qty * i.unit_cost AS total
+    FROM purchase_items i JOIN products p ON p.id = i.product_id WHERE i.purchase_id = ? ORDER BY i.id`).all(id) as Purchase['items'];
+  return { ...head, items };
 }

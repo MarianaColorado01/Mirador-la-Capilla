@@ -1,13 +1,20 @@
 import { AxiosError, create, type AxiosInstance } from 'axios';
 import type {
   Account, BarTicket, BillableAccount, Category, ChargeRequest, CreateRoundRequest, EditItemRequest, HealthResponse, Invoice, InvoiceListItem, ManagedUser, Profile,
-  Role, RoundStatus, SessionUser, Settings, StockMovement, StockSuggestion, TableAdmin, TableSummary, VoidItemRequest,
+  Purchase, PurchaseListItem, Role, RoundStatus, SessionUser, Settings, StockMovement, StockSuggestion, Supplier, TableAdmin, TableSummary, VoidItemRequest,
 } from '@mirador/shared';
 import { useSession } from '@/store/session';
 import { toProductModel, type ProductDTO } from './mappers';
 
 /** Cuerpo de crear/editar producto (RF-13); el stock no va (RN-02). */
 export type ProductBody = { name: string; categoryId: number; price: number; cost: number; minStock: number; imageUrl?: string | null };
+
+/** Cuerpo de crear/editar proveedor (RF-52). */
+export type SupplierBody = Omit<Supplier, 'id' | 'active'>;
+/** Cuerpo de registrar compra (RF-53); el total lo calcula el servidor. */
+export type PurchaseBody = { supplierId: number; date: string; items: { productId: number; qty: number; unitCost: number }[] };
+/** Filtros del historial de compras (RF-55); vacío = sin filtro. */
+export type PurchaseFilter = { supplierId?: number; from?: string; to?: string };
 
 /** Instancia central de Axios; la baseURL sale de la dirección guardada (RF-01). */
 function client(): AxiosInstance {
@@ -63,6 +70,13 @@ export const api = {
   categories: () => call<Category[]>((c) => c.get('/categories')),
   createCategory: (name: string) => call<Category>((c) => c.post('/categories', { name })),
   updateCategory: (id: number, body: Partial<{ name: string; active: boolean }>) => call<Category>((c) => c.patch(`/categories/${id}`, body)),
+  suppliers: () => call<Supplier[]>((c) => c.get('/suppliers')),
+  supplier: (id: number) => call<Supplier>((c) => c.get(`/suppliers/${id}`)),
+  createSupplier: (body: SupplierBody) => call<Supplier>((c) => c.post('/suppliers', body)),
+  updateSupplier: (id: number, body: Partial<SupplierBody & { active: boolean }>) => call<Supplier>((c) => c.patch(`/suppliers/${id}`, body)),
+  purchases: (f: PurchaseFilter) => call<PurchaseListItem[]>((c) => c.get('/purchases', { params: f })),
+  purchase: (id: number) => call<Purchase>((c) => c.get(`/purchases/${id}`)),
+  createPurchase: (body: PurchaseBody) => call<Purchase>((c) => c.post('/purchases', body)),
   tablesAdmin: () => call<TableAdmin[]>((c) => c.get('/tables/all')),
   createTable: (body: { number: number; zone?: string | null }) => call<TableAdmin>((c) => c.post('/tables', body)),
   updateTable: (id: number, body: Partial<{ zone: string | null; active: boolean }>) => call<TableAdmin>((c) => c.patch(`/tables/${id}`, body)),

@@ -18,6 +18,8 @@ const ENTRIES: { name: string; title: string; icon: Icon; roles: Role[] }[] = [
   { name: 'productos', title: 'Productos', icon: 'bottle-wine-outline', roles: ['dueno'] },
   { name: 'categorias', title: 'Categorías', icon: 'shape-outline', roles: ['dueno'] },
   { name: 'mesas', title: 'Mesas', icon: 'table-furniture', roles: ['dueno'] },
+  { name: 'proveedores', title: 'Proveedores', icon: 'truck-outline', roles: ['dueno'] },
+  { name: 'compras', title: 'Compras', icon: 'cart-outline', roles: ['dueno'] },
   { name: 'ajustes', title: 'Ajustes', icon: 'cog-outline', roles: ['dueno'] },
   { name: 'usuarios', title: 'Usuarios', icon: 'account-group-outline', roles: ['dueno'] },
 ];

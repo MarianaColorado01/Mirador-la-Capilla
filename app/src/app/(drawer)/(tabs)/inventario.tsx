@@ -2,6 +2,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { AppButton } from '@/components/AppButton';
 import { Screen } from '@/components/Screen';
 import { StateView } from '@/components/StateView';
 import { Card, Chips, Tag } from '@/components/ui';
@@ -53,6 +54,9 @@ export default function Inventario() {
                 <Text style={styles.buy}>+{s.suggested}</Text>
               </Pressable>
             ))}
+            <View style={styles.explain}>
+              <AppButton label="Crear compra con esto" icon="cart-plus" variant="outline" onPress={() => router.push({ pathname: '/compra/nueva', params: { surtir: '1' } })} />
+            </View>
           </>
         )}
       </Card>

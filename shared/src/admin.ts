@@ -1,4 +1,4 @@
-/* Reglas de Ajustes (RF-04), Usuarios (RF-07), Productos y categorías (RF-13 a RF-15) Mesas (RF-22) e Inventario (RF-48). Las usa la app para validar en vivo
+/* Reglas de Ajustes (RF-04), Usuarios (RF-07), Productos y categorías (RF-13 a RF-15) Mesas (RF-22), Inventario (RF-48), Proveedores y compras (RF-52, RF-53). Las usa la app para validar en vivo
    y el servidor para decidir: los mensajes son los mismos en ambos lados. */
 import { z } from 'zod';
 
@@ -79,6 +79,56 @@ export const StockAdjustmentSchema = z
     reason: z.string({ error: 'Escribe el motivo' }).trim().min(3, 'Escribe el motivo (mínimo 3 letras)').max(100, 'Máximo 100 caracteres'),
   })
   .refine((b) => b.type === 'ajuste' || b.qty >= 1, { message: 'Debe ser al menos 1', path: ['qty'] });
+
+/** Texto opcional: vacío se guarda como null. */
+const optional = (max: number) => z.string().trim().max(max, `Máximo ${max} caracteres`).nullable().optional();
+
+/** RF-52: proveedor. Latitud y longitud van las dos o ninguna; en PATCH, si se manda una se manda la otra. */
+const SupplierFields = z.object({
+  name: name(60),
+  phone: optional(20).refine((v) => !v || /^[\d +()-]+$/.test(v), 'Escribe solo números, espacios, + o -'),
+  notes: optional(200),
+  address: optional(120),
+  lat: number.min(-90, 'La latitud va de -90 a 90').max(90, 'La latitud va de -90 a 90').nullable().optional(),
+  lng: number.min(-180, 'La longitud va de -180 a 180').max(180, 'La longitud va de -180 a 180').nullable().optional(),
+});
+const bothOrNone = (s: { lat?: number | null; lng?: number | null }, ctx: z.RefinementCtx) => {
+  const lat = s.lat != null;
+  const lng = s.lng != null;
+  if (lat && !lng) ctx.addIssue({ code: 'custom', message: 'Escribe también la longitud, o deja las dos vacías', path: ['lng'] });
+  else if (lng && !lat) ctx.addIssue({ code: 'custom', message: 'Escribe también la latitud, o deja las dos vacías', path: ['lat'] });
+  else if ((s.lat === undefined) !== (s.lng === undefined)) ctx.addIssue({ code: 'custom', message: 'Manda latitud y longitud juntas', path: ['lat'] });
+};
+export const SupplierSchema = SupplierFields.superRefine(bothOrNone);
+/** PATCH /suppliers/:id: lo que cambie. Desactivar es `active: false` (RN-04). */
+export const SupplierUpdateSchema = SupplierFields.partial().extend({ active: z.boolean().optional() }).superRefine(bothOrNone);
+
+/** Fecha local de hoy como AAAA-MM-DD (el servidor y los celulares están en el mismo local). */
+export const localDate = (d = new Date()) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+/** AAAA-MM-DD que existe en el calendario (2026-02-30 no). */
+export const isDate = (v: string) => {
+  const t = Date.parse(`${v}T00:00:00Z`);
+  return /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(t) && new Date(t).toISOString().startsWith(v);
+};
+
+/** RF-53: ítem de compra. */
+export const PurchaseItemSchema = z.object({
+  productId: z.number({ error: 'Elige un producto' }).int().positive('Elige un producto'),
+  qty: number.int('Escribe un número entero').positive('La cantidad debe ser mayor que 0').max(100000, 'Máximo 100000'),
+  unitCost: pesos('costo'),
+});
+
+/** RF-53: compra con proveedor, fecha no futura y al menos un ítem. El total lo calcula el servidor. */
+export const PurchaseSchema = z.object({
+  supplierId: z.number({ error: 'Elige un proveedor' }).int().positive('Elige un proveedor'),
+  date: z
+    .string({ error: 'Escribe la fecha' })
+    .refine(isDate, 'Escribe una fecha válida como AAAA-MM-DD')
+    .refine((v) => v <= localDate(), 'La fecha no puede ser futura'),
+  items: z.array(PurchaseItemSchema, { error: 'Agrega al menos un producto' }).min(1, 'Agrega al menos un producto'),
+});
 
 /** Primer mensaje de error por campo, para mostrarlo bajo cada campo del formulario. */
 export function fieldErrors(error: z.ZodError | undefined): Record<string, string> {

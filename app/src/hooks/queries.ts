@@ -1,6 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { StockMovement } from '@mirador/shared';
-import { api, ApiError } from '@/services/api';
+import { api, ApiError, type PurchaseFilter } from '@/services/api';
 import { useLive } from '@/store/live';
 import { useSession } from '@/store/session';
 
@@ -24,6 +24,11 @@ export const keys = {
   invoice: (id: number) => ['invoice', id] as const,
   invoices: (q: string) => ['invoices', q] as const,
   users: ['users'] as const,
+  suppliers: ['suppliers'] as const,
+  supplier: (id: number) => ['suppliers', id] as const,
+  // Todo lo de compras cuelga de ['purchases'].
+  purchases: (f: PurchaseFilter) => ['purchases', f] as const,
+  purchase: (id: number) => ['purchases', 'detail', id] as const,
 };
 
 // Los cambios llegan por Socket.IO (use-realtime). Esto es solo una red de seguridad
@@ -48,6 +53,13 @@ export const useInvoice = (id: number) => useQuery({ queryKey: keys.invoice(id),
 export const useInvoices = (q: string) => useQuery({ queryKey: keys.invoices(q), queryFn: () => api.invoices(q) });
 export const useSettings = (enabled = true) => useQuery({ queryKey: keys.settings, queryFn: api.settings, staleTime: 60000, enabled });
 export const useUsers = () => useQuery({ queryKey: keys.users, queryFn: api.users });
+// Un 404 no se reintenta: la pantalla muestra «no encontrado» con Volver.
+const no404 = (n: number, e: Error) => n < 1 && !(e instanceof ApiError && e.status === 404);
+const validId = (id: number) => Number.isInteger(id) && id > 0;
+export const useSuppliers = () => useQuery({ queryKey: keys.suppliers, queryFn: api.suppliers });
+export const useSupplier = (id: number) => useQuery({ queryKey: keys.supplier(id), queryFn: () => api.supplier(id), enabled: validId(id), retry: no404 });
+export const usePurchases = (f: PurchaseFilter) => useQuery({ queryKey: keys.purchases(f), queryFn: () => api.purchases(f), placeholderData: keepPreviousData });
+export const usePurchase = (id: number) => useQuery({ queryKey: keys.purchase(id), queryFn: () => api.purchase(id), enabled: validId(id), retry: no404 });
 
 /**
  * RF-03: indicador de conexión con el PC de caja.
