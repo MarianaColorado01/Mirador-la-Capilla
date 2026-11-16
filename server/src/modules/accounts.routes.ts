@@ -10,6 +10,8 @@ import { httpError, route } from '../lib/http';
 import { iso, loadAccount, loadInvoice, subtotalOf } from '../services/views';
 
 const OpenBody = z.object({ tableNumber: z.number().int().positive() });
+const MoveBody = z.object({ tableNumber: z.number({ error: 'Elige la mesa destino' }).int().positive() });
+const MergeBody = z.object({ intoAccountId: z.number({ error: 'Elige la cuenta a la que se une' }).int().positive() });
 const RoundBody = z.object({
   items: z
     .array(z.object({
@@ -169,6 +171,51 @@ export function accountRoutes(db: DB, emit: Emit) {
     })();
     emit('mesa:actualizada', { accountId: a.id, tableNumber: a.table_number, status: 'ocupada' });
     res.json(loadAccount(db, a.id));
+  }));
+
+  const tableStatus = (s: AccountRow['status']) => (s === 'por_cobrar' ? 'por_cobrar' : 'ocupada');
+
+  // RF-20: mover la cuenta a otra mesa libre (RN-01: la destino no puede tener cuenta)
+  r.post('/:id/move', requireRole('caja', 'todo'), route((req, res) => {
+    const { tableNumber } = MoveBody.parse(req.body);
+    const out = db.transaction(() => {
+      const a = getAccount(Number(req.params.id));
+      if (a.status === 'pagada') throw httpError(409, 'La cuenta ya está cerrada');
+      if (a.table_number === tableNumber) throw httpError(400, 'La cuenta ya está en esa mesa', 'tableNumber');
+      const t = db.prepare('SELECT id FROM tables WHERE number = ? AND active = 1').get(tableNumber) as { id: number } | undefined;
+      if (!t) throw httpError(404, `La mesa ${tableNumber} no existe`, 'tableNumber');
+      const busy = db.prepare("SELECT 1 FROM accounts WHERE table_id = ? AND status IN ('abierta','por_cobrar')").get(t.id);
+      if (busy) throw httpError(409, `La mesa ${tableNumber} está ocupada: elige una libre o une las cuentas`, 'tableNumber');
+      db.prepare('UPDATE accounts SET table_id = ? WHERE id = ?').run(t.id, a.id);
+      audit(db, req.user!.id, 'mover', 'cuenta', a.id, { from: a.table_number, to: tableNumber });
+      return a;
+    })();
+    emit('mesa:actualizada', { accountId: out.id, tableNumber: out.table_number, status: 'libre' });
+    emit('mesa:actualizada', { accountId: out.id, tableNumber, status: tableStatus(out.status) });
+    res.json(loadAccount(db, out.id));
+  }));
+
+  // RF-20: unir esta cuenta a otra. Sus rondas pasan a la destino y esta queda cerrada
+  // ('pagada' sin factura, con merged_into) en vez de borrarse (RN-04); la mesa queda libre.
+  r.post('/:id/merge', requireRole('caja', 'todo'), route((req, res) => {
+    const { intoAccountId } = MergeBody.parse(req.body);
+    const out = db.transaction(() => {
+      const from = getAccount(Number(req.params.id));
+      if (from.id === intoAccountId) throw httpError(400, 'Elige otra cuenta', 'intoAccountId');
+      const into = getAccount(intoAccountId);
+      if (from.status === 'pagada' || into.status === 'pagada') throw httpError(409, 'Solo se unen cuentas abiertas o por cobrar');
+      const { max } = db.prepare('SELECT COALESCE(MAX(number), 0) AS max FROM rounds WHERE account_id = ?').get(into.id) as { max: number };
+      const rounds = db.prepare('SELECT id FROM rounds WHERE account_id = ? ORDER BY number').all(from.id) as { id: number }[];
+      // Se renumeran a continuación de las rondas de la destino (número único por cuenta).
+      const moveRound = db.prepare('UPDATE rounds SET account_id = ?, number = ? WHERE id = ?');
+      rounds.forEach((rd, i) => moveRound.run(into.id, max + i + 1, rd.id));
+      db.prepare("UPDATE accounts SET status = 'pagada', closed_at = datetime('now'), merged_into = ? WHERE id = ?").run(into.id, from.id);
+      audit(db, req.user!.id, 'unir', 'cuenta', from.id, { into: into.id, fromTable: from.table_number, intoTable: into.table_number, rounds: rounds.map((x) => x.id) });
+      return { from, into };
+    })();
+    emit('mesa:actualizada', { accountId: out.from.id, tableNumber: out.from.table_number, status: 'libre' });
+    emit('mesa:actualizada', { accountId: out.into.id, tableNumber: out.into.table_number, status: tableStatus(out.into.status) });
+    res.json(loadAccount(db, out.into.id));
   }));
 
   // RF-39 a RF-42: cobrar, facturar con número consecutivo y liberar la mesa

@@ -22,6 +22,10 @@ const VoidBody = z.object({
   reason: z.string().trim().min(3, 'Escribe el motivo de la anulación').max(200),
   restock: z.boolean().default(false),
 });
+const EditBody = z.object({
+  qty: z.number().int('La cantidad debe ser un número entero').min(1, 'La cantidad mínima es 1'),
+  note: z.string().trim().max(100, 'La nota admite hasta 100 caracteres').nullish(),
+});
 
 interface RoundRow { id: number; account_id: number; status: RoundStatus; taken_by: number; taken_by_name: string; table_number: number; account_status: string }
 
@@ -59,6 +63,37 @@ export function roundRoutes(db: DB, emit: Emit) {
     })();
     emit('ronda:estado', { accountId: round.account_id, roundId: round.id, status, takenBy: round.taken_by_name, takenById: round.taken_by });
     res.json(loadAccount(db, round.account_id));
+  }));
+
+  // RF-33: en una ronda tomada se cambia cantidad o nota; la diferencia de stock va como ajuste (RN-02)
+  r.patch('/items/:itemId', requireRole('mesero', 'todo', 'caja'), route((req, res) => {
+    const { qty, note } = EditBody.parse(req.body);
+    const out = db.transaction(() => {
+      const item = db.prepare(`SELECT i.*, p.name, p.stock, p.active FROM round_items i JOIN products p ON p.id = i.product_id WHERE i.id = ?`)
+        .get(Number(req.params.itemId)) as
+        | { id: number; round_id: number; product_id: number; qty: number; note: string | null; voided_at: string | null; name: string; stock: number; active: number }
+        | undefined;
+      if (!item) throw httpError(404, 'Ítem no encontrado');
+      if (item.voided_at) throw httpError(409, 'El ítem está anulado');
+      const round = getRound(item.round_id);
+      if (round.status !== 'tomado') throw httpError(409, 'Solo se editan ítems de una ronda tomada; barra ya la empezó');
+      if (round.account_status !== 'abierta') throw httpError(409, round.account_status === 'por_cobrar' ? 'La cuenta está por cobrar: pide a caja que la reabra' : 'La cuenta ya está pagada');
+      const delta = qty - item.qty;
+      // RN-08: solo se valida lo que se suma
+      if (delta > 0 && !item.active) throw httpError(409, `${item.name} ya no está disponible`, 'qty');
+      if (delta > 0 && item.stock < delta) throw httpError(409, `${item.name}: solo quedan ${item.stock} más`, 'qty');
+      const newNote = note || null;
+      db.prepare('UPDATE round_items SET qty = ?, note = ? WHERE id = ?').run(qty, newNote, item.id);
+      if (delta !== 0) {
+        db.prepare('UPDATE products SET stock = stock - ? WHERE id = ?').run(delta, item.product_id);
+        db.prepare("INSERT INTO stock_movements(product_id, type, qty, reason, reference, user_id) VALUES(?, 'ajuste', ?, 'Edición de ítem', ?, ?)")
+          .run(item.product_id, -delta, `ronda:${round.id}`, req.user!.id);
+      }
+      audit(db, req.user!.id, 'editar', 'item', item.id, { from: { qty: item.qty, note: item.note }, to: { qty, note: newNote } });
+      return round;
+    })();
+    emit('item:editado', { accountId: out.account_id, roundId: out.id, itemId: Number(req.params.itemId) });
+    res.json(loadAccount(db, out.account_id));
   }));
 
   // RF-33 a RF-36: anular un ítem según el estado de su ronda; RN-04 nada se borra

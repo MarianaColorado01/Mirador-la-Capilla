@@ -14,6 +14,7 @@ export const keys = {
   bar: ['bar'] as const,
   billable: ['billable'] as const,
   invoice: (id: number) => ['invoice', id] as const,
+  invoices: (q: string) => ['invoices', q] as const,
 };
 
 // Los cambios llegan por Socket.IO (use-realtime). Esto es solo una red de seguridad
@@ -26,6 +27,7 @@ export const useProducts = () => useQuery({ queryKey: keys.products, queryFn: ap
 export const useBarQueue = () => useQuery({ queryKey: keys.bar, queryFn: api.barQueue, refetchInterval: LIVE });
 export const useBillable = () => useQuery({ queryKey: keys.billable, queryFn: api.billable, refetchInterval: LIVE });
 export const useInvoice = (id: number) => useQuery({ queryKey: keys.invoice(id), queryFn: () => api.invoice(id), enabled: Number.isFinite(id) });
+export const useInvoices = (q: string) => useQuery({ queryKey: keys.invoices(q), queryFn: () => api.invoices(q) });
 export const useSettings = () => useQuery({ queryKey: keys.settings, queryFn: api.settings, staleTime: 60000 });
 
 /**

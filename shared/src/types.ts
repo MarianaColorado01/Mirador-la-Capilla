@@ -71,6 +71,8 @@ export interface Account {
   subtotal: number;
   rounds: Round[];
   invoiceId: number | null;
+  /** RF-20: si se unió a otra cuenta, el id de esa cuenta (esta queda cerrada sin factura). */
+  mergedInto: number | null;
 }
 
 /** Mapa de mesas (RF-16). */
@@ -133,6 +135,17 @@ export interface Invoice {
   items: RoundItem[];
 }
 
+/** Fila del historial de facturas (RF-43). */
+export interface InvoiceListItem {
+  id: number;
+  number: number;
+  total: number;
+  createdAt: string;
+  voided: boolean;
+  tableNumber: number;
+  method: PaymentMethod;
+}
+
 export interface CreateRoundRequest {
   items: { productId: number; qty: number; note?: string | null }[];
 }
@@ -142,6 +155,12 @@ export interface ChargeRequest {
   tipPercent: string;
   method: PaymentMethod;
   received?: string;
+}
+
+/** RF-33: cambiar cantidad o nota de un ítem en una ronda tomada. */
+export interface EditItemRequest {
+  qty: number;
+  note: string | null;
 }
 
 export interface VoidItemRequest {
@@ -171,6 +190,7 @@ export interface ServerEvents {
   'ronda:creada': { accountId: number; roundId: number; tableNumber: number };
   'ronda:estado': { accountId: number; roundId: number; status: RoundStatus; takenBy: string; takenById: number };
   'item:anulado': { accountId: number; roundId: number; itemId: number };
+  'item:editado': { accountId: number; roundId: number; itemId: number };
   'mesa:actualizada': { accountId: number; tableNumber: number; status: TableStatus };
   'stock:bajo': { productId: number; name: string; stock: number; minStock: number };
 }

@@ -260,3 +260,140 @@ describe('cobro y factura', () => {
     expect((await as('Cajero').get('/invoices/999')).body.error).toBe('Factura no encontrada');
   });
 });
+
+describe('mover y unir cuentas (RF-20)', () => {
+  const withRound = async (table: number) => {
+    const id = await openTable(table);
+    await as('Ana').post(`/accounts/${id}/rounds`, { items: [{ productId: pid('Tinto'), qty: 1 }] }, key());
+    return id;
+  };
+  const tableStatus = async (n: number) => (await as('Ana').get('/tables')).body.find((x: { number: number }) => x.number === n).status;
+
+  it('caja mueve la cuenta a una mesa libre; la origen queda libre', async () => {
+    const id = await withRound(1);
+    expect((await as('Ana').post(`/accounts/${id}/move`, { tableNumber: 2 })).status).toBe(403);
+    events = [];
+    const r = await as('Cajero').post(`/accounts/${id}/move`, { tableNumber: 2 });
+    expect(r.status).toBe(200);
+    expect(r.body).toMatchObject({ id, tableNumber: 2, subtotal: 2500 });
+    expect(await tableStatus(1)).toBe('libre');
+    expect(await tableStatus(2)).toBe('ocupada');
+    expect(events).toEqual(['mesa:actualizada', 'mesa:actualizada']);
+  });
+
+  it('no mueve a una mesa ocupada ni inexistente (RN-01)', async () => {
+    const id = await withRound(1);
+    await openTable(2, 'Luis');
+    const busy = await as('Cajero').post(`/accounts/${id}/move`, { tableNumber: 2 });
+    expect(busy.status).toBe(409);
+    expect(busy.body.field).toBe('tableNumber');
+    expect((await as('Cajero').post(`/accounts/${id}/move`, { tableNumber: 99 })).status).toBe(404);
+    expect((await as('Ana').get(`/accounts/${id}`)).body.tableNumber).toBe(1);
+  });
+
+  it('une dos cuentas: las rondas pasan a la destino y la origen se cierra sin borrarse', async () => {
+    const a = await withRound(1);
+    const b = await withRound(2);
+    expect((await as('Ana').post(`/accounts/${a}/merge`, { intoAccountId: b })).status).toBe(403);
+    const r = await as('Dueño').post(`/accounts/${a}/merge`, { intoAccountId: b });
+    expect(r.status).toBe(200);
+    expect(r.body.rounds.map((x: { number: number }) => x.number)).toEqual([1, 2]);
+    expect(r.body.subtotal).toBe(5000);
+    const old = (await as('Ana').get(`/accounts/${a}`)).body;
+    expect(old).toMatchObject({ status: 'pagada', mergedInto: b, invoiceId: null, rounds: [] });
+    expect(await tableStatus(1)).toBe('libre');
+    expect((await as('Ana').post(`/accounts/${a}/rounds`, { items: [{ productId: 1, qty: 1 }] }, key())).status).toBe(409);
+    const { n } = db.prepare("SELECT COUNT(*) AS n FROM audit_log WHERE action = 'unir'").get() as { n: number };
+    expect(n).toBe(1);
+  });
+
+  it('no une una cuenta consigo misma ni con una pagada', async () => {
+    const a = await withRound(1);
+    expect((await as('Cajero').post(`/accounts/${a}/merge`, { intoAccountId: a })).status).toBe(400);
+    const b = await withRound(2);
+    await as('Ana').post(`/accounts/${b}/request-bill`);
+    await as('Cajero').post(`/accounts/${b}/charge`, { discount: '', tipPercent: '', method: 'tarjeta' });
+    expect((await as('Cajero').post(`/accounts/${a}/merge`, { intoAccountId: b })).status).toBe(409);
+    expect((await as('Ana').get(`/accounts/${a}`)).body.rounds).toHaveLength(1);
+  });
+});
+
+describe('editar ítem en ronda tomada (RF-33)', () => {
+  const setup = async () => {
+    const id = await openTable();
+    const acc = (await as('Ana').post(`/accounts/${id}/rounds`, { items: [{ productId: pid('Aguardiente 1/2'), qty: 1 }] }, key())).body;
+    return { id, roundId: acc.rounds[0].id as number, itemId: acc.rounds[0].items[0].id as number };
+  };
+
+  it('sube y baja la cantidad con ajustes de stock y cambia la nota', async () => {
+    const { itemId } = await setup();
+    expect(stock('Aguardiente 1/2')).toBe(1);
+    const up = await as('Ana').patch(`/rounds/items/${itemId}`, { qty: 2, note: ' con limón ' });
+    expect(up.status).toBe(200);
+    expect(up.body.rounds[0].items[0]).toMatchObject({ qty: 2, note: 'con limón' });
+    expect(up.body.subtotal).toBe(90000);
+    expect(stock('Aguardiente 1/2')).toBe(0);
+    await as('Cajero').patch(`/rounds/items/${itemId}`, { qty: 1, note: '' });
+    expect(stock('Aguardiente 1/2')).toBe(1);
+    const moves = db.prepare("SELECT qty FROM stock_movements WHERE type = 'ajuste' ORDER BY id").all() as { qty: number }[];
+    expect(moves.map((m) => m.qty)).toEqual([-1, 1]);
+    expect(events).toContain('item:editado');
+  });
+
+  it('no sube más allá del stock y no toca nada (RN-08)', async () => {
+    const { itemId } = await setup();
+    const r = await as('Ana').patch(`/rounds/items/${itemId}`, { qty: 3 });
+    expect(r.status).toBe(409);
+    expect(r.body.field).toBe('qty');
+    expect(stock('Aguardiente 1/2')).toBe(1);
+    expect((await as('Ana').patch(`/rounds/items/${itemId}`, { qty: 0 })).status).toBe(400);
+    expect((await as('Ana').patch(`/rounds/items/${itemId}`, { qty: 1, note: 'x'.repeat(101) })).status).toBe(400);
+  });
+
+  it('barra no edita; tampoco se edita fuera de «tomado» ni con la cuenta por cobrar', async () => {
+    const { id, roundId, itemId } = await setup();
+    expect((await as('Preparador').patch(`/rounds/items/${itemId}`, { qty: 1 })).status).toBe(403);
+    await as('Ana').post(`/accounts/${id}/request-bill`);
+    expect((await as('Ana').patch(`/rounds/items/${itemId}`, { qty: 1 })).status).toBe(409);
+    await as('Cajero').post(`/accounts/${id}/reopen`);
+    await as('Preparador').patch(`/rounds/${roundId}/status`, { status: 'preparacion' });
+    expect((await as('Ana').patch(`/rounds/items/${itemId}`, { qty: 1 })).status).toBe(409);
+  });
+});
+
+describe('anular factura (RF-44)', () => {
+  const paid = async () => {
+    const id = await openTable();
+    const acc = (await as('Ana').post(`/accounts/${id}/rounds`, { items: [{ productId: pid('Club Colombia'), qty: 3 }, { productId: pid('Tinto'), qty: 2 }] }, key())).body;
+    await as('Ana').post(`/rounds/items/${acc.rounds[0].items[1].id}/void`, { reason: 'No lo quiso' }); // el tinto ya volvió al stock
+    await as('Ana').post(`/accounts/${id}/request-bill`);
+    return (await as('Cajero').post(`/accounts/${id}/charge`, { discount: '', tipPercent: '', method: 'tarjeta' })).body as { id: number; number: number; accountId: number };
+  };
+
+  it('solo el dueño, con motivo; devuelve lo vendido con referencia a la factura', async () => {
+    const inv = await paid();
+    expect((await as('Cajero').post(`/invoices/${inv.id}/void`, { reason: 'Error de cobro' })).status).toBe(403);
+    expect((await as('Dueño').post(`/invoices/${inv.id}/void`, { reason: '' })).body.field).toBe('reason');
+    expect(stock('Club Colombia')).toBe(27);
+    const r = await as('Dueño').post(`/invoices/${inv.id}/void`, { reason: 'Error de cobro' });
+    expect(r.status).toBe(200);
+    expect(r.body.voided).toMatchObject({ by: 'Dueño', reason: 'Error de cobro' });
+    expect(stock('Club Colombia')).toBe(30);
+    expect(stock('Tinto')).toBe(120);
+    const ref = db.prepare('SELECT COUNT(*) AS n FROM stock_movements WHERE reference = ?').get(`factura:${inv.number}`) as { n: number };
+    expect(ref.n).toBe(1);
+    expect((await as('Cajero').get(`/invoices?q=${inv.number}`)).body[0].voided).toBe(true);
+    expect((await as('Ana').get(`/accounts/${inv.accountId}`)).body.status).toBe('pagada');
+  });
+
+  it('factura ya anulada → 409 sin devolver stock dos veces; el número no se reutiliza (RN-06)', async () => {
+    const inv = await paid();
+    await as('Dueño').post(`/invoices/${inv.id}/void`, { reason: 'Error de cobro' });
+    expect((await as('Dueño').post(`/invoices/${inv.id}/void`, { reason: 'Otra vez' })).status).toBe(409);
+    expect(stock('Club Colombia')).toBe(30);
+    const id2 = await openTable(2);
+    await as('Ana').post(`/accounts/${id2}/rounds`, { items: [{ productId: pid('Tinto'), qty: 1 }] }, key());
+    await as('Ana').post(`/accounts/${id2}/request-bill`);
+    expect((await as('Cajero').post(`/accounts/${id2}/charge`, { discount: '', tipPercent: '', method: 'tarjeta' })).body.number).toBe(inv.number + 1);
+  });
+});

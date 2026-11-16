@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Role, RoundItem, RoundStatus } from '@mirador/shared';
 import { colors, radius, space, type } from '@/theme';
 import { AppButton } from './AppButton';
+import { QuantityCounter } from './QuantityCounter';
 import { Banner, ROUND_LABEL } from './ui';
 
 const REASONS = ['Cliente cambió de opinión', 'Error al tomar el pedido', 'Producto en mal estado'];
@@ -17,18 +18,29 @@ interface Props {
   offline: boolean;
   onClose: () => void;
   onConfirm: (reason: string, restock: boolean) => void;
+  /** RF-33: en una ronda tomada también se cambia cantidad o nota. Tope = stock libre + lo ya pedido. */
+  maxQty?: number;
+  onSave?: (qty: number, note: string | null) => void;
+  /** Error del servidor al guardar; si trae `field` se muestra bajo ese campo. */
+  saveError?: { message: string; field?: string } | null;
 }
 
-/** Hoja para anular un ítem con motivo obligatorio (RF-33 a RF-35, tabla 4.2). */
-export function VoidItemSheet({ item, roundStatus, role, busy, offline, onClose, onConfirm }: Props) {
+/** Hoja para editar (RF-33) o anular un ítem con motivo obligatorio (RF-33 a RF-35, tabla 4.2). */
+export function VoidItemSheet({ item, roundStatus, role, busy, offline, onClose, onConfirm, maxQty, onSave, saveError }: Props) {
   const insets = useSafeAreaInsets();
   const [choice, setChoice] = useState<number | null>(null);
   const [other, setOther] = useState('');
   const [restock, setRestock] = useState(true);
+  // Quien la usa le pone key = id del ítem, así el estado arranca con sus valores.
+  const [qty, setQty] = useState(item?.qty ?? 1);
+  const [note, setNote] = useState(item?.note ?? '');
 
   const taken = roundStatus === 'tomado';
   const delivered = roundStatus === 'entregado';
   const allowed = taken ? role !== 'barra' : delivered ? role === 'dueno' : ['caja', 'todo', 'dueno'].includes(role);
+  const canEdit = taken && allowed && !!onSave && !!item;
+  const changed = !!item && (qty !== item.qty || (note.trim() || null) !== item.note);
+  const errFor = (f: string) => (saveError?.field === f ? <Text style={styles.error}>{saveError.message}</Text> : null);
   const reason = choice === REASONS.length ? other.trim() : choice != null ? REASONS[choice] : '';
 
   const close = () => {
@@ -41,10 +53,10 @@ export function VoidItemSheet({ item, roundStatus, role, busy, offline, onClose,
   return (
     <Modal visible={!!item} transparent animationType="slide" onRequestClose={close}>
       <Pressable style={styles.scrim} onPress={close} accessibilityLabel="Cerrar" />
-      <View style={[styles.sheet, { paddingBottom: space.lg + insets.bottom }]}>
+      <ScrollView style={styles.sheetBox} contentContainerStyle={[styles.sheet, { paddingBottom: space.lg + insets.bottom }]} keyboardShouldPersistTaps="handled">
         <View style={styles.grab} />
         <Text style={type.h}>
-          {taken ? 'Quitar' : 'Anular'} {item?.qty} × {item?.productName}
+          {canEdit ? 'Cambiar o quitar' : taken ? 'Quitar' : 'Anular'} {item?.qty} × {item?.productName}
         </Text>
         <Text style={type.small}>Ronda {ROUND_LABEL[roundStatus].toLowerCase()}</Text>
         {!allowed ? (
@@ -56,6 +68,38 @@ export function VoidItemSheet({ item, roundStatus, role, busy, offline, onClose,
           />
         ) : (
           <>
+            {canEdit && item && (
+              <>
+                <Text style={type.label}>Cambiar cantidad o nota</Text>
+                <View style={styles.qtyRow}>
+                  {/* Bajar de 1 no quita el ítem: para eso se elige un motivo abajo (RN-04). */}
+                  <QuantityCounter value={qty} max={Math.max(maxQty ?? item.qty, item.qty)} onChange={setQty} onBelowMin={() => {}} />
+                  <Text style={type.small}>{(maxQty ?? item.qty) > item.qty ? `Máximo ${maxQty} por stock` : 'No queda más stock'}</Text>
+                </View>
+                {errFor('qty')}
+                <TextInput
+                  value={note}
+                  onChangeText={setNote}
+                  placeholder="Nota para barra, ej. sin hielo"
+                  placeholderTextColor={colors.ink3}
+                  maxLength={100}
+                  style={styles.input}
+                  accessibilityLabel="Nota del ítem"
+                />
+                <Text style={[type.small, { textAlign: 'right' }]}>{note.length}/100</Text>
+                {errFor('note')}
+                {saveError && saveError.field !== 'qty' && saveError.field !== 'note' && <Banner tone="red" icon="alert-circle-outline" title={saveError.message} />}
+                <AppButton
+                  label={offline ? 'Sin conexión' : 'Guardar cambios'}
+                  icon="content-save-outline"
+                  variant="outline"
+                  loading={busy}
+                  disabled={!changed || offline}
+                  onPress={() => onSave!(qty, note.trim() || null)}
+                />
+                <Text style={[type.label, { marginTop: space.sm }]}>O quitar el ítem</Text>
+              </>
+            )}
             <View style={styles.list}>
               {[...REASONS, 'Otro motivo'].map((r, i) => (
                 <Pressable key={r} style={styles.option} onPress={() => setChoice(i)} accessibilityRole="radio" accessibilityState={{ checked: choice === i }}>
@@ -89,13 +133,16 @@ export function VoidItemSheet({ item, roundStatus, role, busy, offline, onClose,
             />
           </>
         )}
-      </View>
+      </ScrollView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
   scrim: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' },
+  sheetBox: { flexGrow: 0, maxHeight: '90%', backgroundColor: colors.face, borderTopLeftRadius: 18, borderTopRightRadius: 18 },
+  qtyRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  error: { color: colors.red, fontSize: 13 },
   sheet: { backgroundColor: colors.face, borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: space.lg, gap: space.md },
   grab: { alignSelf: 'center', width: 38, height: 4, borderRadius: 2, backgroundColor: colors.ink3, opacity: 0.6 },
   list: { borderWidth: 1, borderColor: colors.line, borderRadius: radius.md, overflow: 'hidden' },

@@ -1,6 +1,7 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { AppButton } from '@/components/AppButton';
 import { Screen } from '@/components/Screen';
 import { StateView } from '@/components/StateView';
 import { Card } from '@/components/ui';
@@ -23,6 +24,8 @@ export default function Caja() {
           <Text style={type.small}>Subtotal sin propina ni impuesto</Text>
         </View>
       </Card>
+      {/* RF-43: en el bloque 4.2 pasa al menú lateral */}
+      <AppButton label="Historial de facturas" icon="receipt" variant="outline" compact onPress={() => router.push('/facturas')} />
       {billable.isPending ? (
         <StateView kind="loading" />
       ) : billable.isError && !billable.data ? (

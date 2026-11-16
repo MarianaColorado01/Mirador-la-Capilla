@@ -32,9 +32,16 @@ Para agregar un módulo: crea `modules/<nombre>.routes.ts`, que exporta una func
 | auth | `GET /auth/profiles` · `POST /auth/login` ✅ | 05, 08 |
 | products | `GET /products` · `GET /products/:id` ✅ · `POST/PATCH /products` | 10–15 |
 | tables | `GET /tables` ✅ · `POST/PATCH /tables` | 16, 22 |
-| accounts | `POST /accounts` · `GET /accounts/:id` · `/request-bill` · `/reopen` ✅ · `/move` · `/merge` | 17–21 |
-| rounds | `POST /accounts/:id/rounds` (Idempotency-Key) · `GET /rounds` · `PATCH /rounds/:id/status` · `POST /rounds/items/:itemId/void` ✅ · `PATCH /round-items/:id` | 23–37 |
-| billing | `GET /accounts?status=por_cobrar` · `POST /accounts/:id/charge` · `GET /invoices` · `GET /invoices/:id` · `POST /invoices/:id/void` | 38–46 |
+| accounts | `POST /accounts` · `GET /accounts/:id` · `/request-bill` · `/reopen` · `POST /accounts/:id/move` `{tableNumber}` · `POST /accounts/:id/merge` `{intoAccountId}` ✅ | 17–21 |
+| rounds | `POST /accounts/:id/rounds` (Idempotency-Key) · `GET /rounds` · `PATCH /rounds/:id/status` · `POST /rounds/items/:itemId/void` · `PATCH /rounds/items/:itemId` `{qty, note}` ✅ | 23–37 |
+| billing | `GET /accounts?status=por_cobrar` · `POST /accounts/:id/charge` · `GET /invoices?q=` · `GET /invoices/:id` · `POST /invoices/:id/void` `{reason}` ✅ | 38–44 |
+
+Decisiones del bloque 4.1:
+
+- **Mover (RF-20):** caja, todo en uno o dueño. La mesa destino debe estar libre (409 si tiene cuenta, RN-01). La cuenta conserva id, rondas y mesero.
+- **Unir (RF-20):** las rondas de la cuenta origen pasan a la destino, renumeradas a continuación. La origen no se borra (RN-04): queda en estado `pagada` sin factura, con `closed_at` y `merged_into` = cuenta destino, y su mesa queda libre. La destino conserva su estado. Se audita como `unir`.
+- **Editar ítem (RF-33):** solo en ronda `tomado` con la cuenta `abierta`; mesero, todo en uno, caja o dueño. La diferencia de cantidad mueve el stock con un `ajuste` referencia `ronda:<id>`; al subir se valida el stock (RN-08, 409 con `field: qty`). Para quitar un ítem se sigue usando la anulación.
+- **Anular factura (RF-44):** solo el dueño, con motivo. Lo vendido no anulado vuelve al stock con `ajuste` referencia `factura:<número>`; se guardan `voided_at`, `voided_by` y `void_reason`. El número no se reutiliza (RN-06). La cuenta sigue `pagada` y la mesa no se reabre. Una factura ya anulada responde 409.
 | inventory | `GET /inventory` · `POST /inventory/adjustments` · `GET /products/:id/movements` · `GET /inventory/suggestions` | 47–51 |
 | suppliers / purchases | CRUD de `/suppliers` · `POST/GET /purchases` · `GET /reports/purchases-by-supplier` | 52–56 |
 | expenses / reports | `POST/GET /expenses` · `GET /reports/summary?from&to` | 57–60 |
@@ -42,7 +49,7 @@ Para agregar un módulo: crea `modules/<nombre>.routes.ts`, que exporta una func
 
 ### Eventos de tiempo real
 
-Están definidos en `shared/src/types.ts`, en `ServerEvents`: `ronda:creada`, `ronda:estado`, `item:anulado`, `mesa:actualizada` y `stock:bajo`. Se emiten con `emit(evento, payload, roles)` **después** de que la transacción se confirma.
+Están definidos en `shared/src/types.ts`, en `ServerEvents`: `ronda:creada`, `ronda:estado`, `item:anulado`, `item:editado`, `mesa:actualizada` y `stock:bajo`. Mover y unir emiten `mesa:actualizada` para la mesa origen (libre) y la destino. Se emiten con `emit(evento, payload, roles)` **después** de que la transacción se confirma.
 
 ## App (`app/`)
 
@@ -58,7 +65,8 @@ login.tsx                   perfil y PIN
 mesa/[id].tsx               cuenta de la mesa
 mesa/[id]/ronda.tsx         tomar ronda
 cobro/[id].tsx              cobrar
-factura/[id].tsx            factura
+factura/[id].tsx            factura (el dueño la anula, RF-44)
+facturas.tsx                historial de facturas (RF-43); se enlaza desde Caja y pasará al menú lateral
 ```
 
 Para la fase 4 están previstos un menú lateral `(drawer)` según rol y las pantallas de inventario, proveedores, ubicación, gastos, resumen, facturas, ajustes y usuarios, además de `producto/[id].tsx` y `compra/nueva.tsx`.

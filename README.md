@@ -57,6 +57,7 @@ Los datos de ejemplo se cargan solos la primera vez. Hay seis perfiles (Ana, Lui
 - [x] Cálculo del cobro compartido, con pruebas
 - [x] Proceso principal: abrir mesa, rondas, barra, cobro y factura (servidor con pruebas de RN-01 a RN-09 y pantallas en la app)
 - [x] Tiempo real con Socket.IO (cola de barra, aviso de ronda lista, stock bajo) e indicador conectado · reconectando · sin conexión
+- [x] Cierre del proceso principal: mover y unir cuentas (RF-20), editar cantidad o nota en ronda tomada (RF-33), historial de facturas (RF-43) y anulación de factura por el dueño (RF-44)
 - [ ] Inventario, compras, gastos, resumen, mapa
 - [ ] Respaldos, PDF, dividir cuenta
 

@@ -36,7 +36,7 @@ export function loadAccount(db: DB, id: number): Account | null {
   const a = db.prepare(`SELECT a.*, t.number AS table_number, u.name AS waiter, inv.id AS invoice_id
     FROM accounts a JOIN tables t ON t.id = a.table_id JOIN users u ON u.id = a.waiter_id
     LEFT JOIN invoices inv ON inv.account_id = a.id WHERE a.id = ?`).get(id) as
-    | { id: number; table_number: number; waiter: string; status: Account['status']; opened_at: string; invoice_id: number | null }
+    | { id: number; table_number: number; waiter: string; status: Account['status']; opened_at: string; invoice_id: number | null; merged_into: number | null }
     | undefined;
   if (!a) return null;
   const rounds = db.prepare(`SELECT r.*, u.name AS taken_by_name FROM rounds r JOIN users u ON u.id = r.taken_by
@@ -44,7 +44,7 @@ export function loadAccount(db: DB, id: number): Account | null {
   const items = itemsOfRounds(db, rounds.map((r) => r.id));
   return {
     id: a.id, tableNumber: a.table_number, waiter: a.waiter, status: a.status, openedAt: iso(a.opened_at),
-    subtotal: subtotalOf(db, a.id), invoiceId: a.invoice_id,
+    subtotal: subtotalOf(db, a.id), invoiceId: a.invoice_id, mergedInto: a.merged_into,
     rounds: rounds.map<Round>((r) => ({ id: r.id, number: r.number, status: r.status, takenBy: r.taken_by_name, createdAt: iso(r.created_at), items: items.get(r.id)! })),
   };
 }

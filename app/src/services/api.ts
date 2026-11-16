@@ -1,6 +1,6 @@
 import { AxiosError, create, type AxiosInstance } from 'axios';
 import type {
-  Account, BarTicket, BillableAccount, ChargeRequest, CreateRoundRequest, HealthResponse, Invoice, Product, Profile,
+  Account, BarTicket, BillableAccount, ChargeRequest, CreateRoundRequest, EditItemRequest, HealthResponse, Invoice, InvoiceListItem, Product, Profile,
   RoundStatus, SessionUser, Settings, TableSummary, VoidItemRequest,
 } from '@mirador/shared';
 import { useSession } from '@/store/session';
@@ -53,10 +53,15 @@ export const api = {
   requestBill: (accountId: number) => call<Account>((c) => c.post(`/accounts/${accountId}/request-bill`)),
   reopen: (accountId: number) => call<Account>((c) => c.post(`/accounts/${accountId}/reopen`)),
   setRoundStatus: (roundId: number, status: Exclude<RoundStatus, 'tomado'>) => call<Account>((c) => c.patch(`/rounds/${roundId}/status`, { status })),
+  moveAccount: (accountId: number, tableNumber: number) => call<Account>((c) => c.post(`/accounts/${accountId}/move`, { tableNumber })),
+  mergeAccount: (accountId: number, intoAccountId: number) => call<Account>((c) => c.post(`/accounts/${accountId}/merge`, { intoAccountId })),
+  editItem: (itemId: number, body: EditItemRequest) => call<Account>((c) => c.patch(`/rounds/items/${itemId}`, body)),
   voidItem: (itemId: number, body: VoidItemRequest) => call<Account>((c) => c.post(`/rounds/items/${itemId}/void`, body)),
 
   barQueue: () => call<BarTicket[]>((c) => c.get('/rounds')),
   billable: () => call<BillableAccount[]>((c) => c.get('/accounts', { params: { status: 'por_cobrar' } })),
   charge: (accountId: number, body: ChargeRequest) => call<Invoice>((c) => c.post(`/accounts/${accountId}/charge`, body)),
   invoice: (id: number) => call<Invoice>((c) => c.get(`/invoices/${id}`)),
+  invoices: (q: string) => call<InvoiceListItem[]>((c) => c.get('/invoices', { params: { q } })),
+  voidInvoice: (id: number, reason: string) => call<Invoice>((c) => c.post(`/invoices/${id}/void`, { reason })),
 };
