@@ -31,7 +31,7 @@ interface RoundRow { id: number; account_id: number; status: RoundStatus; taken_
 
 export function roundRoutes(db: DB, emit: Emit) {
   const r = Router();
-  r.use(requireAuth);
+  r.use(requireAuth(db));
 
   const getRound = (id: number) => {
     const row = db.prepare(`SELECT r.*, u.name AS taken_by_name, t.number AS table_number, a.status AS account_status

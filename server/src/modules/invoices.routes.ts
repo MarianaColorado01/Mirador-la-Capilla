@@ -10,7 +10,7 @@ const VoidBody = z.object({ reason: z.string().trim().min(3, 'Escribe el motivo 
 
 export function invoiceRoutes(db: DB) {
   const r = Router();
-  r.use(requireAuth, requireRole('caja', 'todo'));
+  r.use(requireAuth(db), requireRole('caja', 'todo'));
 
   // RF-43: historial con búsqueda por número o fecha (YYYY-MM-DD)
   r.get('/', route((req, res) => {

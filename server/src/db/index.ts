@@ -32,6 +32,10 @@ const DEFAULT_SETTINGS: Settings = {
   maxPinAttempts: 3,
   lockMinutes: 5,
   idleLogoutMinutes: 10,
+  // shortcut: aproximación del km 3 vía Belalcázar – La Virginia (vereda La Alemania, Risaralda);
+  // el docente debe confirmar las coordenadas reales y el dueño las ajusta en Ajustes.
+  barLat: 4.99,
+  barLng: -75.81,
 };
 
 export function getSettings(db: DB): Settings {

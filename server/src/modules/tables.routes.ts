@@ -12,7 +12,7 @@ interface Row {
 
 export function tableRoutes(db: DB) {
   const r = Router();
-  r.use(requireAuth);
+  r.use(requireAuth(db));
 
   // RF-16: mapa de mesas con su estado
   r.get('/', route((_req, res) => {

@@ -18,7 +18,7 @@ src/
 ├─ db/schema.sql      todas las tablas
 ├─ db/index.ts        openDb(), getSettings(), saveSettings()
 ├─ db/seed.ts         datos de ejemplo (los de los mockups)
-├─ lib/auth.ts        JWT, requireAuth, requireRole (RN-09)
+├─ lib/auth.ts        JWT, requireAuth(db) (relee el usuario: inactivo → 401), requireRole (RN-09)
 ├─ lib/http.ts        HttpError, route(), errorHandler (zod → 400 con campo)
 └─ modules/           un archivo de rutas por módulo
 ```
@@ -42,10 +42,17 @@ Decisiones del bloque 4.1:
 - **Unir (RF-20):** las rondas de la cuenta origen pasan a la destino, renumeradas a continuación. La origen no se borra (RN-04): queda en estado `pagada` sin factura, con `closed_at` y `merged_into` = cuenta destino, y su mesa queda libre. La destino conserva su estado. Se audita como `unir`.
 - **Editar ítem (RF-33):** solo en ronda `tomado` con la cuenta `abierta`; mesero, todo en uno, caja o dueño. La diferencia de cantidad mueve el stock con un `ajuste` referencia `ronda:<id>`; al subir se valida el stock (RN-08, 409 con `field: qty`). Para quitar un ítem se sigue usando la anulación.
 - **Anular factura (RF-44):** solo el dueño, con motivo. Lo vendido no anulado vuelve al stock con `ajuste` referencia `factura:<número>`; se guardan `voided_at`, `voided_by` y `void_reason`. El número no se reutiliza (RN-06). La cuenta sigue `pagada` y la mesa no se reabre. Una factura ya anulada responde 409.
+
+Decisiones del bloque 4.2:
+
+- **Ajustes (RF-04):** `PATCH /settings` acepta cualquier subconjunto; el esquema zod vive en `shared/src/admin.ts` y lo usan la app (errores en vivo) y el servidor (400 con `field`). Incluye `barLat`/`barLng` del bar (por defecto ≈ 4.99, −75.81, pendiente de confirmar). Se audita como `editar ajustes`.
+- **Usuarios (RF-07):** nada se borra: desactivar es `active: false`. El dueño no puede desactivarse a sí mismo y ningún cambio puede dejar el sistema sin dueño activo (se revisa con el cambio ya aplicado, dentro de la transacción). No se repiten nombres entre perfiles activos. El PIN se guarda con bcrypt y uno nuevo quita el bloqueo por intentos.
+- **Sesión:** `requireAuth(db)` relee nombre y rol por id en cada petición: un usuario desactivado recibe 401 (la app cierra su sesión) y un cambio de rol aplica de inmediato. El socket de tiempo real no se corta hasta que reconecta.
 | inventory | `GET /inventory` · `POST /inventory/adjustments` · `GET /products/:id/movements` · `GET /inventory/suggestions` | 47–51 |
 | suppliers / purchases | CRUD de `/suppliers` · `POST/GET /purchases` · `GET /reports/purchases-by-supplier` | 52–56 |
 | expenses / reports | `POST/GET /expenses` · `GET /reports/summary?from&to` | 57–60 |
-| settings / users / backups | `GET/PATCH /settings` · CRUD de `/users` · `GET/POST /backups` · `POST /backups/:id/restore` | 04, 07, 71 |
+| settings / users | `GET /settings` (todos) · `PATCH /settings` (dueño) · `GET /users` · `POST /users` `{name, role, pin}` · `PATCH /users/:id` `{name?, role?, pin?, active?}` (dueño) ✅ | 04, 07 |
+| backups | `GET/POST /backups` · `POST /backups/:id/restore` | 71 |
 
 ### Eventos de tiempo real
 
@@ -59,17 +66,22 @@ Rutas con Expo Router en `app/src/app/`. Hoy existen:
 _layout.tsx                 Stack raíz (rutas protegidas según servidor y sesión)
 setup.tsx                   conexión al servidor
 login.tsx                   perfil y PIN
-(tabs)/_layout.tsx          pestañas según rol
-(tabs)/index.tsx            Mesas
-(tabs)/barra.tsx · caja.tsx Barra · Caja
+(drawer)/_layout.tsx        menú lateral según rol (lista ENTRIES con roles) + Cambiar de perfil
+(drawer)/(tabs)/_layout.tsx pestañas según rol; el botón ☰ abre el menú
+(drawer)/(tabs)/index.tsx   Mesas
+(drawer)/(tabs)/barra.tsx · caja.tsx  Barra · Caja
+(drawer)/facturas.tsx       historial de facturas (RF-43); también desde Caja
+(drawer)/ajustes.tsx        ajustes del negocio (dueño, RF-04)
+(drawer)/usuarios.tsx       crear, editar, desactivar usuarios (dueño, RF-07)
 mesa/[id].tsx               cuenta de la mesa
 mesa/[id]/ronda.tsx         tomar ronda
 cobro/[id].tsx              cobrar
 factura/[id].tsx            factura (el dueño la anula, RF-44)
-facturas.tsx                historial de facturas (RF-43); se enlaza desde Caja y pasará al menú lateral
 ```
 
-Para la fase 4 están previstos un menú lateral `(drawer)` según rol y las pantallas de inventario, proveedores, ubicación, gastos, resumen, facturas, ajustes y usuarios, además de `producto/[id].tsx` y `compra/nueva.tsx`.
+El cierre por inactividad (RF-09) lo hace `hooks/use-idle-logout.ts`: el View raíz captura cada toque (`onStartShouldSetResponderCapture`) y reinicia un temporizador de `idleLogoutMinutes`; al volver del segundo plano revisa el tiempo real transcurrido.
+
+Para el resto de la fase 4 están previstas las pantallas de inventario, proveedores, ubicación, gastos y resumen (se agregan como entradas del menú lateral), además de `producto/[id].tsx` y `compra/nueva.tsx`. El Drawer viene incluido en `expo-router/drawer` desde el SDK 56: no hubo que instalar paquetes.
 
 Librerías previstas: Axios con instancia central y TanStack Query para la red, Zustand con persistencia para la sesión y la ronda en construcción, NativeWind, `expo-camera` para el QR y `expo-location` con Leaflet en WebView para el mapa. Instálalas siempre con `npx expo install` para que coincidan con el SDK.
 

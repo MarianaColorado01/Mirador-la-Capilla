@@ -33,7 +33,7 @@ interface AccountRow { id: number; table_id: number; table_number: number; statu
 
 export function accountRoutes(db: DB, emit: Emit) {
   const r = Router();
-  r.use(requireAuth);
+  r.use(requireAuth(db));
 
   const getAccount = (id: number) => {
     const a = db.prepare(`SELECT a.*, t.number AS table_number, u.name AS waiter_name FROM accounts a

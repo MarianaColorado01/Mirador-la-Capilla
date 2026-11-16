@@ -1,6 +1,6 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { DrawerToggleButton } from 'expo-router/drawer';
 import { Tabs } from 'expo-router/js-tabs';
-import { Alert, Pressable } from 'react-native';
 import type { Role } from '@mirador/shared';
 import { useSession } from '@/store/session';
 import { colors, headerOptions } from '@/theme';
@@ -12,26 +12,6 @@ const TABS: Record<'index' | 'barra' | 'caja', Role[]> = {
   caja: ['todo', 'caja', 'dueno'],
 };
 
-function LogoutButton() {
-  const signOut = useSession((s) => s.signOut);
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel="Cambiar de perfil"
-      hitSlop={10}
-      style={{ paddingHorizontal: 16 }}
-      onPress={() =>
-        Alert.alert('Cambiar de perfil', '¿Cerrar la sesión en este celular?', [
-          { text: 'Cancelar', style: 'cancel' },
-          { text: 'Cerrar sesión', style: 'destructive', onPress: signOut },
-        ])
-      }
-    >
-      <MaterialCommunityIcons name="account-switch-outline" size={24} color={colors.ink} />
-    </Pressable>
-  );
-}
-
 export default function TabsLayout() {
   const role = useSession((s) => s.user?.role ?? 'mesero');
   const show = (tab: keyof typeof TABS) => (TABS[tab].includes(role) ? undefined : null);
@@ -42,7 +22,8 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         ...headerOptions,
-        headerRight: () => <LogoutButton />,
+        // Menú lateral con Facturas, Ajustes, Usuarios y Cambiar de perfil (RF-06).
+        headerLeft: () => <DrawerToggleButton tintColor={colors.ink} accessibilityLabel="Abrir menú" />,
         tabBarActiveTintColor: colors.ink,
         tabBarInactiveTintColor: colors.ink3,
         tabBarStyle: visible > 1 ? { backgroundColor: colors.face, borderTopColor: colors.line } : { display: 'none' },

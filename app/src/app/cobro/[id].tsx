@@ -1,26 +1,16 @@
 import { useMutation } from '@tanstack/react-query';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Alert, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
 import { calculateBill, type PaymentMethod } from '@mirador/shared';
 import { AppButton } from '@/components/AppButton';
 import { Screen } from '@/components/Screen';
 import { StateView } from '@/components/StateView';
-import { Card, Chips, ItemRow, MoneyRow } from '@/components/ui';
+import { Card, Chips, Field, ItemRow, MoneyRow } from '@/components/ui';
 import { useAccount, useConnection, useInvalidateFloor, useSettings } from '@/hooks/queries';
 import { api, ApiError } from '@/services/api';
 import { colors, radius, space, type } from '@/theme';
 import { money, pad } from '@/utils/format';
-
-function Field({ label, value, onChange, error, help, placeholder }: { label: string; value: string; onChange: (t: string) => void; error?: string; help?: string; placeholder?: string }) {
-  return (
-    <View style={{ flex: 1, gap: 6 }}>
-      <Text style={styles.lb}>{label}</Text>
-      <TextInput value={value} onChangeText={onChange} keyboardType="numeric" placeholder={placeholder} placeholderTextColor={colors.ink3} style={[styles.input, !!error && styles.err]} />
-      {error ? <Text style={styles.errText}>{error}</Text> : help ? <Text style={type.small}>{help}</Text> : null}
-    </View>
-  );
-}
 
 /** RF-39 a RF-42: cálculo en vivo, validaciones, método de pago y factura. */
 export default function Cobro() {
@@ -100,8 +90,8 @@ export default function Cobro() {
       </Card>
 
       <View style={styles.two}>
-        <Field label="Descuento ($)" value={discount} onChange={(t) => { setDiscount(t); charge.reset(); }} error={errors.discount} placeholder="0" />
-        <Field label="Propina (%)" value={tipText} onChange={(t) => { setTip(t); charge.reset(); }} error={errors.tipPercent} help={`Sugerida: ${settings.data.suggestedTipPercent} %`} />
+        <Field half keyboardType="numeric" label="Descuento ($)" value={discount} onChangeText={(t) => { setDiscount(t); charge.reset(); }} error={errors.discount} placeholder="0" />
+        <Field half keyboardType="numeric" label="Propina (%)" value={tipText} onChangeText={(t) => { setTip(t); charge.reset(); }} error={errors.tipPercent} help={`Sugerida: ${settings.data.suggestedTipPercent} %`} />
       </View>
 
       <Card>
@@ -126,7 +116,7 @@ export default function Cobro() {
       />
       {method === 'efectivo' && (
         <View style={styles.two}>
-          <Field label="Recibido" value={received} onChange={(t) => { setReceived(t); charge.reset(); }} error={errors.received} placeholder={`Ej. ${money(suggestion)}`} />
+          <Field half keyboardType="numeric" label="Recibido" value={received} onChangeText={(t) => { setReceived(t); charge.reset(); }} error={errors.received} placeholder={`Ej. ${money(suggestion)}`} />
           <View style={{ flex: 1, gap: 6 }}>
             <Text style={styles.lb}>Cambio</Text>
             <View style={[styles.input, styles.ro]}>
@@ -145,6 +135,4 @@ const styles = StyleSheet.create({
   lb: { color: colors.ink2, fontSize: 13, fontWeight: '600' },
   input: { minHeight: 50, borderWidth: 1, borderColor: colors.line, borderRadius: radius.md, paddingHorizontal: 12, color: colors.ink, fontSize: 17, backgroundColor: colors.face, justifyContent: 'center' },
   ro: { backgroundColor: colors.face2 },
-  err: { borderColor: colors.red, borderWidth: 2 },
-  errText: { color: colors.red, fontSize: 13 },
 });

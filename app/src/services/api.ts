@@ -1,7 +1,7 @@
 import { AxiosError, create, type AxiosInstance } from 'axios';
 import type {
-  Account, BarTicket, BillableAccount, ChargeRequest, CreateRoundRequest, EditItemRequest, HealthResponse, Invoice, InvoiceListItem, Product, Profile,
-  RoundStatus, SessionUser, Settings, TableSummary, VoidItemRequest,
+  Account, BarTicket, BillableAccount, ChargeRequest, CreateRoundRequest, EditItemRequest, HealthResponse, Invoice, InvoiceListItem, ManagedUser, Product, Profile,
+  Role, RoundStatus, SessionUser, Settings, TableSummary, VoidItemRequest,
 } from '@mirador/shared';
 import { useSession } from '@/store/session';
 
@@ -43,6 +43,10 @@ export const api = {
   profiles: () => call<Profile[]>((c) => c.get('/auth/profiles')),
   login: (userId: number, pin: string) => call<SessionUser>((c) => c.post('/auth/login', { userId, pin })),
   settings: () => call<Settings>((c) => c.get('/settings')),
+  saveSettings: (patch: Partial<Settings>) => call<Settings>((c) => c.patch('/settings', patch)),
+  users: () => call<ManagedUser[]>((c) => c.get('/users')),
+  createUser: (body: { name: string; role: Role; pin: string }) => call<ManagedUser>((c) => c.post('/users', body)),
+  updateUser: (id: number, body: Partial<{ name: string; role: Role; pin: string; active: boolean }>) => call<ManagedUser>((c) => c.patch(`/users/${id}`, body)),
 
   products: () => call<Product[]>((c) => c.get('/products')),
   tables: () => call<TableSummary[]>((c) => c.get('/tables')),

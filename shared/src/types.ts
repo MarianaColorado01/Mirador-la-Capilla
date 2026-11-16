@@ -176,6 +176,14 @@ export interface Settings {
   maxPinAttempts: number; // RF-08
   lockMinutes: number;
   idleLogoutMinutes: number; // RF-09
+  /** Ubicación del bar para el mapa (RF-61). */
+  barLat: number;
+  barLng: number;
+}
+
+/** Usuario visto desde Ajustes › Usuarios (RF-07). */
+export interface ManagedUser extends Profile {
+  active: boolean;
 }
 
 export interface HealthResponse {

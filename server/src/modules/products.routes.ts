@@ -19,7 +19,7 @@ const toOwner = (r: Row): ProductOwnerView => ({ ...toProduct(r), cost: r.cost, 
 
 export function productRoutes(db: DB) {
   const r = Router();
-  r.use(requireAuth);
+  r.use(requireAuth(db));
 
   // RF-10 / RF-11: listado activo, con búsqueda y filtro por categoría
   r.get('/', route((req, res) => {

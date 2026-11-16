@@ -1,7 +1,7 @@
 /* Piezas pequeñas compartidas: etiquetas de estado, tarjetas, chips, filas de dinero y ítems. */
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import type { ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View, type TextInputProps, type ViewStyle } from 'react-native';
 import type { RoundItem, RoundStatus } from '@mirador/shared';
 import { colors, radius, space, type } from '@/theme';
 import { money } from '@/utils/format';
@@ -78,6 +78,17 @@ export function ItemRow({ item, showPrice = true, onVoid }: { item: RoundItem; s
   );
 }
 
+/** Campo de formulario con etiqueta y error debajo (o ayuda). `half` para dos campos en una fila. */
+export function Field({ label, error, help, half, ...input }: TextInputProps & { label: string; error?: string; help?: string; half?: boolean }) {
+  return (
+    <View style={[{ gap: 6 }, half && { flex: 1 }]}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      <TextInput placeholderTextColor={colors.ink3} accessibilityLabel={label} {...input} style={[styles.input, !!error && styles.inputErr]} />
+      {error ? <Text style={styles.fieldErr}>{error}</Text> : help ? <Text style={type.small}>{help}</Text> : null}
+    </View>
+  );
+}
+
 export function Banner({ tone, icon, title, text }: { tone: 'red' | 'amber' | 'green' | 'neutral'; icon: keyof typeof MaterialCommunityIcons.glyphMap; title: string; text?: string }) {
   const c = { red: [colors.red, colors.redBg], amber: [colors.amber, colors.amberBg], green: [colors.green, colors.greenBg], neutral: [colors.ink2, colors.face] }[tone];
   return (
@@ -115,6 +126,10 @@ const styles = StyleSheet.create({
   voided: { color: colors.red, fontSize: 12, marginTop: 2 },
   struck: { textDecorationLine: 'line-through', color: colors.red },
   more: { minWidth: 44, minHeight: 44, marginVertical: -11, marginRight: -12, alignItems: 'center', justifyContent: 'center' },
+  fieldLabel: { color: colors.ink2, fontSize: 13, fontWeight: '600' },
+  input: { minHeight: 50, borderWidth: 1, borderColor: colors.line, borderRadius: radius.md, paddingHorizontal: 12, color: colors.ink, fontSize: 17, backgroundColor: colors.face },
+  inputErr: { borderColor: colors.red, borderWidth: 2 },
+  fieldErr: { color: colors.red, fontSize: 13 },
   banner: { flexDirection: 'row', gap: 10, borderWidth: 1, borderRadius: radius.md, padding: 12 },
   bannerTitle: { color: colors.ink, fontWeight: '700', fontSize: 14, marginBottom: 2 },
 });

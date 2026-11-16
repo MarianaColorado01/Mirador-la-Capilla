@@ -24,7 +24,7 @@ export default function Caja() {
           <Text style={type.small}>Subtotal sin propina ni impuesto</Text>
         </View>
       </Card>
-      {/* RF-43: en el bloque 4.2 pasa al menú lateral */}
+      {/* RF-43: también está en el menú lateral */}
       <AppButton label="Historial de facturas" icon="receipt" variant="outline" compact onPress={() => router.push('/facturas')} />
       {billable.isPending ? (
         <StateView kind="loading" />
