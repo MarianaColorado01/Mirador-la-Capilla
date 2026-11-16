@@ -1,7 +1,7 @@
 import { AxiosError, create, type AxiosInstance } from 'axios';
 import type {
   Account, BarTicket, BillableAccount, Category, ChargeRequest, CreateRoundRequest, EditItemRequest, Expense, HealthResponse, Invoice, InvoiceListItem, ManagedUser, Profile,
-  Purchase, PurchaseListItem, ReportSummary, Role, RoundStatus, SessionUser, Settings, StockMovement, StockSuggestion, Supplier, TableAdmin, TableSummary, VoidItemRequest,
+  Purchase, PurchaseListItem, ReportSummary, Role, RoundStatus, SessionUser, Settings, StockMovement, StockSuggestion, Supplier, SupplierLocation, TableAdmin, TableSummary, VoidItemRequest,
 } from '@mirador/shared';
 import { useSession } from '@/store/session';
 import { toProductModel, type ProductDTO } from './mappers';
@@ -75,6 +75,7 @@ export const api = {
   updateCategory: (id: number, body: Partial<{ name: string; active: boolean }>) => call<Category>((c) => c.patch(`/categories/${id}`, body)),
   suppliers: () => call<Supplier[]>((c) => c.get('/suppliers')),
   supplier: (id: number) => call<Supplier>((c) => c.get(`/suppliers/${id}`)),
+  supplierLocations: () => call<SupplierLocation[]>((c) => c.get('/suppliers/locations')),
   createSupplier: (body: SupplierBody) => call<Supplier>((c) => c.post('/suppliers', body)),
   updateSupplier: (id: number, body: Partial<SupplierBody & { active: boolean }>) => call<Supplier>((c) => c.patch(`/suppliers/${id}`, body)),
   purchases: (f: PurchaseFilter) => call<PurchaseListItem[]>((c) => c.get('/purchases', { params: f })),

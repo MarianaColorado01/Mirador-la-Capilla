@@ -77,6 +77,15 @@ export interface Supplier {
   active: boolean;
 }
 
+/** RF-61: lo mínimo para poner un proveedor activo en el mapa; lo ven todos los roles. */
+export interface SupplierLocation {
+  id: number;
+  name: string;
+  address: string | null;
+  lat: number;
+  lng: number;
+}
+
 /** RF-55: compra en el historial. `date` es el día de la compra (AAAA-MM-DD). */
 export interface PurchaseListItem {
   id: number;

@@ -26,6 +26,8 @@ export const keys = {
   users: ['users'] as const,
   suppliers: ['suppliers'] as const,
   supplier: (id: number) => ['suppliers', id] as const,
+  // Cuelga de ['suppliers']: al editar un proveedor también se refresca el mapa.
+  supplierLocations: ['suppliers', 'locations'] as const,
   // Todo lo de compras cuelga de ['purchases'].
   purchases: (f: PurchaseFilter) => ['purchases', f] as const,
   purchase: (id: number) => ['purchases', 'detail', id] as const,
@@ -62,6 +64,7 @@ const no404 = (n: number, e: Error) => n < 1 && !(e instanceof ApiError && e.sta
 const validId = (id: number) => Number.isInteger(id) && id > 0;
 export const useSuppliers = () => useQuery({ queryKey: keys.suppliers, queryFn: api.suppliers });
 export const useSupplier = (id: number) => useQuery({ queryKey: keys.supplier(id), queryFn: () => api.supplier(id), enabled: validId(id), retry: no404 });
+export const useSupplierLocations = () => useQuery({ queryKey: keys.supplierLocations, queryFn: api.supplierLocations });
 export const usePurchases = (f: PurchaseFilter) => useQuery({ queryKey: keys.purchases(f), queryFn: () => api.purchases(f), placeholderData: keepPreviousData });
 export const useExpenses = (r: DateRange) => useQuery({ queryKey: keys.expenses(r), queryFn: () => api.expenses(r), placeholderData: keepPreviousData });
 export const useSummary = (r: DateRange) => useQuery({ queryKey: keys.summary(r), queryFn: () => api.summary(r), placeholderData: keepPreviousData });

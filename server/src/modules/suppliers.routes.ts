@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { SupplierSchema, SupplierUpdateSchema, type Supplier } from '@mirador/shared';
+import { SupplierSchema, SupplierUpdateSchema, type Supplier, type SupplierLocation } from '@mirador/shared';
 import type { DB } from '../db/index';
 import { audit } from '../lib/audit';
 import { requireAuth, requireRole } from '../lib/auth';
@@ -12,6 +12,14 @@ const SELECT = 'SELECT id, name, phone, notes, address, lat, lng, active FROM su
 /** RF-52: el dueño registra, edita y desactiva proveedores. Nunca se borran (RN-04). */
 export function supplierRoutes(db: DB) {
   const r = Router();
+
+  // RF-61: el mapa es para todos los roles, así que esta lectura va antes del filtro de dueño.
+  // Solo nombre, dirección y coordenadas de los activos: teléfono, notas y compras siguen siendo del dueño.
+  r.get('/locations', requireAuth(db), route((_req, res) => {
+    res.json(db.prepare('SELECT id, name, address, lat, lng FROM suppliers WHERE active = 1 AND lat IS NOT NULL AND lng IS NOT NULL ORDER BY name')
+      .all() as SupplierLocation[]);
+  }));
+
   r.use(requireAuth(db), requireRole());
 
   const load = (id: number | bigint) => db.prepare(`${SELECT} WHERE id = ?`).get(id) as Row | undefined;

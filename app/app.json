@@ -37,7 +37,13 @@
       "expo-font",
       "expo-image",
       "expo-status-bar",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Mirador La Capilla usa tu ubicación solo mientras ves el mapa, para mostrarte junto al bar y los proveedores."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

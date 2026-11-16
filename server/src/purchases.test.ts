@@ -43,6 +43,18 @@ describe('proveedores (RF-52)', () => {
     }
   });
 
+  it('todos los roles leen las ubicaciones para el mapa (RF-61), solo activos con coordenadas', async () => {
+    db.prepare("UPDATE suppliers SET lat = 4.81, lng = -75.69 WHERE name = 'Distribuidora X'").run();
+    db.prepare("INSERT INTO suppliers(name, lat, lng, active) VALUES('Inactivo', 4.8, -75.7, 0)").run();
+    db.prepare("INSERT INTO suppliers(name) VALUES('Sin coordenadas')").run();
+    for (const who of ['Ana', 'Cajero', 'Operador', 'Preparador', 'Dueño']) {
+      const r = await as(who).get('/suppliers/locations');
+      expect(r.status).toBe(200);
+      expect(r.body).toEqual([{ id: supplierX(), name: 'Distribuidora X', address: null, lat: 4.81, lng: -75.69 }]);
+    }
+    expect((await request(app).get('/suppliers/locations')).status).toBe(401);
+  });
+
   it('crea con datos opcionales vacíos y edita con coordenadas', async () => {
     const c = await as('Dueño').post('/suppliers', { name: '  Hielos La Sierra ', phone: '', notes: '', address: null });
     expect(c.status).toBe(201);

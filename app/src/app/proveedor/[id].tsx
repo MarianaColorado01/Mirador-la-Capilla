@@ -106,8 +106,16 @@ function SupplierForm({ supplier }: { supplier: Supplier | null }) {
               onPress={() => router.push({ pathname: '/compra/nueva', params: { supplierId: String(supplier.id) } })}
             />
           </View>
-          {/* Bloque 4.7: aquí va «Ver en el mapa» (RF-66) cuando el proveedor tenga coordenadas. */}
         </View>
+      )}
+      {/* RF-66: solo si tiene coordenadas; el mapa centra en él sin trazar ruta. Se oculta si está inactivo porque el mapa solo muestra activos. */}
+      {supplier?.active && supplier.lat != null && supplier.lng != null && (
+        <AppButton
+          label="Ver en el mapa"
+          icon="map-marker-outline"
+          variant="outline"
+          onPress={() => router.push({ pathname: '/ubicacion', params: { supplierId: String(supplier.id) } })}
+        />
       )}
       <Card title={supplier ? 'Datos del proveedor' : 'Nuevo proveedor'}>
         <View style={styles.body}>
