@@ -60,7 +60,8 @@ Los datos de ejemplo se cargan solos la primera vez. Hay seis perfiles (Ana, Lui
 - [x] Cierre del proceso principal: mover y unir cuentas (RF-20), editar cantidad o nota en ronda tomada (RF-33), historial de facturas (RF-43) y anulación de factura por el dueño (RF-44)
 - [x] Navegación y administración: menú lateral según rol con las pestañas adentro (RF-06), ajustes del negocio (RF-04), usuarios con PIN y desactivación (RF-07) y cierre de sesión por inactividad (RF-09)
 - [x] Catálogo: detalle de producto con id inexistente (RF-12), crear/editar/desactivar productos con formulario validado (RF-13, RF-14), categorías (RF-15), mesas (RF-22) y mapper DTO → modelo en la app
-- [ ] Inventario, compras, gastos, resumen, mapa
+- [x] Inventario: pestaña con stock y qué surtir (RF-47, RF-51), ajustes manuales con conteo físico (RF-48), historial filtrable (RF-49) y aviso de stock bajo al dueño (RF-50)
+- [ ] Compras, gastos, resumen, mapa
 - [ ] Respaldos, PDF, dividir cuenta
 
 Ver [documentacion/arquitectura.md](documentacion/arquitectura.md) para el plan por fases.

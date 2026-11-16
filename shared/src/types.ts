@@ -53,6 +53,18 @@ export interface StockMovement {
   createdAt: string;
 }
 
+/** RF-51: sugerencia de surtido. `suggested` = max(2 × mínimo, vendido en 7 días) − stock. */
+export interface StockSuggestion {
+  productId: number;
+  name: string;
+  categoryName: string;
+  stock: number;
+  minStock: number;
+  sold7d: number;
+  suggested: number;
+  lowStock: boolean;
+}
+
 /** RF-22: mesa en la administración del dueño; `busy` = tiene cuenta abierta o por cobrar. */
 export interface TableAdmin {
   id: number;

@@ -6,10 +6,11 @@ import { useSession } from '@/store/session';
 import { colors, headerOptions } from '@/theme';
 
 /** Pestañas según el rol (RF-06). El servidor también niega lo que el rol no puede hacer. */
-const TABS: Record<'index' | 'barra' | 'caja', Role[]> = {
+const TABS: Record<'index' | 'barra' | 'caja' | 'inventario', Role[]> = {
   index: ['todo', 'mesero', 'caja', 'dueno'],
   barra: ['todo', 'barra', 'dueno'],
   caja: ['todo', 'caja', 'dueno'],
+  inventario: ['dueno'],
 };
 
 export default function TabsLayout() {
@@ -42,6 +43,10 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="caja"
         options={{ title: 'Caja', href: show('caja'), tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="cash-register" size={size} color={color} /> }}
+      />
+      <Tabs.Screen
+        name="inventario"
+        options={{ title: 'Inventario', href: show('inventario'), tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="package-variant" size={size} color={color} /> }}
       />
     </Tabs>
   );

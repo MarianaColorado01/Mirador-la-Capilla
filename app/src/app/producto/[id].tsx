@@ -1,12 +1,13 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Image } from 'expo-image';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { StockMovement } from '@mirador/shared';
 import { AppButton } from '@/components/AppButton';
 import { Screen } from '@/components/Screen';
 import { StateView } from '@/components/StateView';
-import { Card, MoneyRow, Tag } from '@/components/ui';
+import { Card, Chips, MoneyRow, Tag } from '@/components/ui';
 import { useMovements, useProduct } from '@/hooks/queries';
 import { ApiError } from '@/services/api';
 import { useSession } from '@/store/session';
@@ -14,14 +15,16 @@ import { colors, radius, space, type } from '@/theme';
 import { dateTime, money } from '@/utils/format';
 
 const MOVE: Record<StockMovement['type'], string> = { entrada: 'Entrada', salida: 'Salida', ajuste: 'Ajuste' };
+const FILTERS: { value: 'todos' | StockMovement['type']; label: string }[] = [{ value: 'todos', label: 'Todos' }, ...(Object.keys(MOVE) as StockMovement['type'][]).map((t) => ({ value: t, label: MOVE[t] }))];
 
-/** RF-12: detalle del producto. El dueño ve además costo, margen y movimientos de stock. */
+/** RF-12: detalle del producto. El dueño ve además costo, margen y movimientos de stock filtrables por tipo (RF-49). */
 export default function ProductoDetalle() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const productId = Number(id);
   const isOwner = useSession((s) => s.user!.role === 'dueno');
   const product = useProduct(productId);
-  const movements = useMovements(productId, isOwner && product.isSuccess);
+  const [filter, setFilter] = useState<'todos' | StockMovement['type']>('todos');
+  const movements = useMovements(productId, isOwner && product.isSuccess, filter === 'todos' ? undefined : filter);
 
   // Id no numérico (la consulta ni corre) o el servidor responde 404: nunca se queda cargando.
   const notFound = !(Number.isInteger(productId) && productId > 0) || (product.error instanceof ApiError && product.error.status === 404);
@@ -40,7 +43,18 @@ export default function ProductoDetalle() {
     <Screen
       refreshing={product.isRefetching}
       onRefresh={() => { product.refetch(); if (isOwner) movements.refetch(); }}
-      footer={isOwner ? <AppButton label="Editar producto" icon="pencil-outline" onPress={() => router.push({ pathname: '/producto/editar', params: { id: p.id } })} /> : undefined}
+      footer={
+        isOwner ? (
+          <View style={styles.footer}>
+            <View style={{ flex: 1 }}>
+              <AppButton label="Ajustar stock" icon="swap-vertical" variant="outline" onPress={() => router.push({ pathname: '/producto/ajuste', params: { id: p.id } })} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <AppButton label="Editar" icon="pencil-outline" onPress={() => router.push({ pathname: '/producto/editar', params: { id: p.id } })} />
+            </View>
+          </View>
+        ) : undefined
+      }
     >
       <Stack.Screen options={{ title: p.name }} />
       <View style={styles.head}>
@@ -77,12 +91,15 @@ export default function ProductoDetalle() {
 
       {isOwner && (
         <Card title="Últimos movimientos de stock">
+          <View style={styles.filter}>
+            <Chips options={FILTERS} value={filter} onChange={setFilter} />
+          </View>
           {movements.isPending ? (
             <StateView kind="loading" />
           ) : movements.isError ? (
             <StateView kind="error" message={movements.error.message} onRetry={() => movements.refetch()} />
           ) : movements.data.length === 0 ? (
-            <StateView kind="empty" icon="swap-vertical" title="Sin movimientos" message="El stock sube con una compra o un ajuste de inventario." />
+            <StateView kind="empty" icon="swap-vertical" title={filter === 'todos' ? 'Sin movimientos' : `Sin movimientos de tipo ${MOVE[filter].toLowerCase()}`} message="El stock sube con una compra o un ajuste de inventario." />
           ) : (
             movements.data.map((m) => (
               <View key={m.id} style={styles.move}>
@@ -104,6 +121,8 @@ const styles = StyleSheet.create({
   head: { flexDirection: 'row', gap: space.lg, alignItems: 'center' },
   photo: { width: 96, height: 96, borderRadius: radius.md, backgroundColor: colors.face2, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   tags: { flexDirection: 'row', gap: space.sm, flexWrap: 'wrap' },
+  footer: { flexDirection: 'row', gap: space.md },
+  filter: { paddingHorizontal: 14, paddingBottom: space.sm },
   block: { paddingHorizontal: 14, paddingVertical: 4 },
   move: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 10, borderTopWidth: 1, borderTopColor: colors.line2 },
   qty: { fontSize: 17, fontWeight: '800', fontVariant: ['tabular-nums'] },

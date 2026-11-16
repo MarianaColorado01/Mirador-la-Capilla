@@ -30,7 +30,7 @@ Para agregar un módulo: crea `modules/<nombre>.routes.ts`, que exporta una func
 | Módulo | Rutas | RF |
 |---|---|---|
 | auth | `GET /auth/profiles` · `POST /auth/login` ✅ | 05, 08 |
-| products | `GET /products?q&categoryId&all=1` (all solo dueño) · `GET /products/:id` · `GET /products/:id/movements?limit` (dueño) · `POST /products` · `PATCH /products/:id` `{name?, categoryId?, price?, cost?, minStock?, imageUrl?, active?}` (dueño) ✅ | 10–14 |
+| products | `GET /products?q&categoryId&all=1` (all solo dueño) · `GET /products/:id` · `GET /products/:id/movements?limit&type` (dueño) · `POST /products` · `PATCH /products/:id` `{name?, categoryId?, price?, cost?, minStock?, imageUrl?, active?}` (dueño) ✅ | 10–14 |
 | categories | `GET /categories` · `POST /categories` `{name}` · `PATCH /categories/:id` `{name?, active?}` (dueño) ✅ | 15 |
 | tables | `GET /tables` (mapa) · `GET /tables/all` · `POST /tables` `{number, zone?}` · `PATCH /tables/:id` `{zone?, active?}` (dueño) ✅ | 16, 22 |
 | accounts | `POST /accounts` · `GET /accounts/:id` · `/request-bill` · `/reopen` · `POST /accounts/:id/move` `{tableNumber}` · `POST /accounts/:id/merge` `{intoAccountId}` ✅ | 17–21 |
@@ -58,7 +58,16 @@ Decisiones del bloque 4.3:
 - **Mesas (RF-22):** número único entre todas, también las inactivas (si existe inactiva, el mensaje pide reactivarla). No se desactiva una mesa con cuenta abierta o por cobrar (409). El número no se cambia después de crearla; la zona sí.
 - **Mapper:** `app/src/services/mappers.ts` convierte el DTO (`Product` o `ProductOwnerView`) a `ProductModel` con `imageSource`, `cost`/`margin` (null si no es dueño), `outOfStock` y `lowStock`; lo usan `api.products` y `api.product`. Todas las claves de productos cuelgan de `['products']`, así que una ronda o una edición refresca listas, detalle y movimientos.
 - Estos cambios del catálogo no emiten eventos de tiempo real: los otros celulares los ven al refrescar (productos cada 15 s al volver a la pantalla, mapa cada 30 s).
-| inventory | `GET /inventory` · `POST /inventory/adjustments` · `GET /products/:id/movements` · `GET /inventory/suggestions` | 47–51 |
+
+Decisiones del bloque 4.4:
+
+- **Listado de stock (RF-47):** no hay `GET /inventory`; la pestaña Inventario reutiliza `GET /products?all=1`, muestra solo los activos y ordena primero los que están en o bajo el mínimo (agotados incluidos).
+- **Ajustes manuales (RF-48):** esquema `StockAdjustmentSchema` en `shared/src/admin.ts`. `entrada` suma y `salida` resta `qty` (≥ 1). `ajuste` es un **conteo físico**: `qty` es el stock real contado (≥ 0) y el movimiento guarda la diferencia con signo. Motivo obligatorio (3 a 100 caracteres). Stock negativo → 409 `field: qty`; un conteo igual al stock → 409 (no se guarda un movimiento en cero). Referencia `manual`, auditado como `ajustar inventario`.
+- **Historial (RF-49):** el detalle del producto filtra por tipo con `?type=`.
+- **Aviso de stock bajo (RF-50):** `crossedMin(antes, después, mínimo)` en `server/src/lib/stock.ts` lo usan confirmar ronda, editar ítem y ajuste manual. Se emite `stock:bajo` con roles `[]` (solo el dueño) únicamente cuando el stock cruza el mínimo hacia abajo, una vez.
+- **Sugerencia de surtido (RF-51):** entran los activos en o bajo el mínimo y los 5 más vendidos en 7 días. Vendido = ítems no anulados de cuentas con factura no anulada (por fecha de factura); una cuenta unida no tiene factura y sus rondas ya están en la destino, así que nada se cuenta dos veces. Sugerido = max(2 × mínimo, vendido en 7 días) − stock; si da 0 o menos no se muestra.
+
+| inventory | `POST /inventory/adjustments` `{productId, type, qty, reason}` · `GET /inventory/suggestions` (dueño); el listado usa `GET /products?all=1` y el historial `GET /products/:id/movements?type` ✅ | 47–51 |
 | suppliers / purchases | CRUD de `/suppliers` · `POST/GET /purchases` · `GET /reports/purchases-by-supplier` | 52–56 |
 | expenses / reports | `POST/GET /expenses` · `GET /reports/summary?from&to` | 57–60 |
 | settings / users | `GET /settings` (todos) · `PATCH /settings` (dueño) · `GET /users` · `POST /users` `{name, role, pin}` · `PATCH /users/:id` `{name?, role?, pin?, active?}` (dueño) ✅ | 04, 07 |
@@ -66,7 +75,7 @@ Decisiones del bloque 4.3:
 
 ### Eventos de tiempo real
 
-Están definidos en `shared/src/types.ts`, en `ServerEvents`: `ronda:creada`, `ronda:estado`, `item:anulado`, `item:editado`, `mesa:actualizada` y `stock:bajo`. Mover y unir emiten `mesa:actualizada` para la mesa origen (libre) y la destino. Se emiten con `emit(evento, payload, roles)` **después** de que la transacción se confirma.
+Están definidos en `shared/src/types.ts`, en `ServerEvents`: `ronda:creada`, `ronda:estado`, `item:anulado`, `item:editado`, `mesa:actualizada` y `stock:bajo`. `stock:bajo` va solo al dueño (roles `[]`) tras confirmar ronda, editar ítem o ajuste manual. Mover y unir emiten `mesa:actualizada` para la mesa origen (libre) y la destino. Se emiten con `emit(evento, payload, roles)` **después** de que la transacción se confirma.
 
 ## App (`app/`)
 
@@ -80,6 +89,7 @@ login.tsx                   perfil y PIN
 (drawer)/(tabs)/_layout.tsx pestañas según rol; el botón ☰ abre el menú
 (drawer)/(tabs)/index.tsx   Mesas
 (drawer)/(tabs)/barra.tsx · caja.tsx  Barra · Caja
+(drawer)/(tabs)/inventario.tsx  stock, búsqueda, categoría y qué surtir (dueño, RF-47/51)
 (drawer)/facturas.tsx       historial de facturas (RF-43); también desde Caja
 (drawer)/ajustes.tsx        ajustes del negocio (dueño, RF-04)
 (drawer)/usuarios.tsx       crear, editar, desactivar usuarios (dueño, RF-07)
@@ -92,11 +102,12 @@ cobro/[id].tsx              cobrar
 factura/[id].tsx            factura (el dueño la anula, RF-44)
 producto/[id].tsx           detalle (RF-12); se abre desde Productos o con pulsación larga en la ronda
 producto/editar.tsx         crear producto, o editar/desactivar con ?id= (dueño, RF-13/14)
+producto/ajuste.tsx         entrada, salida o conteo físico con ?id= (dueño, RF-48)
 ```
 
 El cierre por inactividad (RF-09) lo hace `hooks/use-idle-logout.ts`: el View raíz captura cada toque (`onStartShouldSetResponderCapture`) y reinicia un temporizador de `idleLogoutMinutes`; al volver del segundo plano revisa el tiempo real transcurrido.
 
-Para el resto de la fase 4 están previstas las pantallas de inventario, proveedores, ubicación, gastos y resumen (se agregan como entradas del menú lateral), además de `compra/nueva.tsx`. El Drawer viene incluido en `expo-router/drawer` desde el SDK 56: no hubo que instalar paquetes.
+Para el resto de la fase 4 están previstas las pantallas de proveedores, ubicación, gastos y resumen (se agregan como entradas del menú lateral), además de `compra/nueva.tsx`. El Drawer viene incluido en `expo-router/drawer` desde el SDK 56: no hubo que instalar paquetes.
 
 Librerías previstas: Axios con instancia central y TanStack Query para la red, Zustand con persistencia para la sesión y la ronda en construcción, NativeWind, `expo-camera` para el QR y `expo-location` con Leaflet en WebView para el mapa. Instálalas siempre con `npx expo install` para que coincidan con el SDK.
 

@@ -1,7 +1,7 @@
 import { AxiosError, create, type AxiosInstance } from 'axios';
 import type {
   Account, BarTicket, BillableAccount, Category, ChargeRequest, CreateRoundRequest, EditItemRequest, HealthResponse, Invoice, InvoiceListItem, ManagedUser, Profile,
-  Role, RoundStatus, SessionUser, Settings, StockMovement, TableAdmin, TableSummary, VoidItemRequest,
+  Role, RoundStatus, SessionUser, Settings, StockMovement, StockSuggestion, TableAdmin, TableSummary, VoidItemRequest,
 } from '@mirador/shared';
 import { useSession } from '@/store/session';
 import { toProductModel, type ProductDTO } from './mappers';
@@ -55,7 +55,9 @@ export const api = {
   /** `all` (solo dueño) incluye los inactivos (RF-14). */
   products: async (all = false) => (await call<ProductDTO[]>((c) => c.get('/products', { params: all ? { all: 1 } : undefined }))).map(toProductModel),
   product: async (id: number) => toProductModel(await call<ProductDTO>((c) => c.get(`/products/${id}`))),
-  movements: (id: number) => call<StockMovement[]>((c) => c.get(`/products/${id}/movements`)),
+  movements: (id: number, type?: StockMovement['type']) => call<StockMovement[]>((c) => c.get(`/products/${id}/movements`, { params: type ? { type } : undefined })),
+  adjustStock: (body: { productId: number; type: StockMovement['type']; qty: number; reason: string }) => call<StockMovement>((c) => c.post('/inventory/adjustments', body)),
+  stockSuggestions: () => call<StockSuggestion[]>((c) => c.get('/inventory/suggestions')),
   createProduct: async (body: ProductBody) => toProductModel(await call<ProductDTO>((c) => c.post('/products', body))),
   updateProduct: async (id: number, body: Partial<ProductBody & { active: boolean }>) => toProductModel(await call<ProductDTO>((c) => c.patch(`/products/${id}`, body))),
   categories: () => call<Category[]>((c) => c.get('/categories')),

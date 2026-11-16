@@ -7,6 +7,7 @@ import { audit } from '../lib/audit';
 import { requireAuth, requireRole } from '../lib/auth';
 import type { Emit } from '../lib/events';
 import { httpError, route } from '../lib/http';
+import { crossedMin } from '../lib/stock';
 import { iso, loadAccount, loadInvoice, subtotalOf } from '../services/views';
 
 const OpenBody = z.object({ tableNumber: z.number().int().positive() });
@@ -134,7 +135,7 @@ export function accountRoutes(db: DB, emit: Emit) {
         const p = products.get(pid)!;
         db.prepare('UPDATE products SET stock = stock - ? WHERE id = ?').run(qty, pid); // RN-02
         move.run(pid, -qty, `ronda:${roundId}`, req.user!.id);
-        if (p.stock - qty <= p.min_stock && p.stock > p.min_stock) lowStock.push({ ...p, stock: p.stock - qty });
+        if (crossedMin(p.stock, p.stock - qty, p.min_stock)) lowStock.push({ ...p, stock: p.stock - qty });
       }
       db.prepare('INSERT INTO idempotency_keys(key, round_id, body_hash) VALUES(?, ?, ?)').run(key, roundId, hash);
       audit(db, req.user!.id, 'confirmar', 'ronda', roundId, { accountId, items });

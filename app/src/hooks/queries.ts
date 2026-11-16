@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { StockMovement } from '@mirador/shared';
 import { api, ApiError } from '@/services/api';
 import { useLive } from '@/store/live';
 import { useSession } from '@/store/session';
@@ -12,7 +13,8 @@ export const keys = {
   products: ['products'] as const,
   productsAll: ['products', 'all'] as const,
   product: (id: number) => ['products', 'detail', id] as const,
-  movements: (id: number) => ['products', 'movements', id] as const,
+  movements: (id: number, type?: StockMovement['type']) => ['products', 'movements', id, type ?? 'todos'] as const,
+  suggestions: ['products', 'suggestions'] as const,
   categories: ['categories'] as const,
   tables: ['tables'] as const,
   tablesAdmin: ['tables', 'admin'] as const,
@@ -35,7 +37,9 @@ export const useAllProducts = () => useQuery({ queryKey: keys.productsAll, query
 // Id no numérico: la consulta no corre y la pantalla muestra «Producto no encontrado» (RF-12).
 export const useProduct = (id: number) => useQuery({ queryKey: keys.product(id), queryFn: () => api.product(id), enabled: Number.isInteger(id) && id > 0,
   retry: (n, e) => n < 1 && !(e instanceof ApiError && e.status === 404) });
-export const useMovements = (id: number, enabled: boolean) => useQuery({ queryKey: keys.movements(id), queryFn: () => api.movements(id), enabled });
+export const useMovements = (id: number, enabled: boolean, type?: StockMovement['type']) =>
+  useQuery({ queryKey: keys.movements(id, type), queryFn: () => api.movements(id, type), enabled });
+export const useStockSuggestions = () => useQuery({ queryKey: keys.suggestions, queryFn: api.stockSuggestions });
 export const useCategories = () => useQuery({ queryKey: keys.categories, queryFn: api.categories });
 export const useTablesAdmin = () => useQuery({ queryKey: keys.tablesAdmin, queryFn: api.tablesAdmin });
 export const useBarQueue = () => useQuery({ queryKey: keys.bar, queryFn: api.barQueue, refetchInterval: LIVE });

@@ -1,4 +1,4 @@
-/* Reglas de Ajustes (RF-04), Usuarios (RF-07), Productos y categorías (RF-13 a RF-15) y Mesas (RF-22). Las usa la app para validar en vivo
+/* Reglas de Ajustes (RF-04), Usuarios (RF-07), Productos y categorías (RF-13 a RF-15) Mesas (RF-22) e Inventario (RF-48). Las usa la app para validar en vivo
    y el servidor para decidir: los mensajes son los mismos en ambos lados. */
 import { z } from 'zod';
 
@@ -65,6 +65,20 @@ export const TableCreateSchema = z.object({
   zone: z.string().trim().max(30, 'Máximo 30 caracteres').nullable().optional(),
 });
 export const TableUpdateSchema = TableCreateSchema.pick({ zone: true }).extend({ active: z.boolean().optional() });
+
+/**
+ * RF-48: ajuste manual de inventario. entrada suma y salida resta `qty` (≥ 1). En «ajuste» (conteo físico)
+ * `qty` es el stock real contado (≥ 0) y el servidor registra la diferencia contra el stock del sistema.
+ */
+export const STOCK_ADJUST_TYPES = ['entrada', 'salida', 'ajuste'] as const;
+export const StockAdjustmentSchema = z
+  .object({
+    productId: z.number({ error: 'Elige un producto' }).int().positive('Elige un producto'),
+    type: z.enum(STOCK_ADJUST_TYPES, { error: 'Elige el tipo de movimiento' }),
+    qty: number.int('Escribe un número entero').min(0, 'No puede ser negativo').max(100000, 'Máximo 100000'),
+    reason: z.string({ error: 'Escribe el motivo' }).trim().min(3, 'Escribe el motivo (mínimo 3 letras)').max(100, 'Máximo 100 caracteres'),
+  })
+  .refine((b) => b.type === 'ajuste' || b.qty >= 1, { message: 'Debe ser al menos 1', path: ['qty'] });
 
 /** Primer mensaje de error por campo, para mostrarlo bajo cada campo del formulario. */
 export function fieldErrors(error: z.ZodError | undefined): Record<string, string> {

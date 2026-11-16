@@ -6,6 +6,7 @@ import { audit } from '../lib/audit';
 import { requireAuth, requireRole } from '../lib/auth';
 import type { Emit } from '../lib/events';
 import { httpError, route } from '../lib/http';
+import { crossedMin } from '../lib/stock';
 import { barQueue, loadAccount } from '../services/views';
 
 const ORDER: RoundStatus[] = ['tomado', 'preparacion', 'listo', 'entregado'];
@@ -69,9 +70,9 @@ export function roundRoutes(db: DB, emit: Emit) {
   r.patch('/items/:itemId', requireRole('mesero', 'todo', 'caja'), route((req, res) => {
     const { qty, note } = EditBody.parse(req.body);
     const out = db.transaction(() => {
-      const item = db.prepare(`SELECT i.*, p.name, p.stock, p.active FROM round_items i JOIN products p ON p.id = i.product_id WHERE i.id = ?`)
+      const item = db.prepare(`SELECT i.*, p.name, p.stock, p.min_stock, p.active FROM round_items i JOIN products p ON p.id = i.product_id WHERE i.id = ?`)
         .get(Number(req.params.itemId)) as
-        | { id: number; round_id: number; product_id: number; qty: number; note: string | null; voided_at: string | null; name: string; stock: number; active: number }
+        | { id: number; round_id: number; product_id: number; qty: number; note: string | null; voided_at: string | null; name: string; stock: number; min_stock: number; active: number }
         | undefined;
       if (!item) throw httpError(404, 'Ítem no encontrado');
       if (item.voided_at) throw httpError(409, 'El ítem está anulado');
@@ -90,9 +91,13 @@ export function roundRoutes(db: DB, emit: Emit) {
           .run(item.product_id, -delta, `ronda:${round.id}`, req.user!.id);
       }
       audit(db, req.user!.id, 'editar', 'item', item.id, { from: { qty: item.qty, note: item.note }, to: { qty, note: newNote } });
-      return round;
+      const low = crossedMin(item.stock, item.stock - delta, item.min_stock)
+        ? { productId: item.product_id, name: item.name, stock: item.stock - delta, minStock: item.min_stock }
+        : null;
+      return { ...round, low };
     })();
     emit('item:editado', { accountId: out.account_id, roundId: out.id, itemId: Number(req.params.itemId) });
+    if (out.low) emit('stock:bajo', out.low, []); // RF-50: solo al dueño
     res.json(loadAccount(db, out.account_id));
   }));
 

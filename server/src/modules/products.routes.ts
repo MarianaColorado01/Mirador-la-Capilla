@@ -50,14 +50,15 @@ export function productRoutes(db: DB) {
     res.json(req.user!.role === 'dueno' ? toOwner(row) : toProduct(row));
   }));
 
-  // RF-12: últimos movimientos de stock (también los usa el inventario). Solo el dueño.
+  // RF-12 / RF-49: últimos movimientos de stock, con ?type=entrada|salida|ajuste opcional. Solo el dueño.
   r.get('/:id/movements', requireRole(), route((req, res) => {
     const id = Number(req.params.id);
     if (!load(id)) throw httpError(404, 'Producto no encontrado');
     const limit = Math.min(Math.max(Number(req.query.limit) || 20, 1), 200);
+    const type = ['entrada', 'salida', 'ajuste'].includes(String(req.query.type)) ? String(req.query.type) : null;
     const rows = db.prepare(`SELECT m.id, m.type, m.qty, m.reason, m.reference, m.created_at, u.name AS user
       FROM stock_movements m LEFT JOIN users u ON u.id = m.user_id
-      WHERE m.product_id = ? ORDER BY m.id DESC LIMIT ?`).all(id, limit) as
+      WHERE m.product_id = ? AND (? IS NULL OR m.type = ?) ORDER BY m.id DESC LIMIT ?`).all(id, type, type, limit) as
       (Omit<StockMovement, 'createdAt'> & { created_at: string })[];
     res.json(rows.map(({ created_at, ...m }): StockMovement => ({ ...m, createdAt: iso(created_at) })));
   }));

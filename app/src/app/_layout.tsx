@@ -64,6 +64,7 @@ export default function RootLayout() {
               <Stack.Screen name="factura/[id]" options={{ title: 'Factura' }} />
               <Stack.Screen name="producto/[id]" options={{ title: 'Producto' }} />
               <Stack.Screen name="producto/editar" options={{ title: 'Producto' }} />
+              <Stack.Screen name="producto/ajuste" options={{ title: 'Ajustar stock' }} />
             </Stack.Protected>
           </Stack>
           {user && <Notices />}
