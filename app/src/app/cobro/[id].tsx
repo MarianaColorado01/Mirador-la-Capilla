@@ -44,7 +44,9 @@ export default function Cobro() {
       router.push({ pathname: '/factura/[id]', params: { id: String(inv.id), fresh: '1' } });
     },
     onError: (e) => {
-      if (!(e instanceof ApiError && e.field)) Alert.alert('No se pudo cobrar', (e as Error).message);
+      // Si la respuesta se perdió pero el cobro sí entró, la cuenta pasa a «pagada» y aparece la factura.
+      invalidate(accountId);
+      if (!(e instanceof ApiError && e.field && ['discount', 'tipPercent', 'received'].includes(e.field))) Alert.alert('No se pudo cobrar', (e as Error).message);
     },
   });
 
@@ -68,7 +70,12 @@ export default function Cobro() {
   if (a.status !== 'por_cobrar') {
     return (
       <Screen>
-        <StateView kind="empty" icon="cash-lock" title={a.status === 'pagada' ? 'Esta cuenta ya está pagada' : 'La cuenta todavía está abierta'} message={a.status === 'abierta' ? 'Primero hay que pedir la cuenta.' : undefined} action={{ label: 'Volver', onPress: () => router.back() }} />
+        <StateView kind="empty" icon="cash-lock" title={a.status === 'pagada' ? 'Esta cuenta ya está pagada' : 'La cuenta todavía está abierta'} message={a.status === 'abierta' ? 'Primero hay que pedir la cuenta.' : undefined} action={
+            a.status === 'pagada' && a.invoiceId
+              ? { label: 'Ver factura', onPress: () => router.replace({ pathname: '/factura/[id]', params: { id: String(a.invoiceId) } }) }
+              : { label: 'Volver', onPress: () => router.back() }
+          }
+        />
       </Screen>
     );
   }

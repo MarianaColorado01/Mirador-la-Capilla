@@ -70,7 +70,7 @@ export function ItemRow({ item, showPrice = true, onVoid }: { item: RoundItem; s
       </View>
       {showPrice && <Text style={[styles.itemPrice, v && styles.struck]}>{money(item.qty * item.unitPrice)}</Text>}
       {onVoid && !v && (
-        <Pressable accessibilityRole="button" accessibilityLabel={`Anular ${item.productName}`} onPress={onVoid} hitSlop={8} style={styles.more}>
+        <Pressable accessibilityRole="button" accessibilityLabel={`Anular ${item.productName}`} onPress={onVoid} style={styles.more}>
           <MaterialCommunityIcons name="dots-vertical" size={20} color={colors.ink3} />
         </Pressable>
       )}
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
   note: { color: colors.amber, fontSize: 13, marginTop: 2 },
   voided: { color: colors.red, fontSize: 12, marginTop: 2 },
   struck: { textDecorationLine: 'line-through', color: colors.red },
-  more: { paddingLeft: 4, paddingTop: 1 },
+  more: { minWidth: 44, minHeight: 44, marginVertical: -11, marginRight: -12, alignItems: 'center', justifyContent: 'center' },
   banner: { flexDirection: 'row', gap: 10, borderWidth: 1, borderRadius: radius.md, padding: 12 },
   bannerTitle: { color: colors.ink, fontWeight: '700', fontSize: 14, marginBottom: 2 },
 });

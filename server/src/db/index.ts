@@ -16,6 +16,9 @@ export function openDb(file = join(DATA_DIR, 'mirador.db')): DB {
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
   db.exec(readFileSync(join(here, 'schema.sql'), 'utf8'));
+  // Bases creadas antes de que existiera la columna: se agrega sin tocar los datos.
+  const cols = db.prepare('PRAGMA table_info(idempotency_keys)').all() as { name: string }[];
+  if (!cols.some((c) => c.name === 'body_hash')) db.exec('ALTER TABLE idempotency_keys ADD COLUMN body_hash TEXT');
   return db;
 }
 

@@ -49,8 +49,9 @@ export function calculateBill(input: BillInput): BillResult {
   const base = input.subtotal - discount;
   const tip = Math.round((base * tipPercent) / 100);
   const tax = Math.round((base * input.taxPercent) / 100);
-  // Total = (subtotal − descuento) × (1 + (% propina + % impuesto) / 100)
-  const total = Math.round(base * (1 + (tipPercent + input.taxPercent) / 100));
+  // Total = (subtotal − descuento) × (1 + (% propina + % impuesto) / 100), sumando las partes ya
+  // redondeadas para que la factura cuadre al peso.
+  const total = base + tip + tax;
 
   let change: number | null = null;
   let receivedOk = true;

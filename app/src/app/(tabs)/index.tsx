@@ -6,7 +6,7 @@ import type { TableStatus, TableSummary } from '@mirador/shared';
 import { Screen } from '@/components/Screen';
 import { StateView } from '@/components/StateView';
 import { Banner, Chips, Tag } from '@/components/ui';
-import { useConnection, useInvalidateFloor, useTables } from '@/hooks/queries';
+import { useConnection, useInvalidateFloor, useSettings, useTables } from '@/hooks/queries';
 import { api, ApiError } from '@/services/api';
 import { useSession } from '@/store/session';
 import { colors, radius, space } from '@/theme';
@@ -27,6 +27,8 @@ export default function Mesas() {
   const invalidate = useInvalidateFloor();
   const [filter, setFilter] = useState<Filter>('todas');
   const canOrder = ['mesero', 'todo', 'dueno'].includes(user.role);
+  const settings = useSettings();
+  const singleOperator = user.role === 'todo' && !!settings.data?.singleOperator;
 
   const open = useMutation({
     mutationFn: (n: number) => api.openTable(n),
@@ -61,7 +63,7 @@ export default function Mesas() {
   const list = tables.data ?? [];
   const count = (s: TableStatus) => list.filter((t) => t.status === s).length;
   const shown = filter === 'todas' ? list : list.filter((t) => t.status === filter);
-  const ready = list.filter((t) => t.account && t.account.readyRounds > 0 && t.account.waiter === user.name);
+  const ready = list.filter((t) => t.account && t.account.readyRounds > 0 && t.account.waiterId === user.id);
 
   return (
     <Screen refreshing={tables.isRefetching} onRefresh={() => tables.refetch()}>
@@ -71,7 +73,7 @@ export default function Mesas() {
           <Banner tone="green" icon="bell-ring-outline" title={`Mesa ${t.number}: ronda lista en barra`} text="Toca para ir a la cuenta y marcarla entregada." />
         </Pressable>
       ))}
-      {user.role === 'todo' && <Banner tone="amber" icon="information-outline" title="Modo un solo operador" text="Las rondas pasan directo a «entregada». Cobrar sigue siendo un paso aparte." />}
+      {singleOperator && <Banner tone="amber" icon="information-outline" title="Modo un solo operador" text="Las rondas pasan directo a «entregada». Cobrar sigue siendo un paso aparte." />}
 
       <Chips<Filter>
         value={filter}

@@ -27,6 +27,11 @@ interface DraftState {
   setNote: (accountId: number, productId: number, note: string) => void;
   remove: (accountId: number, productId: number) => void;
   discard: (accountId: number) => void;
+  /** Nueva clave cuando el servidor dice que la anterior ya se usó con otro contenido. */
+  renewKey: (accountId: number) => void;
+  /** Servidor al que pertenecen los borradores; en otro servidor los id de cuenta no corresponden. */
+  server?: string;
+  bindServer: (url: string) => void;
 }
 
 const empty = (): Draft => ({ key: Crypto.randomUUID(), items: [], updatedAt: Date.now() });
@@ -61,6 +66,8 @@ export const useRoundDrafts = create<DraftState>()(
             delete next[String(accountId)];
             return { drafts: next };
           }),
+        renewKey: (accountId) => edit(accountId, (d) => ({ ...d, key: Crypto.randomUUID() })),
+        bindServer: (url) => set((s) => (s.server === url ? s : { server: url, drafts: {} })),
       };
     },
     { name: 'mirador-rondas', storage: createJSONStorage(() => AsyncStorage) },

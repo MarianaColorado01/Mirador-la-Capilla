@@ -17,7 +17,7 @@ export function useRealtime() {
   const serverUrl = useSession((s) => s.serverUrl);
   const user = useSession((s) => s.user);
   const token = user?.token;
-  const myName = user?.name;
+  const myId = user?.id;
   const role = user?.role;
 
   useEffect(() => {
@@ -58,7 +58,7 @@ export function useRealtime() {
     socket.on('ronda:estado', (e: ServerEvents['ronda:estado']) => {
       floor(e.accountId);
       // RF-32: aviso al mesero que tomó la ronda.
-      if (e.status === 'listo' && e.takenBy === myName) {
+      if (e.status === 'listo' && e.takenById === myId) {
         Vibration.vibrate([0, 250, 120, 250]);
         notify({ tone: 'green', icon: 'bell-ring-outline', title: 'Ronda lista en barra', text: 'Toca para ir a la cuenta y entregarla.', accountId: e.accountId });
       }
@@ -68,7 +68,7 @@ export function useRealtime() {
       qc.invalidateQueries({ queryKey: keys.products });
       if (role === 'barra' || role === 'todo') notify({ tone: 'red', icon: 'close-circle-outline', title: 'Se anuló un ítem', text: 'En la comanda aparece tachado.' });
     });
-    socket.on('mesa:actualizada', () => floor());
+    socket.on('mesa:actualizada', (e: ServerEvents['mesa:actualizada']) => floor(e.accountId));
     socket.on('stock:bajo', (e: ServerEvents['stock:bajo']) => {
       qc.invalidateQueries({ queryKey: keys.products });
       notify({ tone: 'amber', icon: 'alert-outline', title: `Stock bajo: ${e.name}`, text: `Quedan ${e.stock} (mínimo ${e.minStock}).` });
@@ -78,5 +78,5 @@ export function useRealtime() {
       socket.removeAllListeners();
       socket.disconnect();
     };
-  }, [serverUrl, token, myName, role, qc]);
+  }, [serverUrl, token, myId, role, qc]);
 }

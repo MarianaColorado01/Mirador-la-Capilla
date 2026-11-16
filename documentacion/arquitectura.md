@@ -31,9 +31,9 @@ Para agregar un módulo: crea `modules/<nombre>.routes.ts`, que exporta una func
 |---|---|---|
 | auth | `GET /auth/profiles` · `POST /auth/login` ✅ | 05, 08 |
 | products | `GET /products` · `GET /products/:id` ✅ · `POST/PATCH /products` | 10–15 |
-| tables | `GET /tables` · `POST/PATCH /tables` | 16, 22 |
-| accounts | `POST /accounts` · `GET /accounts/:id` · `/request-bill` · `/reopen` · `/move` · `/merge` | 17–21 |
-| rounds | `POST /accounts/:id/rounds` (Idempotency-Key) · `PATCH /rounds/:id/status` · `PATCH /round-items/:id` · `POST /round-items/:id/void` | 23–37 |
+| tables | `GET /tables` ✅ · `POST/PATCH /tables` | 16, 22 |
+| accounts | `POST /accounts` · `GET /accounts/:id` · `/request-bill` · `/reopen` ✅ · `/move` · `/merge` | 17–21 |
+| rounds | `POST /accounts/:id/rounds` (Idempotency-Key) · `GET /rounds` · `PATCH /rounds/:id/status` · `POST /rounds/items/:itemId/void` ✅ · `PATCH /round-items/:id` | 23–37 |
 | billing | `GET /accounts?status=por_cobrar` · `POST /accounts/:id/charge` · `GET /invoices` · `GET /invoices/:id` · `POST /invoices/:id/void` | 38–46 |
 | inventory | `GET /inventory` · `POST /inventory/adjustments` · `GET /products/:id/movements` · `GET /inventory/suggestions` | 47–51 |
 | suppliers / purchases | CRUD de `/suppliers` · `POST/GET /purchases` · `GET /reports/purchases-by-supplier` | 52–56 |
@@ -46,18 +46,22 @@ Están definidos en `shared/src/types.ts`, en `ServerEvents`: `ronda:creada`, `r
 
 ## App (`app/`)
 
-Rutas con Expo Router en `app/src/app/`, según el mapa de pantallas del documento:
+Rutas con Expo Router en `app/src/app/`. Hoy existen:
 
 ```
-_layout.tsx                 Stack raíz
-setup.tsx                   conexión al servidor (IP o QR)
+_layout.tsx                 Stack raíz (rutas protegidas según servidor y sesión)
+setup.tsx                   conexión al servidor
 login.tsx                   perfil y PIN
-(drawer)/_layout.tsx        menú lateral según rol
-(drawer)/(tabs)/_layout.tsx Mesas · Barra · Caja · Inventario según rol
-(drawer)/(tabs)/mesas.tsx … barra.tsx … caja.tsx … inventario.tsx
-(drawer)/proveedores/…      ubicacion.tsx · gastos.tsx · dashboard.tsx · facturas.tsx · ajustes.tsx · usuarios.tsx
-mesa/[id].tsx · mesa/[id]/ronda.tsx · producto/[id].tsx · factura/[id].tsx · compra/nueva.tsx
+(tabs)/_layout.tsx          pestañas según rol
+(tabs)/index.tsx            Mesas
+(tabs)/barra.tsx · caja.tsx Barra · Caja
+mesa/[id].tsx               cuenta de la mesa
+mesa/[id]/ronda.tsx         tomar ronda
+cobro/[id].tsx              cobrar
+factura/[id].tsx            factura
 ```
+
+Para la fase 4 están previstos un menú lateral `(drawer)` según rol y las pantallas de inventario, proveedores, ubicación, gastos, resumen, facturas, ajustes y usuarios, además de `producto/[id].tsx` y `compra/nueva.tsx`.
 
 Librerías previstas: Axios con instancia central y TanStack Query para la red, Zustand con persistencia para la sesión y la ronda en construcción, NativeWind, `expo-camera` para el QR y `expo-location` con Leaflet en WebView para el mapa. Instálalas siempre con `npx expo install` para que coincidan con el SDK.
 
@@ -66,7 +70,7 @@ El diseño de referencia es `documentacion/wireframes/wireframes-mirador-tablero
 ## Fases
 
 1. **Base** ✅: monorepo, esquema, semilla, login con PIN, productos, QR.
-2. **Proceso principal:** mesas, rondas con transacción e idempotencia, barra, pedir cuenta, cobro y factura. En la app: setup, login, mesas, ronda, cuenta y cobro.
+2. **Proceso principal** ✅: mesas, rondas con transacción e idempotencia, barra, pedir cuenta, cobro y factura. En la app: setup, login, mesas, ronda, cuenta y cobro.
 3. **Tiempo real y sin conexión** ✅: Socket.IO invalida las consultas afectadas, avisos de ronda lista y stock bajo, refresco completo al reconectar.
 4. **Funciones complementarias:** inventario, proveedores y compras, gastos, resumen, mapa.
 5. **Prioridad Baja:** respaldos, PDF, dividir cuenta, reportes.

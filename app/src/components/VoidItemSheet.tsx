@@ -13,12 +13,14 @@ interface Props {
   roundStatus: RoundStatus;
   role: Role;
   busy: boolean;
+  /** Sin conexión con caja no se confirma nada (RF-67). */
+  offline: boolean;
   onClose: () => void;
   onConfirm: (reason: string, restock: boolean) => void;
 }
 
 /** Hoja para anular un ítem con motivo obligatorio (RF-33 a RF-35, tabla 4.2). */
-export function VoidItemSheet({ item, roundStatus, role, busy, onClose, onConfirm }: Props) {
+export function VoidItemSheet({ item, roundStatus, role, busy, offline, onClose, onConfirm }: Props) {
   const insets = useSafeAreaInsets();
   const [choice, setChoice] = useState<number | null>(null);
   const [other, setOther] = useState('');
@@ -78,11 +80,11 @@ export function VoidItemSheet({ item, roundStatus, role, busy, onClose, onConfir
               {taken ? 'El stock se devuelve. ' : delivered ? 'No se devuelve stock: queda como merma. ' : ''}Quedará registrado quién, cuándo y por qué.
             </Text>
             <AppButton
-              label={taken ? 'Quitar ítem' : 'Anular ítem'}
+              label={offline ? 'Sin conexión' : taken ? 'Quitar ítem' : 'Anular ítem'}
               icon="close-circle-outline"
               variant="danger"
               loading={busy}
-              disabled={reason.length < 3}
+              disabled={reason.length < 3 || offline}
               onPress={() => onConfirm(reason, taken || (!delivered && restock))}
             />
           </>

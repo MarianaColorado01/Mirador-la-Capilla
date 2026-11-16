@@ -1,5 +1,5 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,13 +17,18 @@ const ROLE = { todo: 'Todo en uno · L–S', mesero: 'Mesero', barra: 'Barra', c
 /** RF-05: elegir perfil e ingresar el PIN. RF-08: bloqueo tras intentos fallidos. */
 export default function Login() {
   const { serverUrl, signIn, setServerUrl } = useSession();
+  const qc = useQueryClient();
   const profiles = useQuery({ queryKey: keys.profiles(serverUrl), queryFn: api.profiles });
   const [selected, setSelected] = useState<Profile | null>(null);
   const [pin, setPin] = useState('');
 
   const login = useMutation({
     mutationFn: () => api.login(selected!.id, pin),
-    onSuccess: (u) => signIn(u),
+    onSuccess: (u) => {
+      // Que el nuevo usuario no vea por un momento cuentas o facturas del anterior.
+      qc.removeQueries({ predicate: (q) => !['health', 'profiles'].includes(String(q.queryKey[0])) });
+      signIn(u);
+    },
     onError: () => setPin(''),
   });
 
