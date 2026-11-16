@@ -62,7 +62,8 @@ CREATE TABLE IF NOT EXISTS accounts (
   waiter_id INTEGER NOT NULL REFERENCES users(id),
   status    TEXT NOT NULL CHECK (status IN ('abierta','por_cobrar','pagada')),
   opened_at TEXT NOT NULL DEFAULT (datetime('now')),
-  closed_at TEXT
+  closed_at TEXT,
+  merged_into INTEGER REFERENCES accounts(id) -- RF-20: cuenta cerrada al unirla a otra (queda 'pagada' sin factura)
 );
 -- RN-01: solo una cuenta no pagada por mesa
 CREATE UNIQUE INDEX IF NOT EXISTS one_open_account_per_table

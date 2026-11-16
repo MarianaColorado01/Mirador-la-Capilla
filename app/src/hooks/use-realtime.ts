@@ -68,6 +68,10 @@ export function useRealtime() {
       qc.invalidateQueries({ queryKey: keys.products });
       if (role === 'barra' || role === 'todo') notify({ tone: 'red', icon: 'close-circle-outline', title: 'Se anuló un ítem', text: 'En la comanda aparece tachado.' });
     });
+    socket.on('item:editado', (e: ServerEvents['item:editado']) => {
+      floor(e.accountId);
+      qc.invalidateQueries({ queryKey: keys.products });
+    });
     socket.on('mesa:actualizada', (e: ServerEvents['mesa:actualizada']) => floor(e.accountId));
     socket.on('stock:bajo', (e: ServerEvents['stock:bajo']) => {
       qc.invalidateQueries({ queryKey: keys.products });

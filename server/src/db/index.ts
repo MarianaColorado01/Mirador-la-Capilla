@@ -19,6 +19,8 @@ export function openDb(file = join(DATA_DIR, 'mirador.db')): DB {
   // Bases creadas antes de que existiera la columna: se agrega sin tocar los datos.
   const cols = db.prepare('PRAGMA table_info(idempotency_keys)').all() as { name: string }[];
   if (!cols.some((c) => c.name === 'body_hash')) db.exec('ALTER TABLE idempotency_keys ADD COLUMN body_hash TEXT');
+  const accCols = db.prepare('PRAGMA table_info(accounts)').all() as { name: string }[];
+  if (!accCols.some((c) => c.name === 'merged_into')) db.exec('ALTER TABLE accounts ADD COLUMN merged_into INTEGER REFERENCES accounts(id)');
   return db;
 }
 
@@ -30,6 +32,10 @@ const DEFAULT_SETTINGS: Settings = {
   maxPinAttempts: 3,
   lockMinutes: 5,
   idleLogoutMinutes: 10,
+  // shortcut: aproximación del km 3 vía Belalcázar – La Virginia (vereda La Alemania, Risaralda);
+  // el docente debe confirmar las coordenadas reales y el dueño las ajusta en Ajustes.
+  barLat: 4.99,
+  barLng: -75.81,
 };
 
 export function getSettings(db: DB): Settings {

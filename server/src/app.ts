@@ -2,19 +2,26 @@ import cors from 'cors';
 import express from 'express';
 import type { HealthResponse } from '@mirador/shared';
 import { getSettings, type DB } from './db/index';
-import { requireAuth } from './lib/auth';
 import { noopEmit, type Emit } from './lib/events';
 import { errorHandler } from './lib/http';
 import { accountRoutes } from './modules/accounts.routes';
 import { authRoutes } from './modules/auth.routes';
+import { categoryRoutes } from './modules/categories.routes';
+import { expenseRoutes } from './modules/expenses.routes';
+import { inventoryRoutes } from './modules/inventory.routes';
 import { invoiceRoutes } from './modules/invoices.routes';
 import { productRoutes } from './modules/products.routes';
+import { purchaseRoutes } from './modules/purchases.routes';
+import { reportRoutes } from './modules/reports.routes';
 import { roundRoutes } from './modules/rounds.routes';
+import { settingsRoutes } from './modules/settings.routes';
+import { supplierRoutes } from './modules/suppliers.routes';
 import { tableRoutes } from './modules/tables.routes';
+import { userRoutes } from './modules/users.routes';
 
 export const VERSION = '0.2.0';
 
-const ENDPOINTS = ['/health', '/auth/profiles', '/auth/login', '/settings', '/products', '/tables', '/accounts', '/rounds', '/invoices'];
+const ENDPOINTS = ['/health', '/auth/profiles', '/auth/login', '/settings', '/products', '/categories', '/tables', '/accounts', '/rounds', '/invoices', '/users', '/inventory', '/suppliers', '/purchases', '/expenses', '/reports/summary'];
 
 /**
  * Crea la app Express. Recibe la base (en las pruebas, una en memoria) y la
@@ -36,18 +43,21 @@ export function createApp(db: DB, emit: Emit = noopEmit) {
     res.json(body);
   });
 
-  // Impuesto, propina sugerida y modo un solo operador para mostrar en la app (RF-04).
-  app.get('/settings', requireAuth, (_req, res) => {
-    res.json(getSettings(db));
-  });
-
   app.use('/auth', authRoutes(db));
+  app.use('/settings', settingsRoutes(db));
+  app.use('/users', userRoutes(db));
   app.use('/products', productRoutes(db));
+  app.use('/categories', categoryRoutes(db));
   app.use('/tables', tableRoutes(db));
   app.use('/accounts', accountRoutes(db, emit));
   app.use('/rounds', roundRoutes(db, emit));
   app.use('/invoices', invoiceRoutes(db));
-  // Próximos módulos: /inventory, /suppliers, /purchases, /expenses, /reports, /users, /backups
+  app.use('/inventory', inventoryRoutes(db, emit));
+  app.use('/suppliers', supplierRoutes(db));
+  app.use('/purchases', purchaseRoutes(db));
+  app.use('/expenses', expenseRoutes(db));
+  app.use('/reports', reportRoutes(db));
+  // Próximos módulos: /backups
 
   app.use((_req, res) => res.status(404).json({ error: 'Ruta no encontrada' }));
   app.use(errorHandler);

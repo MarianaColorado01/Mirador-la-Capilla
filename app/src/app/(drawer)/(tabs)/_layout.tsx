@@ -1,36 +1,17 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { DrawerToggleButton } from 'expo-router/drawer';
 import { Tabs } from 'expo-router/js-tabs';
-import { Alert, Pressable } from 'react-native';
 import type { Role } from '@mirador/shared';
 import { useSession } from '@/store/session';
 import { colors, headerOptions } from '@/theme';
 
 /** Pestañas según el rol (RF-06). El servidor también niega lo que el rol no puede hacer. */
-const TABS: Record<'index' | 'barra' | 'caja', Role[]> = {
+const TABS: Record<'index' | 'barra' | 'caja' | 'inventario', Role[]> = {
   index: ['todo', 'mesero', 'caja', 'dueno'],
   barra: ['todo', 'barra', 'dueno'],
   caja: ['todo', 'caja', 'dueno'],
+  inventario: ['dueno'],
 };
-
-function LogoutButton() {
-  const signOut = useSession((s) => s.signOut);
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel="Cambiar de perfil"
-      hitSlop={10}
-      style={{ paddingHorizontal: 16 }}
-      onPress={() =>
-        Alert.alert('Cambiar de perfil', '¿Cerrar la sesión en este celular?', [
-          { text: 'Cancelar', style: 'cancel' },
-          { text: 'Cerrar sesión', style: 'destructive', onPress: signOut },
-        ])
-      }
-    >
-      <MaterialCommunityIcons name="account-switch-outline" size={24} color={colors.ink} />
-    </Pressable>
-  );
-}
 
 export default function TabsLayout() {
   const role = useSession((s) => s.user?.role ?? 'mesero');
@@ -42,7 +23,8 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         ...headerOptions,
-        headerRight: () => <LogoutButton />,
+        // Menú lateral con Facturas, Ajustes, Usuarios y Cambiar de perfil (RF-06).
+        headerLeft: () => <DrawerToggleButton tintColor={colors.ink} accessibilityLabel="Abrir menú" />,
         tabBarActiveTintColor: colors.ink,
         tabBarInactiveTintColor: colors.ink3,
         tabBarStyle: visible > 1 ? { backgroundColor: colors.face, borderTopColor: colors.line } : { display: 'none' },
@@ -61,6 +43,10 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="caja"
         options={{ title: 'Caja', href: show('caja'), tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="cash-register" size={size} color={color} /> }}
+      />
+      <Tabs.Screen
+        name="inventario"
+        options={{ title: 'Inventario', href: show('inventario'), tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="package-variant" size={size} color={color} /> }}
       />
     </Tabs>
   );

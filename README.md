@@ -57,7 +57,13 @@ Los datos de ejemplo se cargan solos la primera vez. Hay seis perfiles (Ana, Lui
 - [x] Cálculo del cobro compartido, con pruebas
 - [x] Proceso principal: abrir mesa, rondas, barra, cobro y factura (servidor con pruebas de RN-01 a RN-09 y pantallas en la app)
 - [x] Tiempo real con Socket.IO (cola de barra, aviso de ronda lista, stock bajo) e indicador conectado · reconectando · sin conexión
-- [ ] Inventario, compras, gastos, resumen, mapa
+- [x] Cierre del proceso principal: mover y unir cuentas (RF-20), editar cantidad o nota en ronda tomada (RF-33), historial de facturas (RF-43) y anulación de factura por el dueño (RF-44)
+- [x] Navegación y administración: menú lateral según rol con las pestañas adentro (RF-06), ajustes del negocio (RF-04), usuarios con PIN y desactivación (RF-07) y cierre de sesión por inactividad (RF-09)
+- [x] Catálogo: detalle de producto con id inexistente (RF-12), crear/editar/desactivar productos con formulario validado (RF-13, RF-14), categorías (RF-15), mesas (RF-22) y mapper DTO → modelo en la app
+- [x] Inventario: pestaña con stock y qué surtir (RF-47, RF-51), ajustes manuales con conteo físico (RF-48), historial filtrable (RF-49) y aviso de stock bajo al dueño (RF-50)
+- [x] Proveedores y compras: crear, editar y desactivar proveedores (RF-52), registrar compra que sube el stock y actualiza el último costo en una transacción (RF-53, RF-54) e historial filtrable por proveedor y fechas con detalle (RF-55)
+- [x] Gastos y resumen: registrar y listar gastos (RF-57), resumen Hoy / 7 días / Mes con ventas, costo de lo vendido, surtido aparte, otros gastos y utilidad estimada (RF-58), gráfica por día, más vendidos y ventas por mesero (RF-59) y margen por producto (RF-60)
+- [x] Mapa y ubicación: pantalla Ubicación para todos con OpenStreetMap + Leaflet en WebView, bar, proveedores y el celular con marcadores distintos (RF-61, RF-62), «Mi ubicación» (RF-63), seguimiento con pausar/reanudar que se libera al salir (RF-64), permiso denegado, GPS apagado y mapa sin internet (RF-65) y «Ver en el mapa» desde el proveedor (RF-66)
 - [ ] Respaldos, PDF, dividir cuenta
 
 Ver [documentacion/arquitectura.md](documentacion/arquitectura.md) para el plan por fases.

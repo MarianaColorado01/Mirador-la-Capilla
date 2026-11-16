@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import type { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import type { Role } from '@mirador/shared';
-import { DATA_DIR } from '../db/index';
+import { DATA_DIR, type DB } from '../db/index';
 import { httpError } from './http';
 
 export interface TokenUser {
@@ -40,16 +40,24 @@ export function verifyToken(token: string): TokenUser {
   return { id: p.id, name: p.name, role: p.role };
 }
 
-export function requireAuth(req: Request, _res: Response, next: NextFunction) {
+/**
+ * Valida el token y vuelve a leer el usuario: si el dueño lo desactivó (RF-07) deja de operar
+ * aunque su token siga vigente, y un cambio de rol o nombre aplica desde la siguiente petición.
+ */
+export const requireAuth = (db: DB) => (req: Request, _res: Response, next: NextFunction) => {
   const h = req.headers.authorization;
   if (!h?.startsWith('Bearer ')) return next(httpError(401, 'Inicia sesión para continuar'));
+  let id: number;
   try {
-    req.user = verifyToken(h.slice(7));
-    next();
+    id = verifyToken(h.slice(7)).id;
   } catch {
-    next(httpError(401, 'La sesión expiró. Vuelve a ingresar.'));
+    return next(httpError(401, 'La sesión expiró. Vuelve a ingresar.'));
   }
-}
+  const u = db.prepare('SELECT name, role FROM users WHERE id = ? AND active = 1').get(id) as Pick<TokenUser, 'name' | 'role'> | undefined;
+  if (!u) return next(httpError(401, 'Tu perfil está desactivado. Habla con el dueño.'));
+  req.user = { id, ...u };
+  next();
+};
 
 /** RN-09: cada endpoint verifica el rol del token antes de ejecutar la acción. */
 export const requireRole =

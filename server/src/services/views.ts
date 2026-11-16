@@ -1,5 +1,5 @@
 /* Lecturas que arman los objetos que ve la app. Solo SELECT; nada de reglas aquí. */
-import type { Account, BarTicket, Invoice, PaymentMethod, Round, RoundItem, RoundStatus } from '@mirador/shared';
+import { estimatedProfit, type Account, type BarTicket, type Expense, type Invoice, type PaymentMethod, type Purchase, type PurchaseListItem, type ReportSummary, type Round, type RoundItem, type RoundStatus } from '@mirador/shared';
 import type { DB } from '../db/index';
 
 interface ItemRow {
@@ -36,7 +36,7 @@ export function loadAccount(db: DB, id: number): Account | null {
   const a = db.prepare(`SELECT a.*, t.number AS table_number, u.name AS waiter, inv.id AS invoice_id
     FROM accounts a JOIN tables t ON t.id = a.table_id JOIN users u ON u.id = a.waiter_id
     LEFT JOIN invoices inv ON inv.account_id = a.id WHERE a.id = ?`).get(id) as
-    | { id: number; table_number: number; waiter: string; status: Account['status']; opened_at: string; invoice_id: number | null }
+    | { id: number; table_number: number; waiter: string; status: Account['status']; opened_at: string; invoice_id: number | null; merged_into: number | null }
     | undefined;
   if (!a) return null;
   const rounds = db.prepare(`SELECT r.*, u.name AS taken_by_name FROM rounds r JOIN users u ON u.id = r.taken_by
@@ -44,7 +44,7 @@ export function loadAccount(db: DB, id: number): Account | null {
   const items = itemsOfRounds(db, rounds.map((r) => r.id));
   return {
     id: a.id, tableNumber: a.table_number, waiter: a.waiter, status: a.status, openedAt: iso(a.opened_at),
-    subtotal: subtotalOf(db, a.id), invoiceId: a.invoice_id,
+    subtotal: subtotalOf(db, a.id), invoiceId: a.invoice_id, mergedInto: a.merged_into,
     rounds: rounds.map<Round>((r) => ({ id: r.id, number: r.number, status: r.status, takenBy: r.taken_by_name, createdAt: iso(r.created_at), items: items.get(r.id)! })),
   };
 }
@@ -82,5 +82,63 @@ export function loadInvoice(db: DB, id: number): Invoice | null {
     method: v.method, received: v.received, change: v.change, createdAt: iso(v.created_at),
     voided: v.voided_at ? { at: iso(v.voided_at), by: v.voided_by_name ?? '', reason: v.void_reason ?? '' } : null,
     items,
+  };
+}
+
+type PurchaseRow = { id: number; supplier_id: number; supplier_name: string; date: string; total: number; item_count: number; user: string; created_at: string };
+
+/** RF-55: compras con proveedor, usuario y número de ítems. `where` usa parámetros con nombre. */
+export function listPurchases(db: DB, where: string, params: Record<string, unknown>): PurchaseListItem[] {
+  const rows = db.prepare(`SELECT pu.id, pu.supplier_id, s.name AS supplier_name, pu.date, pu.total, u.name AS user, pu.created_at,
+      (SELECT COUNT(*) FROM purchase_items i WHERE i.purchase_id = pu.id) AS item_count
+    FROM purchases pu JOIN suppliers s ON s.id = pu.supplier_id JOIN users u ON u.id = pu.user_id
+    WHERE ${where} ORDER BY pu.date DESC, pu.id DESC LIMIT 200`).all(params) as PurchaseRow[];
+  return rows.map((r) => ({
+    id: r.id, supplierId: r.supplier_id, supplierName: r.supplier_name, date: r.date, total: r.total,
+    itemCount: r.item_count, user: r.user, createdAt: iso(r.created_at),
+  }));
+}
+
+export function loadPurchase(db: DB, id: number): Purchase | null {
+  const [head] = listPurchases(db, 'pu.id = @id', { id });
+  if (!head) return null;
+  const items = db.prepare(`SELECT i.id, i.product_id AS productId, p.name, i.qty, i.unit_cost AS unitCost, i.qty * i.unit_cost AS total
+    FROM purchase_items i JOIN products p ON p.id = i.product_id WHERE i.purchase_id = ? ORDER BY i.id`).all(id) as Purchase['items'];
+  return { ...head, items };
+}
+
+/** RF-57: gastos del rango (días locales, ambos incluidos), el más reciente primero. */
+export function listExpenses(db: DB, from: string, to: string): Expense[] {
+  const rows = db.prepare(`SELECT e.id, e.concept, e.amount, e.date, u.name AS user, e.created_at FROM expenses e JOIN users u ON u.id = e.user_id
+    WHERE e.date BETWEEN ? AND ? ORDER BY e.date DESC, e.id DESC`).all(from, to) as { id: number; concept: string; amount: number; date: string; user: string; created_at: string }[];
+  return rows.map((r) => ({ id: r.id, concept: r.concept, amount: r.amount, date: r.date, user: r.user, createdAt: iso(r.created_at) }));
+}
+
+/**
+ * RF-58 / RF-59: ventas salen de facturas no anuladas, nunca del estado de la cuenta (una cuenta unida
+ * queda pagada sin factura y sus rondas ya están en la otra). Las fechas de SQLite son UTC: el día es el local.
+ */
+export function loadSummary(db: DB, from: string, to: string): ReportSummary {
+  const p = { from, to };
+  const INV = `FROM invoices inv JOIN accounts a ON a.id = inv.account_id
+    WHERE inv.voided_at IS NULL AND date(inv.created_at, 'localtime') BETWEEN @from AND @to`;
+  const ITEMS = `FROM round_items i JOIN rounds r ON r.id = i.round_id JOIN invoices inv ON inv.account_id = r.account_id
+    WHERE i.voided_at IS NULL AND inv.voided_at IS NULL AND date(inv.created_at, 'localtime') BETWEEN @from AND @to`;
+  const t = db.prepare(`SELECT COALESCE(SUM(inv.subtotal - inv.discount), 0) AS sales, COALESCE(SUM(inv.tip), 0) AS tips,
+    COALESCE(SUM(inv.tax), 0) AS taxes, COUNT(*) AS n ${INV}`).get(p) as { sales: number; tips: number; taxes: number; n: number };
+  const cost = (db.prepare(`SELECT COALESCE(SUM(i.qty * i.unit_cost), 0) AS v ${ITEMS}`).get(p) as { v: number }).v;
+  const purchases = (db.prepare('SELECT COALESCE(SUM(total), 0) AS v FROM purchases WHERE date BETWEEN @from AND @to').get(p) as { v: number }).v;
+  const otherExpenses = (db.prepare('SELECT COALESCE(SUM(amount), 0) AS v FROM expenses WHERE date BETWEEN @from AND @to').get(p) as { v: number }).v;
+  return {
+    from, to,
+    sales: t.sales, tips: t.tips, taxes: t.taxes, costOfSales: cost, purchases, otherExpenses,
+    profit: estimatedProfit(t.sales, cost, otherExpenses),
+    invoiceCount: t.n,
+    averageTicket: t.n ? Math.round(t.sales / t.n) : 0,
+    byDay: db.prepare(`SELECT date(inv.created_at, 'localtime') AS date, SUM(inv.subtotal - inv.discount) AS sales ${INV} GROUP BY 1 ORDER BY 1`).all(p) as ReportSummary['byDay'],
+    topProducts: db.prepare(`SELECT i.product_id AS productId, pr.name, SUM(i.qty) AS qty, SUM(i.qty * i.unit_price) AS amount
+      ${ITEMS.replace('WHERE', 'JOIN products pr ON pr.id = i.product_id WHERE')} GROUP BY i.product_id ORDER BY qty DESC, amount DESC LIMIT 10`).all(p) as ReportSummary['topProducts'],
+    byWaiter: db.prepare(`SELECT a.waiter_id AS waiterId, u.name, SUM(inv.subtotal - inv.discount) AS sales, COUNT(*) AS invoices
+      ${INV.replace('WHERE', 'JOIN users u ON u.id = a.waiter_id WHERE')} GROUP BY a.waiter_id ORDER BY sales DESC`).all(p) as ReportSummary['byWaiter'],
   };
 }

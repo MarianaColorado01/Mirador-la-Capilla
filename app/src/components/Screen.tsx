@@ -6,7 +6,7 @@ import { useSession } from '@/store/session';
 import { colors, space } from '@/theme';
 import { Banner } from './ui';
 
-const ROLE_LABEL = { todo: 'Todo en uno', mesero: 'Mesero', barra: 'Barra', caja: 'Caja', dueno: 'Dueño' } as const;
+export const ROLE_LABEL = { todo: 'Todo en uno', mesero: 'Mesero', barra: 'Barra', caja: 'Caja', dueno: 'Dueño' } as const;
 
 /** Franja bajo la barra superior: quién opera y el indicador de conexión (RF-03). */
 export function ConnectionStrip() {
