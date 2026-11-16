@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { Router } from 'express';
 import { z } from 'zod';
 import { calculateBill, type BillableAccount } from '@mirador/shared';
@@ -71,7 +72,7 @@ export function accountRoutes(db: DB, emit: Emit) {
       res.status(409).json({ error: `${result.conflict.name} ya abrió la mesa ${tableNumber}`, accountId: result.conflict.id });
       return;
     }
-    emit('mesa:actualizada', { tableNumber, status: 'ocupada' });
+    emit('mesa:actualizada', { accountId: result.id, tableNumber, status: 'ocupada' });
     res.status(201).json(loadAccount(db, result.id));
   }));
 
@@ -90,10 +91,19 @@ export function accountRoutes(db: DB, emit: Emit) {
     const accountId = Number(req.params.id);
     const single = req.user!.role === 'todo' && getSettings(db).singleOperator; // RF-29
     const lowStock: ProductRow[] = [];
+    const hash = createHash('sha256')
+      .update(JSON.stringify({ accountId, items: items.map((i) => [i.productId, i.qty, i.note || null]) }))
+      .digest('hex');
 
     const out = db.transaction(() => {
-      const prev = db.prepare('SELECT round_id FROM idempotency_keys WHERE key = ?').get(key) as { round_id: number } | undefined;
-      if (prev) return { roundId: prev.round_id, replay: true };
+      const prev = db.prepare('SELECT round_id, body_hash FROM idempotency_keys WHERE key = ?').get(key) as { round_id: number; body_hash: string | null } | undefined;
+      if (prev) {
+        // Reintento con la clave de una ronda que sí llegó, pero con otro contenido: no se devuelve
+        // la ronda vieja como si fuera esta, porque el mesero perdería lo que agregó.
+        if (prev.body_hash && prev.body_hash !== hash)
+          throw httpError(422, 'La ronda anterior sí llegó a caja. Revisa la cuenta y deja en el borrador solo lo nuevo.', 'Idempotency-Key');
+        return { roundId: prev.round_id, replay: true };
+      }
 
       const a = getAccount(accountId);
       if (a.status !== 'abierta') throw httpError(409, a.status === 'por_cobrar' ? 'La cuenta está por cobrar: pide a caja que la reabra' : 'La cuenta ya está pagada');
@@ -124,7 +134,7 @@ export function accountRoutes(db: DB, emit: Emit) {
         move.run(pid, -qty, `ronda:${roundId}`, req.user!.id);
         if (p.stock - qty <= p.min_stock && p.stock > p.min_stock) lowStock.push({ ...p, stock: p.stock - qty });
       }
-      db.prepare('INSERT INTO idempotency_keys(key, round_id) VALUES(?, ?)').run(key, roundId);
+      db.prepare('INSERT INTO idempotency_keys(key, round_id, body_hash) VALUES(?, ?, ?)').run(key, roundId, hash);
       audit(db, req.user!.id, 'confirmar', 'ronda', roundId, { accountId, items });
       return { roundId, replay: false, tableNumber: a.table_number };
     })();
@@ -145,7 +155,7 @@ export function accountRoutes(db: DB, emit: Emit) {
       db.prepare("UPDATE accounts SET status = 'por_cobrar' WHERE id = ?").run(a.id);
       audit(db, req.user!.id, 'pedir_cuenta', 'cuenta', a.id);
     })();
-    emit('mesa:actualizada', { tableNumber: a.table_number, status: 'por_cobrar' });
+    emit('mesa:actualizada', { accountId: a.id, tableNumber: a.table_number, status: 'por_cobrar' });
     res.json(loadAccount(db, a.id));
   }));
 
@@ -157,7 +167,7 @@ export function accountRoutes(db: DB, emit: Emit) {
       db.prepare("UPDATE accounts SET status = 'abierta' WHERE id = ?").run(a.id);
       audit(db, req.user!.id, 'reabrir', 'cuenta', a.id);
     })();
-    emit('mesa:actualizada', { tableNumber: a.table_number, status: 'ocupada' });
+    emit('mesa:actualizada', { accountId: a.id, tableNumber: a.table_number, status: 'ocupada' });
     res.json(loadAccount(db, a.id));
   }));
 
@@ -184,7 +194,7 @@ export function accountRoutes(db: DB, emit: Emit) {
       audit(db, req.user!.id, 'cobrar', 'factura', id, { number: n, total: b.total, method: body.method });
       return { id, tableNumber: a.table_number };
     })();
-    emit('mesa:actualizada', { tableNumber: invoiceId.tableNumber, status: 'libre' });
+    emit('mesa:actualizada', { accountId, tableNumber: invoiceId.tableNumber, status: 'libre' });
     res.status(201).json(loadInvoice(db, invoiceId.id));
   }));
 

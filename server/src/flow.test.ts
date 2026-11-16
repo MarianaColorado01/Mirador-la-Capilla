@@ -88,6 +88,17 @@ describe('rondas', () => {
     expect(stock('Club Colombia')).toBe(29);
   });
 
+  it('la misma clave con otros productos se rechaza y no pierde lo nuevo (RF-27)', async () => {
+    const id = await openTable();
+    const k = key();
+    await as('Ana').post(`/accounts/${id}/rounds`, { items: [{ productId: pid('Club Colombia'), qty: 1 }] }, k);
+    const edited = await as('Ana').post(`/accounts/${id}/rounds`, { items: [{ productId: pid('Club Colombia'), qty: 3 }] }, k);
+    expect(edited.status).toBe(422);
+    expect(edited.body.field).toBe('Idempotency-Key');
+    expect((await as('Ana').get(`/accounts/${id}`)).body.rounds).toHaveLength(1);
+    expect(stock('Club Colombia')).toBe(29);
+  });
+
   it('rechaza la ronda si algún ítem supera el stock y no toca nada (RN-08)', async () => {
     const id = await openTable();
     const r = await as('Ana').post(`/accounts/${id}/rounds`, {

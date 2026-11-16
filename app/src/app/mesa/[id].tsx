@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
@@ -8,7 +8,7 @@ import { Screen } from '@/components/Screen';
 import { StateView } from '@/components/StateView';
 import { Card, ItemRow, RoundTag, Tag } from '@/components/ui';
 import { VoidItemSheet } from '@/components/VoidItemSheet';
-import { useAccount, useConnection, useInvalidateFloor } from '@/hooks/queries';
+import { keys, useAccount, useConnection, useInvalidateFloor } from '@/hooks/queries';
 import { api } from '@/services/api';
 import { useSession } from '@/store/session';
 import { colors, space, type } from '@/theme';
@@ -22,11 +22,16 @@ export default function MesaCuenta() {
   const account = useAccount(accountId);
   const conn = useConnection();
   const invalidate = useInvalidateFloor();
+  const qc = useQueryClient();
   const [voiding, setVoiding] = useState<{ item: RoundItem; round: Round } | null>(null);
 
   const act = useMutation({
     mutationFn: (fn: () => Promise<Account>) => fn(),
-    onSuccess: () => invalidate(accountId),
+    onSuccess: (acc) => {
+      // La respuesta ya trae la cuenta al día: se pinta sin esperar la recarga.
+      qc.setQueryData(keys.account(accountId), acc);
+      invalidate(accountId);
+    },
     onError: (e) => {
       invalidate(accountId);
       Alert.alert('No se pudo completar', (e as Error).message);
@@ -56,7 +61,7 @@ export default function MesaCuenta() {
 
   const footer =
     a.status === 'pagada' ? (
-      a.invoiceId ? <AppButton label="Ver factura" icon="receipt" onPress={() => router.replace({ pathname: '/factura/[id]', params: { id: String(a.invoiceId) } })} /> : null
+      a.invoiceId && canCharge ? <AppButton label="Ver factura" icon="receipt" onPress={() => router.replace({ pathname: '/factura/[id]', params: { id: String(a.invoiceId) } })} /> : null
     ) : a.status === 'por_cobrar' ? (
       canCharge ? (
         <View style={styles.row}>
@@ -120,10 +125,12 @@ export default function MesaCuenta() {
       <Text style={type.small}>Los ítems anulados no suman al total.</Text>
 
       <VoidItemSheet
+        key={voiding?.item.id ?? 'cerrada'}
         item={voiding?.item ?? null}
         roundStatus={voiding?.round.status ?? 'tomado'}
         role={role}
         busy={act.isPending}
+        offline={conn === 'off'}
         onClose={() => setVoiding(null)}
         onConfirm={(reason, restock) =>
           act.mutate(() => api.voidItem(voiding!.item.id, { reason, restock }), { onSuccess: () => setVoiding(null) })

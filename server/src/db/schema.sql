@@ -95,6 +95,7 @@ CREATE TABLE IF NOT EXISTS round_items (
 CREATE TABLE IF NOT EXISTS idempotency_keys (
   key        TEXT PRIMARY KEY,
   round_id   INTEGER NOT NULL REFERENCES rounds(id),
+  body_hash  TEXT, -- huella de cuenta + ítems: la misma clave con otro contenido se rechaza
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

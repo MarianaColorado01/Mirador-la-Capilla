@@ -57,7 +57,7 @@ export function roundRoutes(db: DB, emit: Emit) {
       db.prepare('UPDATE rounds SET status = ? WHERE id = ?').run(status, round.id);
       audit(db, req.user!.id, 'estado', 'ronda', round.id, { from: round.status, to: status });
     })();
-    emit('ronda:estado', { accountId: round.account_id, roundId: round.id, status, takenBy: round.taken_by_name });
+    emit('ronda:estado', { accountId: round.account_id, roundId: round.id, status, takenBy: round.taken_by_name, takenById: round.taken_by });
     res.json(loadAccount(db, round.account_id));
   }));
 

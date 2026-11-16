@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { SessionUser } from '@mirador/shared';
+import { useRoundDrafts } from './round-drafts';
 
 interface SessionState {
   /** Dirección del servidor del local (RF-01, RF-02). */
@@ -19,7 +20,10 @@ export const useSession = create<SessionState>()(
       serverUrl: null,
       user: null,
       hydrated: false,
-      setServerUrl: (serverUrl) => set({ serverUrl, user: null }),
+      setServerUrl: (serverUrl) => {
+        if (serverUrl) useRoundDrafts.getState().bindServer(serverUrl);
+        set({ serverUrl, user: null });
+      },
       signIn: (user) => set({ user }),
       signOut: () => set({ user: null }),
     }),

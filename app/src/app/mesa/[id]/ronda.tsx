@@ -9,8 +9,8 @@ import { QuantityCounter } from '@/components/QuantityCounter';
 import { Screen } from '@/components/Screen';
 import { StateView } from '@/components/StateView';
 import { Card, Chips, Tag } from '@/components/ui';
-import { useAccount, useConnection, useInvalidateFloor, useProducts } from '@/hooks/queries';
-import { api } from '@/services/api';
+import { useAccount, useConnection, useInvalidateFloor, useProducts, useSettings } from '@/hooks/queries';
+import { api, ApiError } from '@/services/api';
 import { useRoundDrafts, type Draft } from '@/store/round-drafts';
 import { useSession } from '@/store/session';
 import { colors, radius, space, type } from '@/theme';
@@ -30,7 +30,9 @@ export default function TomarRonda() {
 
   const draft = useRoundDrafts((s) => s.drafts[String(accountId)]);
   const items = draft?.items ?? EMPTY;
-  const { add, setQty, setNote, remove, discard } = useRoundDrafts();
+  const { add, setQty, setNote, remove, discard, renewKey } = useRoundDrafts();
+  const settings = useSettings();
+  const singleOperator = role === 'todo' && !!settings.data?.singleOperator;
 
   const [q, setQ] = useState('');
   const [cat, setCat] = useState('Todas');
@@ -58,6 +60,12 @@ export default function TomarRonda() {
     },
     onError: (e) => {
       invalidate(accountId);
+      // La ronda anterior llegó aunque la respuesta se perdió: clave nueva para lo que falte enviar.
+      if (e instanceof ApiError && e.field === 'Idempotency-Key') {
+        renewKey(accountId);
+        Alert.alert('Revisa antes de reenviar', e.message);
+        return;
+      }
       // El borrador se conserva: el mesero corrige y vuelve a confirmar.
       Alert.alert('No se envió la ronda', (e as Error).message);
     },
@@ -81,7 +89,7 @@ export default function TomarRonda() {
             <Text style={[type.figure, { fontSize: 24 }]}>{money(total)}</Text>
           </View>
           <AppButton
-            label={conn === 'off' ? 'Confirmar · sin conexión' : role === 'todo' ? 'Confirmar y entregar' : 'Confirmar y enviar a barra'}
+            label={conn === 'off' ? 'Confirmar · sin conexión' : singleOperator ? 'Confirmar y entregar' : 'Confirmar y enviar a barra'}
             icon="check"
             disabled={!items.length || conn === 'off' || !!blocked}
             loading={confirm.isPending}

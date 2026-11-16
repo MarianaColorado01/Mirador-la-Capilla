@@ -81,6 +81,7 @@ export interface TableSummary {
   account: null | {
     id: number;
     waiter: string;
+    waiterId: number;
     subtotal: number;
     openedAt: string;
     readyRounds: number;
@@ -168,9 +169,9 @@ export interface HealthResponse {
 /** Eventos de tiempo real (RF-70). */
 export interface ServerEvents {
   'ronda:creada': { accountId: number; roundId: number; tableNumber: number };
-  'ronda:estado': { accountId: number; roundId: number; status: RoundStatus; takenBy: string };
+  'ronda:estado': { accountId: number; roundId: number; status: RoundStatus; takenBy: string; takenById: number };
   'item:anulado': { accountId: number; roundId: number; itemId: number };
-  'mesa:actualizada': { tableNumber: number; status: TableStatus };
+  'mesa:actualizada': { accountId: number; tableNumber: number; status: TableStatus };
   'stock:bajo': { productId: number; name: string; stock: number; minStock: number };
 }
 

@@ -18,6 +18,12 @@ describe('calculateBill (sección 4.3)', () => {
     expect(r.errors).toEqual({});
   });
 
+  it('el total es la suma exacta de base, propina e impuesto', () => {
+    // 8.25 % y 8.25 % de 1.000 dan 82,5 cada uno: redondeados suman 1.166, no 1.165.
+    const r = calculateBill({ subtotal: 1000, taxPercent: 8.25, method: 'tarjeta', discount: '', tipPercent: '8.25' });
+    expect(r.total).toBe(r.base + r.tip + r.tax);
+  });
+
   it('rechaza descuento negativo, mayor al subtotal o no numérico', () => {
     expect(calculateBill({ ...base, discount: '-1', tipPercent: '0' }).errors.discount).toMatch(/negativo/);
     expect(calculateBill({ ...base, discount: '70000', tipPercent: '0' }).errors.discount).toMatch(/superar/);
