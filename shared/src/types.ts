@@ -42,6 +42,26 @@ export interface ProductOwnerView extends Product {
   margin: number;
 }
 
+/** RF-12: movimiento de stock (entrada, salida o ajuste) visto por el dueño. */
+export interface StockMovement {
+  id: number;
+  type: 'entrada' | 'salida' | 'ajuste';
+  qty: number; // con signo: + entra, − sale
+  reason: string | null;
+  reference: string | null;
+  user: string | null;
+  createdAt: string;
+}
+
+/** RF-22: mesa en la administración del dueño; `busy` = tiene cuenta abierta o por cobrar. */
+export interface TableAdmin {
+  id: number;
+  number: number;
+  zone: string | null;
+  active: boolean;
+  busy: boolean;
+}
+
 export interface RoundItem {
   id: number;
   productId: number;

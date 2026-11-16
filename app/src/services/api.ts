@@ -1,9 +1,13 @@
 import { AxiosError, create, type AxiosInstance } from 'axios';
 import type {
-  Account, BarTicket, BillableAccount, ChargeRequest, CreateRoundRequest, EditItemRequest, HealthResponse, Invoice, InvoiceListItem, ManagedUser, Product, Profile,
-  Role, RoundStatus, SessionUser, Settings, TableSummary, VoidItemRequest,
+  Account, BarTicket, BillableAccount, Category, ChargeRequest, CreateRoundRequest, EditItemRequest, HealthResponse, Invoice, InvoiceListItem, ManagedUser, Profile,
+  Role, RoundStatus, SessionUser, Settings, StockMovement, TableAdmin, TableSummary, VoidItemRequest,
 } from '@mirador/shared';
 import { useSession } from '@/store/session';
+import { toProductModel, type ProductDTO } from './mappers';
+
+/** Cuerpo de crear/editar producto (RF-13); el stock no va (RN-02). */
+export type ProductBody = { name: string; categoryId: number; price: number; cost: number; minStock: number; imageUrl?: string | null };
 
 /** Instancia central de Axios; la baseURL sale de la dirección guardada (RF-01). */
 function client(): AxiosInstance {
@@ -48,7 +52,18 @@ export const api = {
   createUser: (body: { name: string; role: Role; pin: string }) => call<ManagedUser>((c) => c.post('/users', body)),
   updateUser: (id: number, body: Partial<{ name: string; role: Role; pin: string; active: boolean }>) => call<ManagedUser>((c) => c.patch(`/users/${id}`, body)),
 
-  products: () => call<Product[]>((c) => c.get('/products')),
+  /** `all` (solo dueño) incluye los inactivos (RF-14). */
+  products: async (all = false) => (await call<ProductDTO[]>((c) => c.get('/products', { params: all ? { all: 1 } : undefined }))).map(toProductModel),
+  product: async (id: number) => toProductModel(await call<ProductDTO>((c) => c.get(`/products/${id}`))),
+  movements: (id: number) => call<StockMovement[]>((c) => c.get(`/products/${id}/movements`)),
+  createProduct: async (body: ProductBody) => toProductModel(await call<ProductDTO>((c) => c.post('/products', body))),
+  updateProduct: async (id: number, body: Partial<ProductBody & { active: boolean }>) => toProductModel(await call<ProductDTO>((c) => c.patch(`/products/${id}`, body))),
+  categories: () => call<Category[]>((c) => c.get('/categories')),
+  createCategory: (name: string) => call<Category>((c) => c.post('/categories', { name })),
+  updateCategory: (id: number, body: Partial<{ name: string; active: boolean }>) => call<Category>((c) => c.patch(`/categories/${id}`, body)),
+  tablesAdmin: () => call<TableAdmin[]>((c) => c.get('/tables/all')),
+  createTable: (body: { number: number; zone?: string | null }) => call<TableAdmin>((c) => c.post('/tables', body)),
+  updateTable: (id: number, body: Partial<{ zone: string | null; active: boolean }>) => call<TableAdmin>((c) => c.patch(`/tables/${id}`, body)),
   tables: () => call<TableSummary[]>((c) => c.get('/tables')),
   account: (id: number) => call<Account>((c) => c.get(`/accounts/${id}`)),
   openTable: (tableNumber: number) => call<Account>((c) => c.post('/accounts', { tableNumber })),

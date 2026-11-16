@@ -1,4 +1,4 @@
-/* Reglas de Ajustes (RF-04) y Usuarios (RF-07). Las usa la app para validar en vivo
+/* Reglas de Ajustes (RF-04), Usuarios (RF-07), Productos y categorías (RF-13 a RF-15) y Mesas (RF-22). Las usa la app para validar en vivo
    y el servidor para decidir: los mensajes son los mismos en ambos lados. */
 import { z } from 'zod';
 
@@ -31,6 +31,40 @@ export const UserCreateSchema = z.object({
 
 /** PATCH /users/:id: lo que cambie; el PIN solo si se escribe uno nuevo. Desactivar es `active: false` (RN-04). */
 export const UserUpdateSchema = UserCreateSchema.partial().extend({ active: z.boolean().optional() });
+
+const name = (max: number) => z.string({ error: 'Escribe el nombre' }).trim().min(1, 'Escribe el nombre').max(max, `Máximo ${max} caracteres`);
+const pesos = (what: string) => number.int('Escribe un número entero').positive(`El ${what} debe ser mayor que 0`);
+
+/** RF-13: el stock no está aquí; solo cambia con movimientos de inventario (RN-02). */
+export const ProductSchema = z.object({
+  name: name(60),
+  categoryId: z.number({ error: 'Elige una categoría' }).int().positive('Elige una categoría'),
+  price: pesos('precio'),
+  cost: pesos('costo'),
+  minStock: number.int('Escribe un número entero').min(0, 'No puede ser negativo'),
+  // Vacío = sin imagen: la app muestra la imagen alternativa (RF-10).
+  imageUrl: z
+    .string()
+    .trim()
+    .max(500, 'Máximo 500 caracteres')
+    .refine((v) => v === '' || /^https?:\/\/\S+$/.test(v), 'Escribe una dirección que empiece por http:// o https://')
+    .nullable()
+    .optional(),
+});
+
+/** PATCH /products/:id: lo que cambie. Desactivar es `active: false` (RF-14, RN-04). */
+export const ProductUpdateSchema = ProductSchema.partial().extend({ active: z.boolean().optional() });
+
+/** RF-15: categorías con nombre único. */
+export const CategorySchema = z.object({ name: name(30) });
+export const CategoryUpdateSchema = CategorySchema.partial().extend({ active: z.boolean().optional() });
+
+/** RF-22: mesas con número único y zona opcional. */
+export const TableCreateSchema = z.object({
+  number: number.int('Escribe un número entero').min(1, 'Debe ser al menos 1').max(999, 'Máximo 999'),
+  zone: z.string().trim().max(30, 'Máximo 30 caracteres').nullable().optional(),
+});
+export const TableUpdateSchema = TableCreateSchema.pick({ zone: true }).extend({ active: z.boolean().optional() });
 
 /** Primer mensaje de error por campo, para mostrarlo bajo cada campo del formulario. */
 export function fieldErrors(error: z.ZodError | undefined): Record<string, string> {

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/services/api';
+import { api, ApiError } from '@/services/api';
 import { useLive } from '@/store/live';
 import { useSession } from '@/store/session';
 
@@ -8,8 +8,14 @@ export const keys = {
   health: (url: string | null) => ['health', url] as const,
   profiles: (url: string | null) => ['profiles', url] as const,
   settings: ['settings'] as const,
+  // Todo lo de productos cuelga de ['products']: invalidar esa clave refresca listas, detalle y movimientos.
   products: ['products'] as const,
+  productsAll: ['products', 'all'] as const,
+  product: (id: number) => ['products', 'detail', id] as const,
+  movements: (id: number) => ['products', 'movements', id] as const,
+  categories: ['categories'] as const,
   tables: ['tables'] as const,
+  tablesAdmin: ['tables', 'admin'] as const,
   account: (id: number) => ['account', id] as const,
   bar: ['bar'] as const,
   billable: ['billable'] as const,
@@ -24,7 +30,14 @@ const LIVE = 30000;
 
 export const useTables = () => useQuery({ queryKey: keys.tables, queryFn: api.tables, refetchInterval: LIVE });
 export const useAccount = (id: number) => useQuery({ queryKey: keys.account(id), queryFn: () => api.account(id), refetchInterval: LIVE, enabled: Number.isFinite(id) });
-export const useProducts = () => useQuery({ queryKey: keys.products, queryFn: api.products, staleTime: 15000 });
+export const useProducts = () => useQuery({ queryKey: keys.products, queryFn: () => api.products(), staleTime: 15000 });
+export const useAllProducts = () => useQuery({ queryKey: keys.productsAll, queryFn: () => api.products(true) });
+// Id no numérico: la consulta no corre y la pantalla muestra «Producto no encontrado» (RF-12).
+export const useProduct = (id: number) => useQuery({ queryKey: keys.product(id), queryFn: () => api.product(id), enabled: Number.isInteger(id) && id > 0,
+  retry: (n, e) => n < 1 && !(e instanceof ApiError && e.status === 404) });
+export const useMovements = (id: number, enabled: boolean) => useQuery({ queryKey: keys.movements(id), queryFn: () => api.movements(id), enabled });
+export const useCategories = () => useQuery({ queryKey: keys.categories, queryFn: api.categories });
+export const useTablesAdmin = () => useQuery({ queryKey: keys.tablesAdmin, queryFn: api.tablesAdmin });
 export const useBarQueue = () => useQuery({ queryKey: keys.bar, queryFn: api.barQueue, refetchInterval: LIVE });
 export const useBillable = () => useQuery({ queryKey: keys.billable, queryFn: api.billable, refetchInterval: LIVE });
 export const useInvoice = (id: number) => useQuery({ queryKey: keys.invoice(id), queryFn: () => api.invoice(id), enabled: Number.isFinite(id) });

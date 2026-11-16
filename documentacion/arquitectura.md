@@ -30,8 +30,9 @@ Para agregar un módulo: crea `modules/<nombre>.routes.ts`, que exporta una func
 | Módulo | Rutas | RF |
 |---|---|---|
 | auth | `GET /auth/profiles` · `POST /auth/login` ✅ | 05, 08 |
-| products | `GET /products` · `GET /products/:id` ✅ · `POST/PATCH /products` | 10–15 |
-| tables | `GET /tables` ✅ · `POST/PATCH /tables` | 16, 22 |
+| products | `GET /products?q&categoryId&all=1` (all solo dueño) · `GET /products/:id` · `GET /products/:id/movements?limit` (dueño) · `POST /products` · `PATCH /products/:id` `{name?, categoryId?, price?, cost?, minStock?, imageUrl?, active?}` (dueño) ✅ | 10–14 |
+| categories | `GET /categories` · `POST /categories` `{name}` · `PATCH /categories/:id` `{name?, active?}` (dueño) ✅ | 15 |
+| tables | `GET /tables` (mapa) · `GET /tables/all` · `POST /tables` `{number, zone?}` · `PATCH /tables/:id` `{zone?, active?}` (dueño) ✅ | 16, 22 |
 | accounts | `POST /accounts` · `GET /accounts/:id` · `/request-bill` · `/reopen` · `POST /accounts/:id/move` `{tableNumber}` · `POST /accounts/:id/merge` `{intoAccountId}` ✅ | 17–21 |
 | rounds | `POST /accounts/:id/rounds` (Idempotency-Key) · `GET /rounds` · `PATCH /rounds/:id/status` · `POST /rounds/items/:itemId/void` · `PATCH /rounds/items/:itemId` `{qty, note}` ✅ | 23–37 |
 | billing | `GET /accounts?status=por_cobrar` · `POST /accounts/:id/charge` · `GET /invoices?q=` · `GET /invoices/:id` · `POST /invoices/:id/void` `{reason}` ✅ | 38–44 |
@@ -48,6 +49,15 @@ Decisiones del bloque 4.2:
 - **Ajustes (RF-04):** `PATCH /settings` acepta cualquier subconjunto; el esquema zod vive en `shared/src/admin.ts` y lo usan la app (errores en vivo) y el servidor (400 con `field`). Incluye `barLat`/`barLng` del bar (por defecto ≈ 4.99, −75.81, pendiente de confirmar). Se audita como `editar ajustes`.
 - **Usuarios (RF-07):** nada se borra: desactivar es `active: false`. El dueño no puede desactivarse a sí mismo y ningún cambio puede dejar el sistema sin dueño activo (se revisa con el cambio ya aplicado, dentro de la transacción). No se repiten nombres entre perfiles activos. El PIN se guarda con bcrypt y uno nuevo quita el bloqueo por intentos.
 - **Sesión:** `requireAuth(db)` relee nombre y rol por id en cada petición: un usuario desactivado recibe 401 (la app cierra su sesión) y un cambio de rol aplica de inmediato. El socket de tiempo real no se corta hasta que reconecta.
+
+Decisiones del bloque 4.3:
+
+- **Productos (RF-13, RF-14):** esquema `ProductSchema` en `shared/src/admin.ts` (nombre obligatorio, categoría activa, precio y costo enteros > 0, stock mínimo entero ≥ 0, imagen URL http(s) opcional; vacía = sin imagen). El stock no se edita: un producto nuevo arranca en 0 y sube con compra o ajuste (RN-02). Desactivar es `active: false`; los inactivos no salen en `GET /products` ni se pueden pedir en una ronda (409), pero el dueño los ve con `?all=1`.
+- **Detalle (RF-12):** id inexistente o no numérico → 404 «Producto no encontrado»; la app tampoco consulta un id no numérico y no reintenta un 404. Los movimientos traen tipo, cantidad con signo, motivo, referencia, usuario y fecha (los reutiliza el inventario).
+- **Categorías (RF-15):** nombre único sin importar mayúsculas (409 `field: name`). No se desactiva una categoría con productos activos (409 `field: active`), para que no queden productos a la venta en una categoría oculta.
+- **Mesas (RF-22):** número único entre todas, también las inactivas (si existe inactiva, el mensaje pide reactivarla). No se desactiva una mesa con cuenta abierta o por cobrar (409). El número no se cambia después de crearla; la zona sí.
+- **Mapper:** `app/src/services/mappers.ts` convierte el DTO (`Product` o `ProductOwnerView`) a `ProductModel` con `imageSource`, `cost`/`margin` (null si no es dueño), `outOfStock` y `lowStock`; lo usan `api.products` y `api.product`. Todas las claves de productos cuelgan de `['products']`, así que una ronda o una edición refresca listas, detalle y movimientos.
+- Estos cambios del catálogo no emiten eventos de tiempo real: los otros celulares los ven al refrescar (productos cada 15 s al volver a la pantalla, mapa cada 30 s).
 | inventory | `GET /inventory` · `POST /inventory/adjustments` · `GET /products/:id/movements` · `GET /inventory/suggestions` | 47–51 |
 | suppliers / purchases | CRUD de `/suppliers` · `POST/GET /purchases` · `GET /reports/purchases-by-supplier` | 52–56 |
 | expenses / reports | `POST/GET /expenses` · `GET /reports/summary?from&to` | 57–60 |
@@ -73,15 +83,20 @@ login.tsx                   perfil y PIN
 (drawer)/facturas.tsx       historial de facturas (RF-43); también desde Caja
 (drawer)/ajustes.tsx        ajustes del negocio (dueño, RF-04)
 (drawer)/usuarios.tsx       crear, editar, desactivar usuarios (dueño, RF-07)
+(drawer)/productos.tsx      lista de productos con inactivos, búsqueda y categoría (dueño, RF-13/14)
+(drawer)/categorias.tsx     crear, renombrar, desactivar categorías (dueño, RF-15)
+(drawer)/mesas.tsx          crear mesas, zona, desactivar (dueño, RF-22)
 mesa/[id].tsx               cuenta de la mesa
 mesa/[id]/ronda.tsx         tomar ronda
 cobro/[id].tsx              cobrar
 factura/[id].tsx            factura (el dueño la anula, RF-44)
+producto/[id].tsx           detalle (RF-12); se abre desde Productos o con pulsación larga en la ronda
+producto/editar.tsx         crear producto, o editar/desactivar con ?id= (dueño, RF-13/14)
 ```
 
 El cierre por inactividad (RF-09) lo hace `hooks/use-idle-logout.ts`: el View raíz captura cada toque (`onStartShouldSetResponderCapture`) y reinicia un temporizador de `idleLogoutMinutes`; al volver del segundo plano revisa el tiempo real transcurrido.
 
-Para el resto de la fase 4 están previstas las pantallas de inventario, proveedores, ubicación, gastos y resumen (se agregan como entradas del menú lateral), además de `producto/[id].tsx` y `compra/nueva.tsx`. El Drawer viene incluido en `expo-router/drawer` desde el SDK 56: no hubo que instalar paquetes.
+Para el resto de la fase 4 están previstas las pantallas de inventario, proveedores, ubicación, gastos y resumen (se agregan como entradas del menú lateral), además de `compra/nueva.tsx`. El Drawer viene incluido en `expo-router/drawer` desde el SDK 56: no hubo que instalar paquetes.
 
 Librerías previstas: Axios con instancia central y TanStack Query para la red, Zustand con persistencia para la sesión y la ronda en construcción, NativeWind, `expo-camera` para el QR y `expo-location` con Leaflet en WebView para el mapa. Instálalas siempre con `npx expo install` para que coincidan con el SDK.
 

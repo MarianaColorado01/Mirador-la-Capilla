@@ -138,7 +138,7 @@ export default function TomarRonda() {
         ) : (
           shown.map((p) => (
             <View key={p.id} style={styles.divider}>
-              <ProductCard product={p} inRound={items.find((i) => i.productId === p.id)?.qty ?? 0} onAdd={(prod) => add(accountId, prod)} />
+              <ProductCard product={p} inRound={items.find((i) => i.productId === p.id)?.qty ?? 0} onAdd={(prod) => add(accountId, prod)} onOpen={(prod) => router.push(`/producto/${prod.id}`)} />
             </View>
           ))
         )}
@@ -146,7 +146,7 @@ export default function TomarRonda() {
 
       <Card title={`Esta ronda · ${units} ${units === 1 ? 'unidad' : 'unidades'}`} right={items.length ? <Tag label="Borrador guardado" /> : undefined}>
         {items.length === 0 ? (
-          <Text style={[type.small, { padding: space.lg }]}>Toca + en un producto para agregarlo.</Text>
+          <Text style={[type.small, { padding: space.lg }]}>Toca + en un producto para agregarlo. Mantén pulsado para ver su detalle.</Text>
         ) : (
           items.map((i) => (
             <View key={i.productId} style={styles.line}>

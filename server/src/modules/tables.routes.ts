@@ -1,8 +1,9 @@
 import { Router } from 'express';
-import type { TableSummary } from '@mirador/shared';
+import { TableCreateSchema, TableUpdateSchema, type TableAdmin, type TableSummary } from '@mirador/shared';
 import type { DB } from '../db/index';
-import { requireAuth } from '../lib/auth';
-import { route } from '../lib/http';
+import { audit } from '../lib/audit';
+import { requireAuth, requireRole } from '../lib/auth';
+import { httpError, route } from '../lib/http';
 import { iso } from '../services/views';
 
 interface Row {
@@ -33,6 +34,45 @@ export function tableRoutes(db: DB) {
         : null,
     }));
     res.json(out);
+  }));
+
+  // RF-22: administración de mesas, solo el dueño. Incluye las inactivas para reactivarlas.
+  const ADMIN = `SELECT t.id, t.number, t.zone, t.active,
+      EXISTS(SELECT 1 FROM accounts a WHERE a.table_id = t.id AND a.status IN ('abierta', 'por_cobrar')) AS busy
+    FROM tables t`;
+  type AdminRow = Omit<TableAdmin, 'active' | 'busy'> & { active: number; busy: number };
+  const view = (t: AdminRow): TableAdmin => ({ ...t, active: !!t.active, busy: !!t.busy });
+  const load = (id: number | bigint) => db.prepare(`${ADMIN} WHERE t.id = ?`).get(id) as AdminRow | undefined;
+
+  r.get('/all', requireRole(), route((_req, res) => {
+    res.json((db.prepare(`${ADMIN} ORDER BY t.active DESC, t.number`).all() as AdminRow[]).map(view));
+  }));
+
+  r.post('/', requireRole(), route((req, res) => {
+    const { number, zone } = TableCreateSchema.parse(req.body);
+    const row = db.transaction(() => {
+      const twin = db.prepare('SELECT active FROM tables WHERE number = ?').get(number) as { active: number } | undefined;
+      if (twin) throw httpError(409, twin.active ? `Ya existe la mesa ${number}` : `La mesa ${number} existe pero está inactiva: reactívala`, 'number');
+      const id = db.prepare('INSERT INTO tables(number, zone) VALUES(?, ?)').run(number, zone || null).lastInsertRowid;
+      audit(db, req.user!.id, 'crear', 'mesa', id, { number, zone });
+      return load(id)!;
+    })();
+    res.status(201).json(view(row));
+  }));
+
+  r.patch('/:id', requireRole(), route((req, res) => {
+    const body = TableUpdateSchema.parse(req.body);
+    const id = Number(req.params.id);
+    const row = db.transaction(() => {
+      const t = load(id);
+      if (!t) throw httpError(404, 'Mesa no encontrada');
+      if (body.active === false && t.busy) throw httpError(409, `La mesa ${t.number} tiene una cuenta sin cerrar: cóbrala o muévela primero`, 'active');
+      if (body.zone !== undefined) db.prepare('UPDATE tables SET zone = ? WHERE id = ?').run(body.zone || null, id);
+      if (body.active !== undefined) db.prepare('UPDATE tables SET active = ? WHERE id = ?').run(body.active ? 1 : 0, id);
+      audit(db, req.user!.id, 'editar', 'mesa', id, body);
+      return load(id)!;
+    })();
+    res.json(view(row));
   }));
 
   return r;

@@ -15,6 +15,9 @@ type Icon = keyof typeof MaterialCommunityIcons.glyphMap;
  */
 const ENTRIES: { name: string; title: string; icon: Icon; roles: Role[] }[] = [
   { name: 'facturas', title: 'Facturas', icon: 'receipt', roles: ['todo', 'caja', 'dueno'] },
+  { name: 'productos', title: 'Productos', icon: 'bottle-wine-outline', roles: ['dueno'] },
+  { name: 'categorias', title: 'Categorías', icon: 'shape-outline', roles: ['dueno'] },
+  { name: 'mesas', title: 'Mesas', icon: 'table-furniture', roles: ['dueno'] },
   { name: 'ajustes', title: 'Ajustes', icon: 'cog-outline', roles: ['dueno'] },
   { name: 'usuarios', title: 'Usuarios', icon: 'account-group-outline', roles: ['dueno'] },
 ];

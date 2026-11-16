@@ -59,6 +59,7 @@ Los datos de ejemplo se cargan solos la primera vez. Hay seis perfiles (Ana, Lui
 - [x] Tiempo real con Socket.IO (cola de barra, aviso de ronda lista, stock bajo) e indicador conectado · reconectando · sin conexión
 - [x] Cierre del proceso principal: mover y unir cuentas (RF-20), editar cantidad o nota en ronda tomada (RF-33), historial de facturas (RF-43) y anulación de factura por el dueño (RF-44)
 - [x] Navegación y administración: menú lateral según rol con las pestañas adentro (RF-06), ajustes del negocio (RF-04), usuarios con PIN y desactivación (RF-07) y cierre de sesión por inactividad (RF-09)
+- [x] Catálogo: detalle de producto con id inexistente (RF-12), crear/editar/desactivar productos con formulario validado (RF-13, RF-14), categorías (RF-15), mesas (RF-22) y mapper DTO → modelo en la app
 - [ ] Inventario, compras, gastos, resumen, mapa
 - [ ] Respaldos, PDF, dividir cuenta
 

@@ -6,6 +6,7 @@ import { noopEmit, type Emit } from './lib/events';
 import { errorHandler } from './lib/http';
 import { accountRoutes } from './modules/accounts.routes';
 import { authRoutes } from './modules/auth.routes';
+import { categoryRoutes } from './modules/categories.routes';
 import { invoiceRoutes } from './modules/invoices.routes';
 import { productRoutes } from './modules/products.routes';
 import { roundRoutes } from './modules/rounds.routes';
@@ -15,7 +16,7 @@ import { userRoutes } from './modules/users.routes';
 
 export const VERSION = '0.2.0';
 
-const ENDPOINTS = ['/health', '/auth/profiles', '/auth/login', '/settings', '/products', '/tables', '/accounts', '/rounds', '/invoices', '/users'];
+const ENDPOINTS = ['/health', '/auth/profiles', '/auth/login', '/settings', '/products', '/categories', '/tables', '/accounts', '/rounds', '/invoices', '/users'];
 
 /**
  * Crea la app Express. Recibe la base (en las pruebas, una en memoria) y la
@@ -41,6 +42,7 @@ export function createApp(db: DB, emit: Emit = noopEmit) {
   app.use('/settings', settingsRoutes(db));
   app.use('/users', userRoutes(db));
   app.use('/products', productRoutes(db));
+  app.use('/categories', categoryRoutes(db));
   app.use('/tables', tableRoutes(db));
   app.use('/accounts', accountRoutes(db, emit));
   app.use('/rounds', roundRoutes(db, emit));
