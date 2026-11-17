@@ -35,6 +35,7 @@ export const keys = {
   // Todo lo del Resumen cuelga de ['reports']: invalidarla tras compras, gastos y cobros.
   reports: ['reports'] as const,
   summary: (r: DateRange) => ['reports', 'summary', r] as const,
+  purchasesBySupplier: (r: DateRange) => ['reports', 'purchases-by-supplier', r] as const,
 };
 
 // Los cambios llegan por Socket.IO (use-realtime). Esto es solo una red de seguridad
@@ -68,6 +69,8 @@ export const useSupplierLocations = () => useQuery({ queryKey: keys.supplierLoca
 export const usePurchases = (f: PurchaseFilter) => useQuery({ queryKey: keys.purchases(f), queryFn: () => api.purchases(f), placeholderData: keepPreviousData });
 export const useExpenses = (r: DateRange) => useQuery({ queryKey: keys.expenses(r), queryFn: () => api.expenses(r), placeholderData: keepPreviousData });
 export const useSummary = (r: DateRange) => useQuery({ queryKey: keys.summary(r), queryFn: () => api.summary(r), placeholderData: keepPreviousData });
+export const usePurchasesBySupplier = (r: DateRange, enabled: boolean) =>
+  useQuery({ queryKey: keys.purchasesBySupplier(r), queryFn: () => api.purchasesBySupplier(r), placeholderData: keepPreviousData, enabled });
 export const usePurchase = (id: number) => useQuery({ queryKey: keys.purchase(id), queryFn: () => api.purchase(id), enabled: validId(id), retry: no404 });
 
 /**

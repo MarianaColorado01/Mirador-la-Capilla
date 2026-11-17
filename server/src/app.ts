@@ -21,7 +21,7 @@ import { userRoutes } from './modules/users.routes';
 
 export const VERSION = '0.2.0';
 
-const ENDPOINTS = ['/health', '/auth/profiles', '/auth/login', '/settings', '/products', '/categories', '/tables', '/accounts', '/rounds', '/invoices', '/users', '/inventory', '/suppliers', '/purchases', '/expenses', '/reports/summary'];
+const ENDPOINTS = ['/health', '/auth/profiles', '/auth/login', '/settings', '/products', '/categories', '/tables', '/accounts', '/rounds', '/invoices', '/users', '/inventory', '/suppliers', '/purchases', '/expenses', '/reports/summary', '/reports/purchases-by-supplier'];
 
 /**
  * Crea la app Express. Recibe la base (en las pruebas, una en memoria) y la

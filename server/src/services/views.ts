@@ -1,5 +1,5 @@
 /* Lecturas que arman los objetos que ve la app. Solo SELECT; nada de reglas aquí. */
-import { estimatedProfit, type Account, type BarTicket, type Expense, type Invoice, type InvoicePayment, type Purchase, type PurchaseListItem, type ReportSummary, type Round, type RoundItem, type RoundStatus } from '@mirador/shared';
+import { estimatedProfit, type Account, type BarTicket, type Expense, type Invoice, type InvoicePayment, type Purchase, type PurchaseListItem, type PurchasesBySupplier, type ReportSummary, type Round, type RoundItem, type RoundStatus } from '@mirador/shared';
 import type { DB } from '../db/index';
 
 interface ItemRow {
@@ -141,4 +141,21 @@ export function loadSummary(db: DB, from: string, to: string): ReportSummary {
     byWaiter: db.prepare(`SELECT a.waiter_id AS waiterId, u.name, SUM(inv.subtotal - inv.discount) AS sales, COUNT(*) AS invoices
       ${INV.replace('WHERE', 'JOIN users u ON u.id = a.waiter_id WHERE')} GROUP BY a.waiter_id ORDER BY sales DESC`).all(p) as ReportSummary['byWaiter'],
   };
+}
+
+/** RF-56: compras con `date` en el rango, agrupadas por proveedor (aunque esté inactivo). */
+export function loadPurchasesBySupplier(db: DB, from: string, to: string): PurchasesBySupplier {
+  const p = { from, to };
+  const rows = db.prepare(`SELECT s.id AS supplierId, s.name, s.active, COUNT(*) AS purchases, SUM(pu.total) AS total, MAX(pu.date) AS lastDate
+    FROM purchases pu JOIN suppliers s ON s.id = pu.supplier_id WHERE pu.date BETWEEN @from AND @to
+    GROUP BY s.id ORDER BY total DESC, s.name`).all(p) as (Omit<PurchasesBySupplier['suppliers'][number], 'active' | 'products'> & { active: number })[];
+  const items = db.prepare(`SELECT pu.supplier_id AS supplierId, i.product_id AS productId, pr.name, SUM(i.qty) AS qty, SUM(i.qty * i.unit_cost) AS total
+    FROM purchase_items i JOIN purchases pu ON pu.id = i.purchase_id JOIN products pr ON pr.id = i.product_id
+    WHERE pu.date BETWEEN @from AND @to GROUP BY pu.supplier_id, i.product_id ORDER BY total DESC, pr.name`).all(p) as ({ supplierId: number } & PurchasesBySupplier['suppliers'][number]['products'][number])[];
+  const suppliers = rows.map((r) => ({
+    ...r,
+    active: !!r.active,
+    products: items.filter((i) => i.supplierId === r.supplierId).map(({ supplierId: _, ...i }) => i),
+  }));
+  return { from, to, total: suppliers.reduce((t, s) => t + s.total, 0), suppliers };
 }

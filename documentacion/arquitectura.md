@@ -49,6 +49,11 @@ Decisiones del bloque 5.2 (RF-45, factura en PDF):
 - **Sin endpoint nuevo:** el PDF se arma en el celular con la factura ya cargada (`GET /invoices/:id`), así no depende del servidor ni de internet. `expo-print` (`printToFileAsync` con HTML) y `expo-sharing` (`shareAsync`, `application/pdf` / `com.adobe.pdf`); ambos vienen en Expo Go.
 - **HTML en shared:** `invoiceHtml(invoice, businessName)` en `shared/src/invoice-html.ts`, función pura sin recursos externos y con `escapeHtml` en todo texto de usuario (pruebas en `invoice-html.test.ts`). Hoja A4 con una columna angosta tipo tirilla; ítems anulados tachados con su motivo; si la factura está anulada, sello «ANULADA» con motivo. `money`, `pad`, `clock` y `dateTime` pasaron a `shared/src/format.ts` (la app los reexporta desde `utils/format.ts`).
 
+Decisiones del bloque 5.3 (RF-56, compras por proveedor):
+
+- **Endpoint:** `GET /reports/purchases-by-supplier?from&to` (solo dueño) en `reports.routes.ts`, con el mismo `DateRangeSchema` que el Resumen (400 con `field`). Lectura `loadPurchasesBySupplier` en `views.ts`: compras con `date` en el rango agrupadas por proveedor **aunque esté inactivo** (RN-04: sus compras siguen siendo historia); por proveedor `purchases`, `total`, `lastDate`, `active` y `products` (todos, de mayor a menor total = Σ qty × costo); `total` general. Orden por total descendente (empate por nombre). Proveedores sin compras en el rango no salen. Pruebas en `reports.test.ts`.
+- **App:** pestaña «Por proveedor» dentro de `(drawer)/compras.tsx` (Chips Historial / Por proveedor) con el selector Hoy / 7 días / Mes de `periodRange` (por defecto Mes). Cada proveedor es una tarjeta con su total, barra horizontal con `View` de su % del total, número de compras, última fecha y sus 3 productos principales. Tocarla vuelve al Historial filtrado por ese proveedor y las fechas del período. La clave cuelga de `['reports']`, así que se invalida al guardar una compra.
+
 Decisiones del bloque 4.1:
 
 - **Mover (RF-20):** caja, todo en uno o dueño. La mesa destino debe estar libre (409 si tiene cuenta, RN-01). La cuenta conserva id, rondas y mesero.
@@ -104,7 +109,7 @@ Decisiones del bloque 4.7 (mapa y ubicación):
 - **Accesibilidad:** la WebView no la lee el lector de pantalla, así que debajo hay una lista «Lugares» (bar, proveedores, tu posición) con coordenadas y dirección; cada fila centra el mapa.
 
 | inventory | `POST /inventory/adjustments` `{productId, type, qty, reason}` · `GET /inventory/suggestions` (dueño); el listado usa `GET /products?all=1` y el historial `GET /products/:id/movements?type` ✅ | 47–51 |
-| suppliers / purchases | `GET /suppliers/locations` (todos, RF-61) ✅ · `GET /suppliers` · `GET /suppliers/:id` · `POST /suppliers` `{name, phone?, notes?, address?, lat?, lng?}` · `PATCH /suppliers/:id` (lo mismo + `active`) · `POST /purchases` `{supplierId, date, items: [{productId, qty, unitCost}]}` · `GET /purchases?supplierId&from&to` · `GET /purchases/:id` (dueño) ✅ · `GET /reports/purchases-by-supplier` (RF-56, Baja, pendiente) | 52–56, 61 |
+| suppliers / purchases | `GET /suppliers/locations` (todos, RF-61) ✅ · `GET /suppliers` · `GET /suppliers/:id` · `POST /suppliers` `{name, phone?, notes?, address?, lat?, lng?}` · `PATCH /suppliers/:id` (lo mismo + `active`) · `POST /purchases` `{supplierId, date, items: [{productId, qty, unitCost}]}` · `GET /purchases?supplierId&from&to` · `GET /purchases/:id` (dueño) ✅ · `GET /reports/purchases-by-supplier?from&to` (dueño, RF-56) ✅ | 52–56, 61 |
 | expenses / reports | `POST /expenses` `{concept, amount, date}` · `GET /expenses?from&to` · `GET /reports/summary?from&to` (dueño) ✅; el margen (RF-60) usa `GET /products?all=1` | 57–60 |
 | settings / users | `GET /settings` (todos) · `PATCH /settings` (dueño) · `GET /users` · `POST /users` `{name, role, pin}` · `PATCH /users/:id` `{name?, role?, pin?, active?}` (dueño) ✅ | 04, 07 |
 | backups | `GET/POST /backups` · `POST /backups/:id/restore` | 71 |
@@ -133,7 +138,7 @@ login.tsx                   perfil y PIN
 (drawer)/categorias.tsx     crear, renombrar, desactivar categorías (dueño, RF-15)
 (drawer)/mesas.tsx          crear mesas, zona, desactivar (dueño, RF-22)
 (drawer)/proveedores.tsx    lista de proveedores, nuevo proveedor y registrar compra (dueño, RF-52)
-(drawer)/compras.tsx        historial de compras por proveedor y fechas (dueño, RF-55)
+(drawer)/compras.tsx        historial de compras por proveedor y fechas (RF-55) y pestaña «Por proveedor» (RF-56) (dueño)
 (drawer)/dashboard.tsx      Resumen: Hoy / 7 días / Mes, utilidad, gráfica por día, más vendidos, por mesero y margen (dueño, RF-58 a RF-60)
 (drawer)/gastos.tsx         registrar gasto y lista por período (dueño, RF-57)
 mesa/[id].tsx               cuenta de la mesa

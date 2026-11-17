@@ -1,7 +1,7 @@
 import { AxiosError, create, type AxiosInstance } from 'axios';
 import type {
   Account, BarTicket, BillableAccount, Category, ChargeRequest, CreateRoundRequest, EditItemRequest, Expense, HealthResponse, Invoice, InvoiceListItem, ManagedUser, Profile,
-  Purchase, PurchaseListItem, ReportSummary, Role, RoundStatus, SessionUser, Settings, StockMovement, StockSuggestion, Supplier, SupplierLocation, TableAdmin, TableSummary, VoidItemRequest,
+  Purchase, PurchaseListItem, PurchasesBySupplier, ReportSummary, Role, RoundStatus, SessionUser, Settings, StockMovement, StockSuggestion, Supplier, SupplierLocation, TableAdmin, TableSummary, VoidItemRequest,
 } from '@mirador/shared';
 import { useSession } from '@/store/session';
 import { toProductModel, type ProductDTO } from './mappers';
@@ -84,6 +84,7 @@ export const api = {
   expenses: (r: DateRange) => call<Expense[]>((c) => c.get('/expenses', { params: r })),
   createExpense: (body: { concept: string; amount: number; date: string }) => call<Expense>((c) => c.post('/expenses', body)),
   summary: (r: DateRange) => call<ReportSummary>((c) => c.get('/reports/summary', { params: r })),
+  purchasesBySupplier: (r: DateRange) => call<PurchasesBySupplier>((c) => c.get('/reports/purchases-by-supplier', { params: r })),
   tablesAdmin: () => call<TableAdmin[]>((c) => c.get('/tables/all')),
   createTable: (body: { number: number; zone?: string | null }) => call<TableAdmin>((c) => c.post('/tables', body)),
   updateTable: (id: number, body: Partial<{ zone: string | null; active: boolean }>) => call<TableAdmin>((c) => c.patch(`/tables/${id}`, body)),

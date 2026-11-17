@@ -302,6 +302,23 @@ export interface ReportSummary {
   byWaiter: { waiterId: number; name: string; sales: number; invoices: number }[];
 }
 
+/** RF-56: compras del rango por proveedor (incluye inactivos con compras), ordenado por total descendente. */
+export interface PurchasesBySupplier {
+  from: string;
+  to: string;
+  total: number;
+  suppliers: {
+    supplierId: number;
+    name: string;
+    active: boolean;
+    purchases: number;
+    total: number;
+    lastDate: string;
+    /** Productos comprados, de mayor a menor total (total = Σ qty × costo). */
+    products: { productId: number; name: string; qty: number; total: number }[];
+  }[];
+}
+
 export interface HealthResponse {
   ok: true;
   business: string;
