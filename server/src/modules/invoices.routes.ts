@@ -17,10 +17,12 @@ export function invoiceRoutes(db: DB) {
     const q = String(req.query.q ?? '').trim();
     const byNumber = /^\d+$/.test(q) ? Number(q) : null;
     const byDate = /^\d{4}-\d{2}-\d{2}$/.test(q) ? q : null;
-    const rows = db.prepare(`SELECT inv.id, inv.number, inv.total, inv.created_at, inv.voided_at, t.number AS table_number, p.method
+    const rows = db.prepare(`SELECT inv.id, inv.number, inv.total, inv.created_at, inv.voided_at, t.number AS table_number,
+        CASE WHEN COUNT(p.id) > 1 THEN 'mixto' ELSE MAX(p.method) END AS method
       FROM invoices inv JOIN accounts a ON a.id = inv.account_id JOIN tables t ON t.id = a.table_id
       LEFT JOIN payments p ON p.invoice_id = inv.id
       WHERE (@n IS NULL OR inv.number = @n) AND (@d IS NULL OR date(inv.created_at, 'localtime') = @d)
+      GROUP BY inv.id -- una fila por factura aunque tenga varios pagos (RF-46)
       ORDER BY inv.number DESC LIMIT 100`).all({ n: byNumber, d: byDate }) as
       { id: number; number: number; total: number; created_at: string; voided_at: string | null; table_number: number; method: string }[];
     res.json(rows.map((v) => ({ id: v.id, number: v.number, total: v.total, createdAt: iso(v.created_at), voided: !!v.voided_at, tableNumber: v.table_number, method: v.method })));

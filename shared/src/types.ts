@@ -197,9 +197,9 @@ export interface Invoice {
   taxPercent: number;
   tax: number;
   total: number;
-  method: PaymentMethod;
-  received: number | null;
-  change: number | null;
+  /** Resumen para listas: 'mixto' si se pagó con varios pagos (RF-46). */
+  method: InvoiceMethod;
+  payments: InvoicePayment[];
   createdAt: string;
   voided: null | { at: string; by: string; reason: string };
   items: RoundItem[];
@@ -213,18 +213,30 @@ export interface InvoiceListItem {
   createdAt: string;
   voided: boolean;
   tableNumber: number;
+  method: InvoiceMethod;
+}
+
+export type InvoiceMethod = PaymentMethod | 'mixto';
+
+export interface InvoicePayment {
   method: PaymentMethod;
+  amount: number;
+  /** Solo en efectivo; el cambio es por pago. */
+  received: number | null;
+  change: number | null;
 }
 
 export interface CreateRoundRequest {
   items: { productId: number; qty: number; note?: string | null }[];
 }
 
+/** Un solo pago con `method`/`received`, o pago dividido con `payments` (RF-46). */
 export interface ChargeRequest {
   discount: string;
   tipPercent: string;
-  method: PaymentMethod;
+  method?: PaymentMethod;
   received?: string;
+  payments?: { method: PaymentMethod; amount: string; received?: string }[];
 }
 
 /** RF-33: cambiar cantidad o nota de un ítem en una ronda tomada. */

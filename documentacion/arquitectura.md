@@ -35,7 +35,14 @@ Para agregar un módulo: crea `modules/<nombre>.routes.ts`, que exporta una func
 | tables | `GET /tables` (mapa) · `GET /tables/all` · `POST /tables` `{number, zone?}` · `PATCH /tables/:id` `{zone?, active?}` (dueño) ✅ | 16, 22 |
 | accounts | `POST /accounts` · `GET /accounts/:id` · `/request-bill` · `/reopen` · `POST /accounts/:id/move` `{tableNumber}` · `POST /accounts/:id/merge` `{intoAccountId}` ✅ | 17–21 |
 | rounds | `POST /accounts/:id/rounds` (Idempotency-Key) · `GET /rounds` · `PATCH /rounds/:id/status` · `POST /rounds/items/:itemId/void` · `PATCH /rounds/items/:itemId` `{qty, note}` ✅ | 23–37 |
-| billing | `GET /accounts?status=por_cobrar` · `POST /accounts/:id/charge` · `GET /invoices?q=` · `GET /invoices/:id` · `POST /invoices/:id/void` `{reason}` ✅ | 38–44 |
+| billing | `GET /accounts?status=por_cobrar` · `POST /accounts/:id/charge` `{discount, tipPercent, method, received?}` o `{discount, tipPercent, payments: [{method, amount, received?}]}` · `GET /invoices?q=` · `GET /invoices/:id` · `POST /invoices/:id/void` `{reason}` ✅ | 38–44, 46 |
+
+Decisiones del bloque 5.1 (RF-46, dividir pago):
+
+- **Formato:** `POST /accounts/:id/charge` acepta el formato de un solo pago (`method`, `received`) o `payments` (1 a 10). La app usa el primero en el cobro normal y el segundo al dividir.
+- **Reglas** en `splitPayments` de shared (pruebas en `billing.test.ts`): el total sale de `calculateBill`; cada monto es entero > 0; la suma debe ser exactamente el total; en efectivo `received ≥ amount` y el cambio es por pago. Errores por campo: `payments.N.amount`, `payments.N.received` y `payments` (la suma no cuadra). `equalShares` reparte en partes iguales y la última absorbe el redondeo.
+- **Servidor:** recalcula todo, inserta una fila de `payments` por pago en la misma transacción que la factura; si algo falla no queda nada.
+- **Lecturas:** `Invoice.payments` trae `{method, amount, received, change}[]` y `Invoice.method` es el resumen (`mixto` con varios pagos). La lista de facturas agrupa por factura (sin filas duplicadas). Los reportes suman desde `invoices`, así que las ventas no se duplican.
 
 Decisiones del bloque 4.1:
 
@@ -126,7 +133,7 @@ login.tsx                   perfil y PIN
 (drawer)/gastos.tsx         registrar gasto y lista por período (dueño, RF-57)
 mesa/[id].tsx               cuenta de la mesa
 mesa/[id]/ronda.tsx         tomar ronda
-cobro/[id].tsx              cobrar
+cobro/[id].tsx              cobrar (un pago o «Dividir pago», RF-46)
 factura/[id].tsx            factura (el dueño la anula, RF-44)
 producto/[id].tsx           detalle (RF-12); se abre desde Productos o con pulsación larga en la ronda
 producto/editar.tsx         crear producto, o editar/desactivar con ?id= (dueño, RF-13/14)

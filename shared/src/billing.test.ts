@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculateBill, estimatedProfit } from './billing';
+import { calculateBill, equalShares, estimatedProfit, splitPayments } from './billing';
 import { periodRange } from './admin';
 
 const base = { subtotal: 63000, taxPercent: 8, method: 'efectivo' as const };
@@ -43,6 +43,50 @@ describe('calculateBill (sección 4.3)', () => {
 
   it('con tarjeta no pide monto recibido', () => {
     expect(calculateBill({ ...base, method: 'tarjeta', discount: '0', tipPercent: '10' }).ready).toBe(true);
+  });
+});
+
+describe('splitPayments (RF-46)', () => {
+  it('acepta pagos que suman exactamente el total, con cambio por pago en efectivo', () => {
+    const r = splitPayments(70800, [
+      { method: 'efectivo', amount: '30.000', received: '50.000' },
+      { method: 'tarjeta', amount: '40800' },
+    ]);
+    expect(r.ready).toBe(true);
+    expect(r.remaining).toBe(0);
+    expect(r.payments).toEqual([
+      { method: 'efectivo', amount: 30000, received: 50000, change: 20000 },
+      { method: 'tarjeta', amount: 40800, received: null, change: null },
+    ]);
+  });
+
+  it('marca lo que falta o lo que sobra', () => {
+    const falta = splitPayments(70800, [{ method: 'tarjeta', amount: '70000' }]);
+    expect(falta.remaining).toBe(800);
+    expect(falta.errors.payments).toMatch(/no cubren/);
+    const sobra = splitPayments(70800, [{ method: 'tarjeta', amount: '40000' }, { method: 'transferencia', amount: '40000' }]);
+    expect(sobra.remaining).toBe(-9200);
+    expect(sobra.errors.payments).toMatch(/superan/);
+    expect(sobra.ready).toBe(false);
+  });
+
+  it('valida cada pago con su campo', () => {
+    const r = splitPayments(1000, [
+      { method: 'tarjeta', amount: '0' },
+      { method: 'efectivo', amount: '500', received: '400' },
+      { method: 'tarjeta', amount: '' },
+      { method: 'tarjeta', amount: '10,5' },
+    ]);
+    expect(Object.keys(r.errors).sort()).toEqual(['payments.0.amount', 'payments.1.received', 'payments.2.amount', 'payments.3.amount']);
+    expect(r.errors['payments.1.received']).toMatch(/no cubre/);
+    expect(splitPayments(1000, []).errors.payments).toBeDefined();
+  });
+
+  it('partes iguales: el último absorbe el redondeo', () => {
+    expect(equalShares(70800, 3)).toEqual([23600, 23600, 23600]);
+    expect(equalShares(100000, 3)).toEqual([33333, 33333, 33334]);
+    expect(equalShares(100000, 3).reduce((a, b) => a + b, 0)).toBe(100000);
+    expect(equalShares(5000, 1)).toEqual([5000]);
   });
 });
 

@@ -1,5 +1,5 @@
 /* Lecturas que arman los objetos que ve la app. Solo SELECT; nada de reglas aquí. */
-import { estimatedProfit, type Account, type BarTicket, type Expense, type Invoice, type PaymentMethod, type Purchase, type PurchaseListItem, type ReportSummary, type Round, type RoundItem, type RoundStatus } from '@mirador/shared';
+import { estimatedProfit, type Account, type BarTicket, type Expense, type Invoice, type InvoicePayment, type Purchase, type PurchaseListItem, type ReportSummary, type Round, type RoundItem, type RoundStatus } from '@mirador/shared';
 import type { DB } from '../db/index';
 
 interface ItemRow {
@@ -62,24 +62,24 @@ export function barQueue(db: DB, statuses: RoundStatus[]): BarTicket[] {
 }
 
 export function loadInvoice(db: DB, id: number): Invoice | null {
-  const v = db.prepare(`SELECT inv.*, t.number AS table_number, w.name AS waiter, c.name AS cashier, vb.name AS voided_by_name,
-      p.method, p.received, p.change
+  const v = db.prepare(`SELECT inv.*, t.number AS table_number, w.name AS waiter, c.name AS cashier, vb.name AS voided_by_name
     FROM invoices inv JOIN accounts a ON a.id = inv.account_id JOIN tables t ON t.id = a.table_id
     JOIN users w ON w.id = a.waiter_id JOIN users c ON c.id = inv.cashier_id LEFT JOIN users vb ON vb.id = inv.voided_by
-    LEFT JOIN payments p ON p.invoice_id = inv.id WHERE inv.id = ?`).get(id) as
+    WHERE inv.id = ?`).get(id) as
     | {
         id: number; number: number; account_id: number; table_number: number; waiter: string; cashier: string; subtotal: number; discount: number;
-        tip_percent: number; tip: number; tax_percent: number; tax: number; total: number; method: PaymentMethod; received: number | null;
-        change: number | null; created_at: string; voided_at: string | null; voided_by_name: string | null; void_reason: string | null;
+        tip_percent: number; tip: number; tax_percent: number; tax: number; total: number;
+        created_at: string; voided_at: string | null; voided_by_name: string | null; void_reason: string | null;
       }
     | undefined;
   if (!v) return null;
   const roundIds = (db.prepare('SELECT id FROM rounds WHERE account_id = ? ORDER BY number').all(v.account_id) as { id: number }[]).map((r) => r.id);
   const items = [...itemsOfRounds(db, roundIds).values()].flat();
+  const payments = db.prepare('SELECT method, amount, received, change FROM payments WHERE invoice_id = ? ORDER BY id').all(id) as InvoicePayment[];
   return {
     id: v.id, number: v.number, accountId: v.account_id, tableNumber: v.table_number, waiter: v.waiter, cashier: v.cashier,
     subtotal: v.subtotal, discount: v.discount, tipPercent: v.tip_percent, tip: v.tip, taxPercent: v.tax_percent, tax: v.tax, total: v.total,
-    method: v.method, received: v.received, change: v.change, createdAt: iso(v.created_at),
+    method: payments.length === 1 ? payments[0]!.method : 'mixto', payments, createdAt: iso(v.created_at),
     voided: v.voided_at ? { at: iso(v.voided_at), by: v.voided_by_name ?? '', reason: v.void_reason ?? '' } : null,
     items,
   };

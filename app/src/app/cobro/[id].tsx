@@ -2,7 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
-import { calculateBill, type PaymentMethod } from '@mirador/shared';
+import { calculateBill, equalShares, splitPayments, type PaymentInput, type PaymentMethod } from '@mirador/shared';
 import { AppButton } from '@/components/AppButton';
 import { Screen } from '@/components/Screen';
 import { StateView } from '@/components/StateView';
@@ -12,7 +12,13 @@ import { api, ApiError } from '@/services/api';
 import { colors, radius, space, type } from '@/theme';
 import { money, pad } from '@/utils/format';
 
-/** RF-39 a RF-42: cálculo en vivo, validaciones, método de pago y factura. */
+const METHODS: { value: PaymentMethod; label: string }[] = [
+  { value: 'efectivo', label: 'Efectivo' },
+  { value: 'tarjeta', label: 'Tarjeta' },
+  { value: 'transferencia', label: 'Transferencia' },
+];
+
+/** RF-39 a RF-42: cálculo en vivo, validaciones, método de pago y factura. RF-46: dividir el pago. */
 export default function Cobro() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const accountId = Number(id);
@@ -25,6 +31,7 @@ export default function Cobro() {
   const [tip, setTip] = useState<string | null>(null); // null = usar la sugerida
   const [method, setMethod] = useState<PaymentMethod>('efectivo');
   const [received, setReceived] = useState('');
+  const [split, setSplit] = useState<PaymentInput[] | null>(null); // null = un solo pago
 
   const charge = useMutation({
     mutationFn: (body: Parameters<typeof api.charge>[1]) => api.charge(accountId, body),
@@ -36,7 +43,7 @@ export default function Cobro() {
     onError: (e) => {
       // Si la respuesta se perdió pero el cobro sí entró, la cuenta pasa a «pagada» y aparece la factura.
       invalidate(accountId);
-      if (!(e instanceof ApiError && e.field && ['discount', 'tipPercent', 'received'].includes(e.field))) Alert.alert('No se pudo cobrar', (e as Error).message);
+      if (!(e instanceof ApiError && e.field && (['discount', 'tipPercent', 'received'].includes(e.field) || e.field.startsWith('payments')))) Alert.alert('No se pudo cobrar', (e as Error).message);
     },
   });
 
@@ -51,10 +58,17 @@ export default function Cobro() {
 
   const a = account.data;
   const tipText = tip ?? String(settings.data.suggestedTipPercent);
-  const b = calculateBill({ subtotal: a.subtotal, discount, tipPercent: tipText, taxPercent: settings.data.taxPercent, method, received });
+  const b = calculateBill({ subtotal: a.subtotal, discount, tipPercent: tipText, taxPercent: settings.data.taxPercent, method: split ? undefined : method, received });
+  const sp = split && splitPayments(b.total, split);
   // El servidor vuelve a validar; si responde con un campo, se muestra en ese campo.
   const serverErr = charge.error instanceof ApiError && charge.error.field ? { [charge.error.field]: charge.error.message } : {};
-  const errors = { ...serverErr, ...b.errors } as Record<string, string | undefined>;
+  const errors = { ...serverErr, ...b.errors, ...(sp ? sp.errors : {}) } as Record<string, string | undefined>;
+  const setRow = (i: number, patch: Partial<PaymentInput>) => { setSplit(split!.map((r, j) => (j === i ? { ...r, ...patch } : r))); charge.reset(); };
+  // Reparte el total entre n personas conservando el método que ya tenía cada fila.
+  const shareEqually = (n: number) => {
+    setSplit(equalShares(b.total, n).map((amt, i) => ({ method: split?.[i]?.method ?? 'efectivo', amount: String(amt), received: '' })));
+    charge.reset();
+  };
   const suggestion = Math.ceil(b.total / 10000) * 10000;
 
   if (a.status !== 'por_cobrar') {
@@ -76,9 +90,11 @@ export default function Cobro() {
         <AppButton
           label={`Cobrar ${money(b.total)} y facturar`}
           icon="receipt"
-          disabled={!b.ready || conn === 'off'}
+          disabled={!b.ready || (!!sp && !sp.ready) || conn === 'off'}
           loading={charge.isPending}
-          onPress={() => charge.mutate({ discount, tipPercent: tipText, method, received: method === 'efectivo' ? received : undefined })}
+          onPress={() => charge.mutate(split
+            ? { discount, tipPercent: tipText, payments: split.map((r) => ({ ...r, received: r.method === 'efectivo' ? r.received : undefined })) }
+            : { discount, tipPercent: tipText, method, received: method === 'efectivo' ? received : undefined })}
         />
       }
     >
@@ -104,26 +120,63 @@ export default function Cobro() {
         </View>
       </Card>
 
-      <Text style={type.label}>Método de pago</Text>
-      <Chips<PaymentMethod>
-        value={method}
-        onChange={(m) => { setMethod(m); charge.reset(); }}
-        options={[
-          { value: 'efectivo', label: 'Efectivo' },
-          { value: 'tarjeta', label: 'Tarjeta' },
-          { value: 'transferencia', label: 'Transferencia' },
-        ]}
-      />
-      {method === 'efectivo' && (
-        <View style={styles.two}>
-          <Field half keyboardType="numeric" label="Recibido" value={received} onChangeText={(t) => { setReceived(t); charge.reset(); }} error={errors.received} placeholder={`Ej. ${money(suggestion)}`} />
-          <View style={{ flex: 1, gap: 6 }}>
-            <Text style={styles.lb}>Cambio</Text>
-            <View style={[styles.input, styles.ro]}>
-              <Text style={{ color: colors.ink, fontSize: 17, fontWeight: '800' }}>{b.change != null ? money(b.change) : '—'}</Text>
+      {split && sp ? (
+        <>
+          <Text style={type.label}>Pagos</Text>
+          <Text style={type.small}>Partes iguales entre:</Text>
+          <Chips<string>
+            value={String(split.length)}
+            onChange={(n) => shareEqually(Number(n))}
+            options={['2', '3', '4', '5', '6'].map((n) => ({ value: n, label: `${n} personas` }))}
+          />
+          {split.map((row, i) => (
+            <Card key={i} title={`Pago ${i + 1}`} right={split.length > 1 ? (
+              <AppButton compact variant="text" icon="close" label="Quitar" onPress={() => { setSplit(split.filter((_, j) => j !== i)); charge.reset(); }} />
+            ) : undefined}>
+              <View style={{ padding: space.md, gap: space.sm }}>
+                <Chips<PaymentMethod> value={row.method} onChange={(m) => setRow(i, { method: m })} options={METHODS} />
+                <View style={styles.two}>
+                  <Field half keyboardType="numeric" label="Monto" accessibilityLabel={`Monto del pago ${i + 1}`} value={row.amount} onChangeText={(t) => setRow(i, { amount: t })} error={errors[`payments.${i}.amount`]} />
+                  {row.method === 'efectivo' && (
+                    <Field half keyboardType="numeric" label="Recibido" accessibilityLabel={`Recibido en el pago ${i + 1}`} value={row.received} onChangeText={(t) => setRow(i, { received: t })} error={errors[`payments.${i}.received`]}
+                      help={sp.payments[i]?.change != null ? `Cambio: ${money(sp.payments[i]!.change!)}` : undefined} />
+                  )}
+                </View>
+              </View>
+            </Card>
+          ))}
+          {split.length < 10 && (
+            <AppButton variant="outline" icon="plus" label="Agregar pago" onPress={() => { setSplit([...split, { method: 'tarjeta', amount: sp.remaining > 0 ? String(sp.remaining) : '' }]); charge.reset(); }} />
+          )}
+          <Card>
+            <View style={{ paddingHorizontal: space.lg, paddingVertical: space.sm }}>
+              <MoneyRow label={sp.remaining > 0 ? 'Falta por cubrir' : sp.remaining < 0 ? 'Sobra' : 'Cubierto'} value={Math.abs(sp.remaining)} strong />
             </View>
-          </View>
-        </View>
+          </Card>
+          {errors.payments && <Text style={styles.err}>{errors.payments}</Text>}
+          <AppButton variant="text" icon="cash" label="Volver a un solo pago" onPress={() => { setSplit(null); charge.reset(); }} />
+        </>
+      ) : (
+        <>
+          <Text style={type.label}>Método de pago</Text>
+          <Chips<PaymentMethod>
+            value={method}
+            onChange={(m) => { setMethod(m); charge.reset(); }}
+            options={METHODS}
+          />
+          {method === 'efectivo' && (
+            <View style={styles.two}>
+              <Field half keyboardType="numeric" label="Recibido" value={received} onChangeText={(t) => { setReceived(t); charge.reset(); }} error={errors.received} placeholder={`Ej. ${money(suggestion)}`} />
+              <View style={{ flex: 1, gap: 6 }}>
+                <Text style={styles.lb}>Cambio</Text>
+                <View style={[styles.input, styles.ro]}>
+                  <Text style={{ color: colors.ink, fontSize: 17, fontWeight: '800' }}>{b.change != null ? money(b.change) : '—'}</Text>
+                </View>
+              </View>
+            </View>
+          )}
+          <AppButton variant="outline" icon="call-split" label="Dividir pago" onPress={() => shareEqually(2)} />
+        </>
       )}
       <Text style={type.small}>Al cobrar se genera la factura con el siguiente número consecutivo y la mesa {a.tableNumber} queda libre.</Text>
     </Screen>
@@ -135,4 +188,5 @@ const styles = StyleSheet.create({
   lb: { color: colors.ink2, fontSize: 13, fontWeight: '600' },
   input: { minHeight: 50, borderWidth: 1, borderColor: colors.line, borderRadius: radius.md, paddingHorizontal: 12, color: colors.ink, fontSize: 17, backgroundColor: colors.face, justifyContent: 'center' },
   ro: { backgroundColor: colors.face2 },
+  err: { color: colors.red, fontSize: 13 },
 });

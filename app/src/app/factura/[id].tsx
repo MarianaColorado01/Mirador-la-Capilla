@@ -13,7 +13,7 @@ import { useSession } from '@/store/session';
 import { colors, radius, space, type } from '@/theme';
 import { dateTime, pad } from '@/utils/format';
 
-const METHOD = { efectivo: 'Efectivo', tarjeta: 'Tarjeta', transferencia: 'Transferencia' } as const;
+const METHOD = { efectivo: 'Efectivo', tarjeta: 'Tarjeta', transferencia: 'Transferencia', mixto: 'Pago dividido' } as const;
 
 /** RF-42 a RF-44: factura emitida, su detalle y su anulación. Un id inexistente muestra «Factura no encontrada». */
 export default function Factura() {
@@ -63,8 +63,16 @@ export default function Factura() {
           <MoneyRow label={`Propina ${v.tipPercent} %`} value={v.tip} />
           <MoneyRow label={`Impuesto ${v.taxPercent} %`} value={v.tax} />
           <MoneyRow label="Total" value={v.total} strong />
-          {v.received != null && <MoneyRow label="Recibido" value={v.received} />}
-          {v.change != null && <MoneyRow label="Cambio" value={v.change} />}
+        </View>
+        {/* RF-46: uno o varios pagos; en efectivo el cambio es por pago */}
+        <View style={styles.block}>
+          {v.payments.map((p, i) => (
+            <View key={i}>
+              <MoneyRow label={v.payments.length > 1 ? `Pago ${i + 1} · ${METHOD[p.method]}` : `Pagado · ${METHOD[p.method]}`} value={p.amount} />
+              {p.received != null && <MoneyRow label="Recibido" value={p.received} />}
+              {p.change != null && <MoneyRow label="Cambio" value={p.change} />}
+            </View>
+          ))}
         </View>
       </Card>
       <Text style={type.small}>Numeración consecutiva. La factura queda guardada en el servidor del local.</Text>
