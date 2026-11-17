@@ -9,7 +9,7 @@ import { useInvoices } from '@/hooks/queries';
 import { colors, radius, type } from '@/theme';
 import { dateTime, money, pad } from '@/utils/format';
 
-const METHOD = { efectivo: 'Efectivo', tarjeta: 'Tarjeta', transferencia: 'Transferencia' } as const;
+const METHOD = { efectivo: 'Efectivo', tarjeta: 'Tarjeta', transferencia: 'Transferencia', mixto: 'Pago dividido' } as const;
 // El servidor busca por número exacto o por día (AAAA-MM-DD).
 const VALID = /^(\d+|\d{4}-\d{2}-\d{2})$/;
 

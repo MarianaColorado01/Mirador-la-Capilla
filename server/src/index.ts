@@ -4,6 +4,7 @@ import qrcode from 'qrcode-terminal';
 import { createApp } from './app';
 import { getSettings, openDb } from './db/index';
 import { seed } from './db/seed';
+import { startDailyBackups } from './lib/backups';
 import { noopEmit, type Emit } from './lib/events';
 import { attachRealtime } from './realtime';
 
@@ -11,6 +12,8 @@ const PORT = Number(process.env.PORT ?? 3000);
 
 const db = openDb();
 if (seed(db)) console.log('Base nueva: se cargaron los datos de ejemplo (PIN de prueba 1234).');
+// RF-71: copia diaria automática en server/backups/.
+startDailyBackups(db);
 
 // Express necesita `emit` y Socket.IO necesita el servidor HTTP: se enlazan con una referencia.
 // (Socket.IO debe engancharse después de Express para atender él mismo /socket.io/.)

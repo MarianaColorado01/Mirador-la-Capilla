@@ -1,5 +1,6 @@
 /* Cálculo del cobro — sección 4.3 del documento de requerimientos.
    Lo usan la app (para mostrarlo en vivo) y el servidor (que es quien decide). */
+import type { InvoicePayment, PaymentMethod } from './types';
 
 export interface BillInput {
   /** Σ cantidad × precio de los ítems no anulados */
@@ -8,7 +9,8 @@ export interface BillInput {
   discount: string;
   tipPercent: string;
   taxPercent: number;
-  method: 'efectivo' | 'tarjeta' | 'transferencia';
+  /** Sin método (pago dividido, RF-46) no se valida el recibido: lo hace `splitPayments`. */
+  method?: PaymentMethod;
   received?: string;
 }
 
@@ -65,6 +67,53 @@ export function calculateBill(input: BillInput): BillResult {
   }
 
   return { discount, tipPercent, base, tip, tax, total, change, errors, ready: Object.keys(errors).length === 0 && receivedOk };
+}
+
+export interface PaymentInput {
+  method: PaymentMethod;
+  amount: string;
+  received?: string;
+}
+
+export interface SplitResult {
+  payments: InvoicePayment[];
+  /** total − Σ montos válidos: > 0 falta, < 0 sobra */
+  remaining: number;
+  /** Claves `payments.N.amount`, `payments.N.received` y `payments` (la suma no cuadra). */
+  errors: Record<string, string>;
+  ready: boolean;
+}
+
+/** RF-46: varios pagos para una misma factura. La suma debe ser exactamente el total y en
+    efectivo el cambio se calcula por pago. */
+export function splitPayments(total: number, inputs: PaymentInput[]): SplitResult {
+  const errors: Record<string, string> = {};
+  let covered = 0;
+  const payments = inputs.map((p, i): InvoicePayment => {
+    const amount = parseAmount(p.amount);
+    const amountOk = Number.isInteger(amount) && amount > 0;
+    if ((p.amount ?? '').trim() === '') errors[`payments.${i}.amount`] = 'Escribe el monto.';
+    else if (!amountOk) errors[`payments.${i}.amount`] = 'El monto debe ser un número entero mayor que 0.';
+    else covered += amount;
+    if (p.method !== 'efectivo') return { method: p.method, amount, received: null, change: null };
+    const raw = (p.received ?? '').trim();
+    const r = parseAmount(raw);
+    if (raw === '') errors[`payments.${i}.received`] = 'Escribe el monto recibido.';
+    else if (Number.isNaN(r)) errors[`payments.${i}.received`] = 'Escribe solo números.';
+    else if (amountOk && r < amount) errors[`payments.${i}.received`] = 'El recibido no cubre este pago.';
+    return { method: p.method, amount, received: r, change: amountOk && r >= amount ? r - amount : null };
+  });
+  const remaining = total - covered;
+  if (inputs.length === 0) errors.payments = 'Agrega al menos un pago.';
+  else if (Object.keys(errors).length === 0 && remaining !== 0)
+    errors.payments = remaining > 0 ? 'Los pagos no cubren el total.' : 'Los pagos superan el total.';
+  return { payments, remaining, errors, ready: Object.keys(errors).length === 0 };
+}
+
+/** Reparte el total en n partes enteras iguales; la última absorbe el redondeo. */
+export function equalShares(total: number, n: number): number[] {
+  const part = Math.floor(total / n);
+  return Array.from({ length: n }, (_, i) => (i === n - 1 ? total - part * (n - 1) : part));
 }
 
 /** Utilidad estimada = ventas − costo de lo vendido − otros gastos (el surtido no se resta). */

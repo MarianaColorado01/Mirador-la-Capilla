@@ -169,3 +169,52 @@ describe('resumen (RF-58, RF-59, sección 4.3)', () => {
     expect((await as('Dueño').get(`/expenses?${q}`)).status).toBe(400);
   });
 });
+
+describe('compras por proveedor (RF-56)', () => {
+  const bySupplier = (from: string, to = from) => as('Dueño').get(`/reports/purchases-by-supplier?from=${from}&to=${to}`);
+  const buy = async (supplierId: number, date: string, items: [string, number, number][]) =>
+    expect((await as('Dueño').post('/purchases', { supplierId, date, items: items.map(([p, qty, unitCost]) => ({ productId: pid(p), qty, unitCost })) })).status).toBe(201);
+
+  it('suma por proveedor, incluye inactivos con compras, excluye lo de fuera del rango y ordena por total', async () => {
+    const x = id("SELECT id FROM suppliers WHERE name = 'Distribuidora X'");
+    const y = Number(db.prepare("INSERT INTO suppliers(name) VALUES('Licores Y')").run().lastInsertRowid);
+    db.prepare("INSERT INTO suppliers(name) VALUES('Sin compras')").run();
+    await buy(x, '2026-03-10', [['Águila 330 ml', 24, 2500], ['Club Colombia', 10, 3000]]); // 60.000 + 30.000
+    await buy(x, '2026-03-12', [['Águila 330 ml', 12, 2600]]); // 31.200
+    await buy(y, '2026-03-11', [['Club Colombia', 50, 3000]]); // 150.000
+    await buy(y, '2026-03-20', [['Club Colombia', 1, 9999]]); // fuera del rango
+    db.prepare('UPDATE suppliers SET active = 0 WHERE id = ?').run(y); // RN-04: inactivo, pero sus compras siguen contando
+
+    const r = await bySupplier('2026-03-10', '2026-03-15');
+    expect(r.status).toBe(200);
+    expect(r.body).toEqual({
+      from: '2026-03-10', to: '2026-03-15', total: 271200,
+      suppliers: [
+        { supplierId: y, name: 'Licores Y', active: false, purchases: 1, total: 150000, lastDate: '2026-03-11',
+          products: [{ productId: pid('Club Colombia'), name: 'Club Colombia', qty: 50, total: 150000 }] },
+        { supplierId: x, name: 'Distribuidora X', active: true, purchases: 2, total: 121200, lastDate: '2026-03-12',
+          products: [
+            { productId: pid('Águila 330 ml'), name: 'Águila 330 ml', qty: 36, total: 91200 },
+            { productId: pid('Club Colombia'), name: 'Club Colombia', qty: 10, total: 30000 },
+          ] },
+      ],
+    });
+    expect((await bySupplier('2026-03-20')).body).toMatchObject({ total: 9999, suppliers: [{ supplierId: y, purchases: 1 }] });
+    expect((await bySupplier('2020-01-01')).body).toEqual({ from: '2020-01-01', to: '2020-01-01', total: 0, suppliers: [] });
+  });
+
+  it('solo el dueño (RN-09)', async () => {
+    for (const who of ['Ana', 'Cajero', 'Operador', 'Preparador'])
+      expect((await as(who).get(`/reports/purchases-by-supplier?from=${localDate()}&to=${localDate()}`)).status).toBe(403);
+  });
+
+  it.each([
+    ['from=2026-03-11&to=2026-03-10', 'to'],
+    ['from=2026-03-10', 'to'],
+    ['from=2026-02-30&to=2026-03-10', 'from'],
+  ])('rango inválido %s → 400', async (q, field) => {
+    const r = await as('Dueño').get(`/reports/purchases-by-supplier?${q}`);
+    expect(r.status).toBe(400);
+    expect(r.body.field).toBe(field);
+  });
+});

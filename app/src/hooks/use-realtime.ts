@@ -4,6 +4,7 @@ import { Vibration } from 'react-native';
 import { io } from 'socket.io-client';
 import type { ServerEvents } from '@mirador/shared';
 import { useLive } from '@/store/live';
+import { useRoundDrafts } from '@/store/round-drafts';
 import { useSession } from '@/store/session';
 import { keys } from './queries';
 
@@ -76,6 +77,12 @@ export function useRealtime() {
     socket.on('stock:bajo', (e: ServerEvents['stock:bajo']) => {
       qc.invalidateQueries({ queryKey: keys.products });
       notify({ tone: 'amber', icon: 'alert-outline', title: `Stock bajo: ${e.name}`, text: `Quedan ${e.stock} (mínimo ${e.minStock}).` });
+    });
+    socket.on('datos:restaurados', () => {
+      // RF-71: todo volvió a otra fecha. Los borradores apuntan a cuentas que pueden ya no ser las mismas.
+      useRoundDrafts.setState({ drafts: {} });
+      qc.invalidateQueries();
+      notify({ tone: 'amber', icon: 'backup-restore', title: 'Se restauró una copia', text: 'Los datos volvieron a esa fecha. Revisa las mesas antes de seguir.' });
     });
 
     return () => {

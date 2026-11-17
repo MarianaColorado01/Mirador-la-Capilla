@@ -3,9 +3,9 @@ import { DateRangeSchema } from '@mirador/shared';
 import type { DB } from '../db/index';
 import { requireAuth, requireRole } from '../lib/auth';
 import { route } from '../lib/http';
-import { loadSummary } from '../services/views';
+import { loadPurchasesBySupplier, loadSummary } from '../services/views';
 
-/** Reportes (RF-58, RF-59). Solo el dueño. */
+/** Reportes (RF-56, RF-58, RF-59). Solo el dueño. */
 export function reportRoutes(db: DB) {
   const r = Router();
   r.use(requireAuth(db), requireRole());
@@ -14,6 +14,11 @@ export function reportRoutes(db: DB) {
   r.get('/summary', route((req, res) => {
     const { from, to } = DateRangeSchema.parse(req.query);
     res.json(loadSummary(db, from, to));
+  }));
+
+  r.get('/purchases-by-supplier', route((req, res) => {
+    const { from, to } = DateRangeSchema.parse(req.query);
+    res.json(loadPurchasesBySupplier(db, from, to));
   }));
 
   return r;

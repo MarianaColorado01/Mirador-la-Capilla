@@ -1,6 +1,7 @@
 /* Proceso principal: abrir mesa → rondas → barra → pedir cuenta → cobrar. Reglas RN-01 a RN-09. */
 import request from 'supertest';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { localDate } from '@mirador/shared';
 import { createApp } from './app';
 import { openDb, saveSettings, type DB } from './db/index';
 import { DEMO_PIN, seed } from './db/seed';
@@ -241,7 +242,8 @@ describe('cobro y factura', () => {
     const id = await billable(1);
     const r = await as('Cajero').post(`/accounts/${id}/charge`, { discount: '3.000', tipPercent: '10', method: 'efectivo', received: '80.000' });
     expect(r.status).toBe(201);
-    expect(r.body).toMatchObject({ number: 1, subtotal: 63000, discount: 3000, tip: 6000, tax: 4800, total: 70800, received: 80000, change: 9200, tableNumber: 1 });
+    expect(r.body).toMatchObject({ number: 1, subtotal: 63000, discount: 3000, tip: 6000, tax: 4800, total: 70800, tableNumber: 1, method: 'efectivo' });
+    expect(r.body.payments).toEqual([{ method: 'efectivo', amount: 70800, received: 80000, change: 9200 }]);
     const t = (await as('Ana').get('/tables')).body.find((x: { number: number }) => x.number === 1);
     expect(t.status).toBe('libre');
 
@@ -249,6 +251,53 @@ describe('cobro y factura', () => {
     const r2 = await as('Cajero').post(`/accounts/${id2}/charge`, { discount: '', tipPercent: '', method: 'tarjeta' });
     expect(r2.body.number).toBe(2);
     expect((await as('Cajero').post(`/accounts/${id}/charge`, { discount: '', tipPercent: '', method: 'tarjeta' })).status).toBe(409);
+  });
+
+  it('divide el cobro en varios pagos con cambio por pago (RF-46)', async () => {
+    const id = await billable(1); // total 70.800 con descuento 3.000 y propina 10 %
+    const r = await as('Cajero').post(`/accounts/${id}/charge`, {
+      discount: '3.000', tipPercent: '10',
+      payments: [
+        { method: 'efectivo', amount: '23.600', received: '30.000' },
+        { method: 'tarjeta', amount: '23600' },
+        { method: 'transferencia', amount: '23600' },
+      ],
+    });
+    expect(r.status).toBe(201);
+    expect(r.body.method).toBe('mixto');
+    expect(r.body.payments).toEqual([
+      { method: 'efectivo', amount: 23600, received: 30000, change: 6400 },
+      { method: 'tarjeta', amount: 23600, received: null, change: null },
+      { method: 'transferencia', amount: 23600, received: null, change: null },
+    ]);
+    expect((await as('Cajero').get(`/invoices/${r.body.id}`)).body.payments).toHaveLength(3);
+
+    // Lista sin filas duplicadas y reportes sin ventas duplicadas
+    const id2 = await billable(2);
+    await as('Cajero').post(`/accounts/${id2}/charge`, { discount: '', tipPercent: '', method: 'tarjeta' });
+    const list = (await as('Cajero').get('/invoices')).body;
+    expect(list.map((v: { number: number; method: string }) => [v.number, v.method])).toEqual([[2, 'tarjeta'], [1, 'mixto']]);
+    const day = localDate();
+    const rep = (await as('Dueño').get(`/reports/summary?from=${day}&to=${day}`)).body;
+    expect(rep.invoiceCount).toBe(2);
+    expect(rep.sales).toBe(60000 + 63000); // Σ (subtotal − descuento), una vez por factura
+    expect(rep.averageTicket).toBe(61500);
+  });
+
+  it('pago dividido que no cuadra → 400 con campo y sin efectos parciales (RF-46)', async () => {
+    const id = await billable(1);
+    const post = (payments: object[]) => as('Cajero').post(`/accounts/${id}/charge`, { discount: '', tipPercent: '', payments });
+    const short = await post([{ method: 'tarjeta', amount: '10000' }, { method: 'transferencia', amount: '10000' }]);
+    expect(short.status).toBe(400);
+    expect(short.body.field).toBe('payments');
+    const poor = await post([{ method: 'tarjeta', amount: '40000' }, { method: 'efectivo', amount: '28040', received: '20000' }]);
+    expect(poor.body.field).toBe('payments.1.received');
+    const zero = await post([{ method: 'tarjeta', amount: '0' }]);
+    expect(zero.body.field).toBe('payments.0.amount');
+    expect((await post([])).body.field).toBe('payments');
+    expect(db.prepare('SELECT COUNT(*) AS n FROM invoices').get()).toEqual({ n: 0 });
+    expect(db.prepare('SELECT COUNT(*) AS n FROM payments').get()).toEqual({ n: 0 });
+    expect((await as('Cajero').get(`/accounts/${id}`)).body.status).toBe('por_cobrar');
   });
 
   it('historial y detalle de facturas (RF-43)', async () => {

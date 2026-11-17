@@ -1,7 +1,8 @@
 import { AxiosError, create, type AxiosInstance } from 'axios';
+import { File, Paths } from 'expo-file-system';
 import type {
-  Account, BarTicket, BillableAccount, Category, ChargeRequest, CreateRoundRequest, EditItemRequest, Expense, HealthResponse, Invoice, InvoiceListItem, ManagedUser, Profile,
-  Purchase, PurchaseListItem, ReportSummary, Role, RoundStatus, SessionUser, Settings, StockMovement, StockSuggestion, Supplier, SupplierLocation, TableAdmin, TableSummary, VoidItemRequest,
+  Account, BackupInfo, BarTicket, BillableAccount, Category, ChargeRequest, CreateRoundRequest, EditItemRequest, Expense, HealthResponse, Invoice, InvoiceListItem, ManagedUser, Profile,
+  Purchase, PurchaseListItem, PurchasesBySupplier, ReportSummary, Role, RoundStatus, SessionUser, Settings, StockMovement, StockSuggestion, Supplier, SupplierLocation, TableAdmin, TableSummary, VoidItemRequest,
 } from '@mirador/shared';
 import { useSession } from '@/store/session';
 import { toProductModel, type ProductDTO } from './mappers';
@@ -84,6 +85,7 @@ export const api = {
   expenses: (r: DateRange) => call<Expense[]>((c) => c.get('/expenses', { params: r })),
   createExpense: (body: { concept: string; amount: number; date: string }) => call<Expense>((c) => c.post('/expenses', body)),
   summary: (r: DateRange) => call<ReportSummary>((c) => c.get('/reports/summary', { params: r })),
+  purchasesBySupplier: (r: DateRange) => call<PurchasesBySupplier>((c) => c.get('/reports/purchases-by-supplier', { params: r })),
   tablesAdmin: () => call<TableAdmin[]>((c) => c.get('/tables/all')),
   createTable: (body: { number: number; zone?: string | null }) => call<TableAdmin>((c) => c.post('/tables', body)),
   updateTable: (id: number, body: Partial<{ zone: string | null; active: boolean }>) => call<TableAdmin>((c) => c.patch(`/tables/${id}`, body)),
@@ -106,4 +108,18 @@ export const api = {
   invoice: (id: number) => call<Invoice>((c) => c.get(`/invoices/${id}`)),
   invoices: (q: string) => call<InvoiceListItem[]>((c) => c.get('/invoices', { params: { q } })),
   voidInvoice: (id: number, reason: string) => call<Invoice>((c) => c.post(`/invoices/${id}/void`, { reason })),
+
+  // RF-71: copiar y restaurar tarda más que una petición normal en una base grande.
+  backups: () => call<BackupInfo[]>((c) => c.get('/backups')),
+  createBackup: () => call<BackupInfo>((c) => c.post('/backups', undefined, { timeout: 60000 })),
+  restoreBackup: (id: string) => call<{ restored: string; safety: string }>((c) => c.post(`/backups/${id}/restore`, { confirm: 'RESTAURAR' }, { timeout: 60000 })),
+  /** Descarga la copia al caché del celular (con el token) para compartirla. */
+  downloadBackup: async (id: string) => {
+    const { serverUrl, user } = useSession.getState();
+    const file = await File.downloadFileAsync(`${serverUrl}/backups/${id}/download`, new File(Paths.cache, id), {
+      headers: { Authorization: `Bearer ${user?.token ?? ''}` },
+      idempotent: true,
+    });
+    return file.uri;
+  },
 };

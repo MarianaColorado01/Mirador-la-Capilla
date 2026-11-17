@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { Router } from 'express';
 import { z } from 'zod';
-import { calculateBill, type BillableAccount } from '@mirador/shared';
+import { calculateBill, splitPayments, type BillableAccount, type InvoicePayment } from '@mirador/shared';
 import { getSettings, type DB } from '../db/index';
 import { audit } from '../lib/audit';
 import { requireAuth, requireRole } from '../lib/auth';
@@ -22,12 +22,19 @@ const RoundBody = z.object({
     }))
     .min(1, 'Agrega al menos un producto'),
 });
+const Method = z.enum(['efectivo', 'tarjeta', 'transferencia'], { error: 'Elige el método de pago' });
+// Un solo pago (`method`/`received`) o pago dividido (`payments`, RF-46).
 const ChargeBody = z.object({
   discount: z.coerce.string().default(''),
   tipPercent: z.coerce.string().default(''),
-  method: z.enum(['efectivo', 'tarjeta', 'transferencia']),
+  method: Method.optional(),
   received: z.coerce.string().optional(),
-});
+  payments: z
+    .array(z.object({ method: Method, amount: z.coerce.string(), received: z.coerce.string().optional() }))
+    .min(1, 'Agrega al menos un pago')
+    .max(10, 'Máximo 10 pagos por factura')
+    .optional(),
+}).refine((b) => b.method || b.payments, { message: 'Elige el método de pago', path: ['method'] });
 
 interface ProductRow { id: number; name: string; price: number; cost: number; stock: number; min_stock: number; active: number }
 interface AccountRow { id: number; table_id: number; table_number: number; status: 'abierta' | 'por_cobrar' | 'pagada'; waiter_name: string }
@@ -228,18 +235,27 @@ export function accountRoutes(db: DB, emit: Emit) {
       if (a.status !== 'por_cobrar') throw httpError(409, a.status === 'pagada' ? 'La cuenta ya está pagada' : 'Primero hay que pedir la cuenta');
       const subtotal = subtotalOf(db, accountId);
       const s = getSettings(db);
-      const b = calculateBill({ subtotal, discount: body.discount, tipPercent: body.tipPercent, taxPercent: s.taxPercent, method: body.method, received: body.received });
+      const b = calculateBill({ subtotal, discount: body.discount, tipPercent: body.tipPercent, taxPercent: s.taxPercent, method: body.payments ? undefined : body.method, received: body.received });
       const [field, msg] = Object.entries(b.errors)[0] ?? [];
       if (field) throw httpError(400, msg!, field);
       if (!b.ready) throw httpError(400, 'Escribe el monto recibido', 'received');
+      let payments: InvoicePayment[];
+      if (body.payments) {
+        const sp = splitPayments(b.total, body.payments);
+        const [pf, pm] = Object.entries(sp.errors)[0] ?? [];
+        if (pf) throw httpError(400, pm!, pf);
+        payments = sp.payments;
+      } else {
+        payments = [{ method: body.method!, amount: b.total, received: b.change != null ? b.total + b.change : null, change: b.change }];
+      }
 
       const { n } = db.prepare('SELECT COALESCE(MAX(number), 0) + 1 AS n FROM invoices').get() as { n: number }; // RN-06
       const id = Number(db.prepare(`INSERT INTO invoices(number, account_id, subtotal, discount, tip_percent, tip, tax_percent, tax, total, cashier_id)
         VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(n, accountId, subtotal, b.discount, b.tipPercent, b.tip, s.taxPercent, b.tax, b.total, req.user!.id).lastInsertRowid);
-      const received = body.method === 'efectivo' ? b.total + (b.change ?? 0) : null;
-      db.prepare('INSERT INTO payments(invoice_id, method, amount, received, change) VALUES(?, ?, ?, ?, ?)').run(id, body.method, b.total, received, b.change);
+      const pay = db.prepare('INSERT INTO payments(invoice_id, method, amount, received, change) VALUES(?, ?, ?, ?, ?)');
+      for (const p of payments) pay.run(id, p.method, p.amount, p.received, p.change);
       db.prepare("UPDATE accounts SET status = 'pagada', closed_at = datetime('now') WHERE id = ?").run(accountId);
-      audit(db, req.user!.id, 'cobrar', 'factura', id, { number: n, total: b.total, method: body.method });
+      audit(db, req.user!.id, 'cobrar', 'factura', id, { number: n, total: b.total, payments });
       return { id, tableNumber: a.table_number };
     })();
     emit('mesa:actualizada', { accountId, tableNumber: invoiceId.tableNumber, status: 'libre' });

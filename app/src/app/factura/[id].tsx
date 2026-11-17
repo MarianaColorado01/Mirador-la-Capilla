@@ -1,5 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { BUSINESS_NAME, invoiceHtml, METHOD_LABEL as METHOD, type Invoice } from '@mirador/shared';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { printToFileAsync } from 'expo-print';
+import { isAvailableAsync, shareAsync } from 'expo-sharing';
 import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,13 +10,11 @@ import { AppButton } from '@/components/AppButton';
 import { Screen } from '@/components/Screen';
 import { StateView } from '@/components/StateView';
 import { Banner, Card, ItemRow, MoneyRow } from '@/components/ui';
-import { keys, useConnection, useInvoice } from '@/hooks/queries';
+import { keys, useConnection, useInvoice, useSettings } from '@/hooks/queries';
 import { api, type ApiError } from '@/services/api';
 import { useSession } from '@/store/session';
 import { colors, radius, space, type } from '@/theme';
 import { dateTime, pad } from '@/utils/format';
-
-const METHOD = { efectivo: 'Efectivo', tarjeta: 'Tarjeta', transferencia: 'Transferencia' } as const;
 
 /** RF-42 a RF-44: factura emitida, su detalle y su anulación. Un id inexistente muestra «Factura no encontrada». */
 export default function Factura() {
@@ -63,13 +64,48 @@ export default function Factura() {
           <MoneyRow label={`Propina ${v.tipPercent} %`} value={v.tip} />
           <MoneyRow label={`Impuesto ${v.taxPercent} %`} value={v.tax} />
           <MoneyRow label="Total" value={v.total} strong />
-          {v.received != null && <MoneyRow label="Recibido" value={v.received} />}
-          {v.change != null && <MoneyRow label="Cambio" value={v.change} />}
+        </View>
+        {/* RF-46: uno o varios pagos; en efectivo el cambio es por pago */}
+        <View style={styles.block}>
+          {v.payments.map((p, i) => (
+            <View key={i}>
+              <MoneyRow label={v.payments.length > 1 ? `Pago ${i + 1} · ${METHOD[p.method]}` : `Pagado · ${METHOD[p.method]}`} value={p.amount} />
+              {p.received != null && <MoneyRow label="Recibido" value={p.received} />}
+              {p.change != null && <MoneyRow label="Cambio" value={p.change} />}
+            </View>
+          ))}
         </View>
       </Card>
+      <SharePdf invoice={v} />
       <Text style={type.small}>Numeración consecutiva. La factura queda guardada en el servidor del local.</Text>
       {voiding && <VoidInvoiceSheet invoiceId={v.id} number={v.number} onClose={() => setVoiding(false)} />}
     </Screen>
+  );
+}
+
+/** RF-45: arma el PDF en el celular con la factura ya cargada; no necesita el servidor. */
+function SharePdf({ invoice }: { invoice: Invoice }) {
+  const businessName = useSettings().data?.businessName ?? BUSINESS_NAME;
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const share = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      if (!(await isAvailableAsync())) return setError('Este celular no permite compartir archivos.');
+      const { uri } = await printToFileAsync({ html: invoiceHtml(invoice, businessName) });
+      await shareAsync(uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle: `Factura ${pad(invoice.number, 6)}` });
+    } catch {
+      setError('No se pudo generar o compartir el PDF. Intenta de nuevo.');
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <>
+      <AppButton label="Compartir PDF" icon="file-pdf-box" variant="outline" loading={busy} onPress={share} />
+      {error && <Banner tone="red" icon="alert-circle-outline" title={error} />}
+    </>
   );
 }
 

@@ -64,6 +64,9 @@ Los datos de ejemplo se cargan solos la primera vez. Hay seis perfiles (Ana, Lui
 - [x] Proveedores y compras: crear, editar y desactivar proveedores (RF-52), registrar compra que sube el stock y actualiza el último costo en una transacción (RF-53, RF-54) e historial filtrable por proveedor y fechas con detalle (RF-55)
 - [x] Gastos y resumen: registrar y listar gastos (RF-57), resumen Hoy / 7 días / Mes con ventas, costo de lo vendido, surtido aparte, otros gastos y utilidad estimada (RF-58), gráfica por día, más vendidos y ventas por mesero (RF-59) y margen por producto (RF-60)
 - [x] Mapa y ubicación: pantalla Ubicación para todos con OpenStreetMap + Leaflet en WebView, bar, proveedores y el celular con marcadores distintos (RF-61, RF-62), «Mi ubicación» (RF-63), seguimiento con pausar/reanudar que se libera al salir (RF-64), permiso denegado, GPS apagado y mapa sin internet (RF-65) y «Ver en el mapa» desde el proveedor (RF-66)
-- [ ] Respaldos, PDF, dividir cuenta
+- [x] Dividir pago: una factura con varios pagos (efectivo, tarjeta, transferencia), partes iguales con redondeo en el último, lo que falta por cubrir en vivo y cambio por pago en efectivo (RF-46)
+- [x] Factura en PDF: «Compartir PDF» en el detalle de la factura la genera en el celular (sin servidor ni internet) y la comparte por WhatsApp, correo, etc. (RF-45)
+- [x] Compras por proveedor: pestaña «Por proveedor» en Compras con total, % del total, número de compras, última fecha y productos principales por proveedor (incluidos inactivos) para Hoy / 7 días / Mes; al tocar uno se ve su historial (RF-56)
+- [x] Respaldos: copia diaria automática en `server/backups/` (se guardan las últimas 14), copia manual, exportar al celular para compartir y restaurar con confirmación «RESTAURAR» y copia de seguridad previa; todas las apps se refrescan al restaurar (RF-71)
 
 Ver [documentacion/arquitectura.md](documentacion/arquitectura.md) para el plan por fases.

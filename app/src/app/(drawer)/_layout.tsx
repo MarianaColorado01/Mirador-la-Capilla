@@ -24,6 +24,7 @@ const ENTRIES: { name: string; title: string; icon: Icon; roles: Role[] }[] = [
   { name: 'compras', title: 'Compras', icon: 'cart-outline', roles: ['dueno'] },
   { name: 'ajustes', title: 'Ajustes', icon: 'cog-outline', roles: ['dueno'] },
   { name: 'usuarios', title: 'Usuarios', icon: 'account-group-outline', roles: ['dueno'] },
+  { name: 'respaldos', title: 'Respaldos', icon: 'database-export-outline', roles: ['dueno'] },
   { name: 'ubicacion', title: 'Ubicación', icon: 'map-marker-outline', roles: ['todo', 'mesero', 'barra', 'caja', 'dueno'] },
 ];
 

@@ -197,9 +197,9 @@ export interface Invoice {
   taxPercent: number;
   tax: number;
   total: number;
-  method: PaymentMethod;
-  received: number | null;
-  change: number | null;
+  /** Resumen para listas: 'mixto' si se pagó con varios pagos (RF-46). */
+  method: InvoiceMethod;
+  payments: InvoicePayment[];
   createdAt: string;
   voided: null | { at: string; by: string; reason: string };
   items: RoundItem[];
@@ -213,18 +213,30 @@ export interface InvoiceListItem {
   createdAt: string;
   voided: boolean;
   tableNumber: number;
+  method: InvoiceMethod;
+}
+
+export type InvoiceMethod = PaymentMethod | 'mixto';
+
+export interface InvoicePayment {
   method: PaymentMethod;
+  amount: number;
+  /** Solo en efectivo; el cambio es por pago. */
+  received: number | null;
+  change: number | null;
 }
 
 export interface CreateRoundRequest {
   items: { productId: number; qty: number; note?: string | null }[];
 }
 
+/** Un solo pago con `method`/`received`, o pago dividido con `payments` (RF-46). */
 export interface ChargeRequest {
   discount: string;
   tipPercent: string;
-  method: PaymentMethod;
+  method?: PaymentMethod;
   received?: string;
+  payments?: { method: PaymentMethod; amount: string; received?: string }[];
 }
 
 /** RF-33: cambiar cantidad o nota de un ítem en una ronda tomada. */
@@ -290,6 +302,34 @@ export interface ReportSummary {
   byWaiter: { waiterId: number; name: string; sales: number; invoices: number }[];
 }
 
+/** RF-56: compras del rango por proveedor (incluye inactivos con compras), ordenado por total descendente. */
+export interface PurchasesBySupplier {
+  from: string;
+  to: string;
+  total: number;
+  suppliers: {
+    supplierId: number;
+    name: string;
+    active: boolean;
+    purchases: number;
+    total: number;
+    lastDate: string;
+    /** Productos comprados, de mayor a menor total (total = Σ qty × costo). */
+    products: { productId: number; name: string; qty: number; total: number }[];
+  }[];
+}
+
+/** RF-71: copia de la base en el PC de caja. `auto` = diaria, `seguridad` = la que se hace antes de restaurar. */
+export type BackupKind = 'auto' | 'manual' | 'seguridad';
+
+export interface BackupInfo {
+  /** Nombre del archivo, p. ej. mirador-2026-11-17_030000.db */
+  id: string;
+  kind: BackupKind;
+  createdAt: string;
+  size: number;
+}
+
 export interface HealthResponse {
   ok: true;
   business: string;
@@ -305,6 +345,8 @@ export interface ServerEvents {
   'item:editado': { accountId: number; roundId: number; itemId: number };
   'mesa:actualizada': { accountId: number; tableNumber: number; status: TableStatus };
   'stock:bajo': { productId: number; name: string; stock: number; minStock: number };
+  /** RF-71: se restauró un respaldo; las apps vuelven a leer todo. */
+  'datos:restaurados': { backupId: string };
 }
 
 export interface ApiError {
