@@ -1,11 +1,13 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { router } from 'expo-router';
 import { useEffect } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLive, type Notice } from '@/store/live';
-import { colors, radius } from '@/theme';
+import { colors } from '@/theme';
 
+// Sombra con los valores exactos de cada plataforma (elevation es solo de Android).
+const SHADOW = { shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 8 };
 const TONE = { green: colors.green, amber: colors.amber, red: colors.red } as const;
 
 function NoticeCard({ n }: { n: Notice }) {
@@ -23,12 +25,13 @@ function NoticeCard({ n }: { n: Notice }) {
         dismiss(n.id);
         if (n.accountId) router.push({ pathname: '/mesa/[id]', params: { id: String(n.accountId) } });
       }}
-      style={[styles.card, { borderLeftColor: TONE[n.tone] }]}
+      className="flex-row items-center gap-md p-[14px] rounded-md bg-shell border border-line border-l-4"
+      style={{ borderLeftColor: TONE[n.tone], ...SHADOW }}
     >
       <MaterialCommunityIcons name={n.icon} size={22} color={TONE[n.tone]} />
-      <View style={{ flex: 1 }}>
-        <Text style={styles.title}>{n.title}</Text>
-        {n.text ? <Text style={styles.text}>{n.text}</Text> : null}
+      <View className="flex-1">
+        <Text className="font-body-bold text-[15px] text-ink">{n.title}</Text>
+        {n.text ? <Text className="font-body text-[13px] text-ink2 mt-[2px]">{n.text}</Text> : null}
       </View>
       <MaterialCommunityIcons name="close" size={18} color={colors.ink3} />
     </Pressable>
@@ -41,21 +44,10 @@ export function Notices() {
   const insets = useSafeAreaInsets();
   if (!notices.length) return null;
   return (
-    <View pointerEvents="box-none" style={[styles.stack, { top: insets.top + 8 }]}>
+    <View pointerEvents="box-none" className="absolute left-md right-md gap-sm" style={{ top: insets.top + 8 }}>
       {notices.map((n) => (
         <NoticeCard key={n.id} n={n} />
       ))}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  stack: { position: 'absolute', left: 12, right: 12, gap: 8 },
-  card: {
-    flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: radius.md,
-    backgroundColor: colors.shell, borderWidth: 1, borderColor: colors.line, borderLeftWidth: 4,
-    shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 8,
-  },
-  title: { color: colors.ink, fontSize: 15, fontWeight: '700' },
-  text: { color: colors.ink2, fontSize: 13, marginTop: 2 },
-});

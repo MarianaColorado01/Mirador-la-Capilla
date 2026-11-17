@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Role, RoundItem, RoundStatus } from '@mirador/shared';
-import { colors, radius, space, type } from '@/theme';
+import { colors, space, text } from '@/theme';
 import { AppButton } from './AppButton';
 import { QuantityCounter } from './QuantityCounter';
 import { Banner, ROUND_LABEL } from './ui';
@@ -40,7 +40,7 @@ export function VoidItemSheet({ item, roundStatus, role, busy, offline, onClose,
   const allowed = taken ? role !== 'barra' : delivered ? role === 'dueno' : ['caja', 'todo', 'dueno'].includes(role);
   const canEdit = taken && allowed && !!onSave && !!item;
   const changed = !!item && (qty !== item.qty || (note.trim() || null) !== item.note);
-  const errFor = (f: string) => (saveError?.field === f ? <Text style={styles.error}>{saveError.message}</Text> : null);
+  const errFor = (f: string) => (saveError?.field === f ? <Text className="font-body text-[13px] text-red">{saveError.message}</Text> : null);
   const reason = choice === REASONS.length ? other.trim() : choice != null ? REASONS[choice] : '';
 
   const close = () => {
@@ -52,13 +52,18 @@ export function VoidItemSheet({ item, roundStatus, role, busy, offline, onClose,
 
   return (
     <Modal visible={!!item} transparent animationType="slide" onRequestClose={close}>
-      <Pressable style={styles.scrim} onPress={close} accessibilityLabel="Cerrar" />
-      <ScrollView style={styles.sheetBox} contentContainerStyle={[styles.sheet, { paddingBottom: space.lg + insets.bottom }]} keyboardShouldPersistTaps="handled">
-        <View style={styles.grab} />
-        <Text style={type.h}>
+      <Pressable className="flex-1 bg-black/60" onPress={close} accessibilityLabel="Cerrar" />
+      <ScrollView
+        className="grow-0 max-h-[90%] bg-face rounded-t-[18px]"
+        contentContainerClassName="p-lg gap-md"
+        contentContainerStyle={{ paddingBottom: space.lg + insets.bottom }}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View className="self-center w-[38px] h-[4px] rounded-[2px] bg-ink3 opacity-60" />
+        <Text className={text.h}>
           {canEdit ? 'Cambiar o quitar' : taken ? 'Quitar' : 'Anular'} {item?.qty} × {item?.productName}
         </Text>
-        <Text style={type.small}>Ronda {ROUND_LABEL[roundStatus].toLowerCase()}</Text>
+        <Text className={text.small}>Ronda {ROUND_LABEL[roundStatus].toLowerCase()}</Text>
         {!allowed ? (
           <Banner
             tone="amber"
@@ -70,11 +75,11 @@ export function VoidItemSheet({ item, roundStatus, role, busy, offline, onClose,
           <>
             {canEdit && item && (
               <>
-                <Text style={type.label}>Cambiar cantidad o nota</Text>
-                <View style={styles.qtyRow}>
+                <Text className={text.label}>Cambiar cantidad o nota</Text>
+                <View className="flex-row items-center gap-md">
                   {/* Bajar de 1 no quita el ítem: para eso se elige un motivo abajo (RN-04). */}
                   <QuantityCounter value={qty} max={Math.max(maxQty ?? item.qty, item.qty)} onChange={setQty} onBelowMin={() => {}} />
-                  <Text style={type.small}>{(maxQty ?? item.qty) > item.qty ? `Máximo ${maxQty} por stock` : 'No queda más stock'}</Text>
+                  <Text className={text.small}>{(maxQty ?? item.qty) > item.qty ? `Máximo ${maxQty} por stock` : 'No queda más stock'}</Text>
                 </View>
                 {errFor('qty')}
                 <TextInput
@@ -83,10 +88,10 @@ export function VoidItemSheet({ item, roundStatus, role, busy, offline, onClose,
                   placeholder="Nota para barra, ej. sin hielo"
                   placeholderTextColor={colors.ink3}
                   maxLength={100}
-                  style={styles.input}
+                  className="min-h-[48px] border border-line rounded-md px-md font-body text-[16px] text-ink"
                   accessibilityLabel="Nota del ítem"
                 />
-                <Text style={[type.small, { textAlign: 'right' }]}>{note.length}/100</Text>
+                <Text className={`${text.small} text-right`}>{note.length}/100</Text>
                 {errFor('note')}
                 {saveError && saveError.field !== 'qty' && saveError.field !== 'note' && <Banner tone="red" icon="alert-circle-outline" title={saveError.message} />}
                 <AppButton
@@ -97,30 +102,30 @@ export function VoidItemSheet({ item, roundStatus, role, busy, offline, onClose,
                   disabled={!changed || offline}
                   onPress={() => onSave!(qty, note.trim() || null)}
                 />
-                <Text style={[type.label, { marginTop: space.sm }]}>O quitar el ítem</Text>
+                <Text className={`${text.label} mt-sm`}>O quitar el ítem</Text>
               </>
             )}
-            <View style={styles.list}>
+            <View className="border border-line rounded-md overflow-hidden">
               {[...REASONS, 'Otro motivo'].map((r, i) => (
-                <Pressable key={r} style={styles.option} onPress={() => setChoice(i)} accessibilityRole="radio" accessibilityState={{ checked: choice === i }}>
-                  <View style={[styles.radio, choice === i && styles.radioOn]} />
-                  <Text style={type.body}>{r}</Text>
+                <Pressable key={r} className="flex-row items-center gap-md px-[14px] min-h-[48px] border-t border-t-line2" onPress={() => setChoice(i)} accessibilityRole="radio" accessibilityState={{ checked: choice === i }}>
+                  <View className={`w-[20px] h-[20px] rounded-[10px] border-2 ${choice === i ? 'border-trim bg-trim' : 'border-ink3'}`} />
+                  <Text className={text.body}>{r}</Text>
                 </Pressable>
               ))}
             </View>
             {choice === REASONS.length && (
-              <TextInput value={other} onChangeText={setOther} placeholder="Escribe el motivo" placeholderTextColor={colors.ink3} style={styles.input} maxLength={200} />
+              <TextInput value={other} onChangeText={setOther} placeholder="Escribe el motivo" placeholderTextColor={colors.ink3} className="min-h-[48px] border border-line rounded-md px-md font-body text-[16px] text-ink" maxLength={200} />
             )}
             {!taken && !delivered && (
-              <View style={styles.switchRow}>
-                <View style={{ flex: 1 }}>
-                  <Text style={type.body}>Devolver al stock</Text>
-                  <Text style={type.small}>Solo si no se alcanzó a preparar.</Text>
+              <View className="flex-row items-center gap-md">
+                <View className="flex-1">
+                  <Text className={text.body}>Devolver al stock</Text>
+                  <Text className={text.small}>Solo si no se alcanzó a preparar.</Text>
                 </View>
                 <Switch value={restock} onValueChange={setRestock} trackColor={{ true: colors.trim, false: colors.line }} />
               </View>
             )}
-            <Text style={type.small}>
+            <Text className={text.small}>
               {taken ? 'El stock se devuelve. ' : delivered ? 'No se devuelve stock: queda como merma. ' : ''}Quedará registrado quién, cuándo y por qué.
             </Text>
             <AppButton
@@ -137,18 +142,3 @@ export function VoidItemSheet({ item, roundStatus, role, busy, offline, onClose,
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  scrim: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' },
-  sheetBox: { flexGrow: 0, maxHeight: '90%', backgroundColor: colors.face, borderTopLeftRadius: 18, borderTopRightRadius: 18 },
-  qtyRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  error: { color: colors.red, fontSize: 13 },
-  sheet: { backgroundColor: colors.face, borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: space.lg, gap: space.md },
-  grab: { alignSelf: 'center', width: 38, height: 4, borderRadius: 2, backgroundColor: colors.ink3, opacity: 0.6 },
-  list: { borderWidth: 1, borderColor: colors.line, borderRadius: radius.md, overflow: 'hidden' },
-  option: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, minHeight: 48, borderTopWidth: 1, borderTopColor: colors.line2 },
-  radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: colors.ink3 },
-  radioOn: { borderColor: colors.trim, backgroundColor: colors.trim },
-  input: { minHeight: 48, borderWidth: 1, borderColor: colors.line, borderRadius: radius.md, paddingHorizontal: 12, color: colors.ink, fontSize: 16 },
-  switchRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-});

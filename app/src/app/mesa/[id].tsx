@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Modal, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Account, Round, RoundItem } from '@mirador/shared';
 import { AppButton } from '@/components/AppButton';
@@ -12,7 +12,7 @@ import { VoidItemSheet } from '@/components/VoidItemSheet';
 import { keys, useAccount, useConnection, useInvalidateFloor, useProducts, useTables } from '@/hooks/queries';
 import { api, type ApiError } from '@/services/api';
 import { useSession } from '@/store/session';
-import { colors, radius, space, type } from '@/theme';
+import { colors, space, tabular, text } from '@/theme';
 import { clock, money, pad } from '@/utils/format';
 
 /** RF-18: la cuenta de la mesa con sus rondas. RF-19 a RF-21, RF-28, RF-30, RF-33 a RF-36. */
@@ -78,16 +78,16 @@ export default function MesaCuenta() {
       a.invoiceId && canCharge ? <AppButton label="Ver factura" icon="receipt" onPress={() => router.replace({ pathname: '/factura/[id]', params: { id: String(a.invoiceId) } })} /> : null
     ) : a.status === 'por_cobrar' ? (
       canCharge ? (
-        <View style={styles.row}>
-          <View style={{ flex: 1 }}>
+        <View className="flex-row gap-sm">
+          <View className="flex-1">
             <AppButton label="Reabrir" icon="undo" variant="outline" disabled={off} onPress={() => act.mutate(() => api.reopen(accountId))} />
           </View>
-          <View style={{ flex: 1 }}>
+          <View className="flex-1">
             <AppButton label="Cobrar" icon="cash" onPress={() => router.push({ pathname: '/cobro/[id]', params: { id: String(accountId) } })} />
           </View>
         </View>
       ) : (
-        <Text style={[type.small, { textAlign: 'center' }]}>La cuenta está en caja. No admite rondas hasta que caja la reabra.</Text>
+        <Text className={`${text.small} text-center`}>La cuenta está en caja. No admite rondas hasta que caja la reabra.</Text>
       )
     ) : (
       <>
@@ -112,11 +112,11 @@ export default function MesaCuenta() {
     <Screen footer={footer} refreshing={account.isRefetching} onRefresh={() => account.refetch()}>
       <Stack.Screen options={{ title: `Mesa ${pad(a.tableNumber)}` }} />
       <Card>
-        <View style={styles.total}>
+        <View className="flex-row justify-between items-start p-lg">
           <View>
-            <Text style={type.label}>Total acumulado</Text>
-            <Text style={type.figure}>{money(a.subtotal)}</Text>
-            <Text style={type.small}>Abierta por {a.waiter} · {clock(a.openedAt)}</Text>
+            <Text className={text.label}>Total acumulado</Text>
+            <Text className={text.figure} style={tabular}>{money(a.subtotal)}</Text>
+            <Text className={text.small}>Abierta por {a.waiter} · {clock(a.openedAt)}</Text>
           </View>
           <Tag label={statusTag.l} color={statusTag.c} />
         </View>
@@ -138,22 +138,22 @@ export default function MesaCuenta() {
               <ItemRow key={i.id} item={i} onVoid={a.status !== 'pagada' && role !== 'barra' ? () => setVoiding({ item: i, round: r }) : undefined} />
             ))}
             {r.status === 'listo' && canOrder && (
-              <View style={{ padding: space.md }}>
+              <View className="p-md">
                 <AppButton label="Marcar entregada" icon="check" variant="outline" compact disabled={off} onPress={() => act.mutate(() => api.setRoundStatus(r.id, 'entregado'))} />
               </View>
             )}
           </Card>
         ))
       )}
-      <Text style={type.small}>Los ítems anulados no suman al total.</Text>
+      <Text className={text.small}>Los ítems anulados no suman al total.</Text>
 
       {/* RF-20: solo caja, todo en uno y dueño mueven o unen cuentas */}
       {canCharge && a.status !== 'pagada' && (
-        <View style={styles.row}>
-          <View style={{ flex: 1 }}>
+        <View className="flex-row gap-sm">
+          <View className="flex-1">
             <AppButton label="Mover de mesa" icon="swap-horizontal" variant="outline" compact disabled={off} onPress={() => setPicker('move')} />
           </View>
-          <View style={{ flex: 1 }}>
+          <View className="flex-1">
             <AppButton label="Unir cuentas" icon="call-merge" variant="outline" compact disabled={off} onPress={() => setPicker('merge')} />
           </View>
         </View>
@@ -223,10 +223,10 @@ function TablePicker({ mode, account, busy, onClose, onPick }: {
 
   return (
     <Modal visible transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.scrim} onPress={onClose} accessibilityLabel="Cerrar" />
-      <View style={[styles.sheet, { paddingBottom: space.lg + insets.bottom }]}>
-        <Text style={type.h}>{mode === 'move' ? 'Mover a una mesa libre' : 'Unir con otra cuenta'}</Text>
-        <Text style={type.small}>
+      <Pressable className="flex-1 bg-black/60" onPress={onClose} accessibilityLabel="Cerrar" />
+      <View className="bg-face rounded-t-[18px] p-lg gap-md" style={{ paddingBottom: space.lg + insets.bottom }}>
+        <Text className={text.h}>{mode === 'move' ? 'Mover a una mesa libre' : 'Unir con otra cuenta'}</Text>
+        <Text className={text.small}>
           {mode === 'move' ? 'La cuenta conserva sus rondas y su mesero.' : `Las rondas de la mesa ${pad(account.tableNumber)} se suman a la cuenta que elijas.`}
         </Text>
         {tables.isPending ? (
@@ -236,18 +236,18 @@ function TablePicker({ mode, account, busy, onClose, onPick }: {
         ) : list.length === 0 ? (
           <StateView kind="empty" icon="table-off" title={mode === 'move' ? 'No hay mesas libres' : 'No hay otras mesas ocupadas'} />
         ) : (
-          <View style={styles.grid}>
+          <View className="flex-row flex-wrap gap-sm">
             {list.map((t) => (
               <Pressable
                 key={t.number}
-                style={({ pressed }) => [styles.cell, pressed && { backgroundColor: colors.face2 }, off && { opacity: 0.5 }]}
+                className={`w-[31%] min-h-[64px] p-sm border border-line rounded-md justify-center active:bg-face2 ${off ? 'opacity-50' : ''}`}
                 disabled={off}
                 onPress={() => confirm(t.number, t.account?.id)}
                 accessibilityRole="button"
                 accessibilityLabel={`Mesa ${t.number}${t.account ? `, ${t.account.waiter}, ${money(t.account.subtotal)}` : ''}`}
               >
-                <Text style={styles.cellNum}>{pad(t.number)}</Text>
-                <Text style={type.small}>{t.account ? `${t.account.waiter} · ${money(t.account.subtotal)}` : (t.zone ?? 'Libre')}</Text>
+                <Text className="font-display text-[22px] text-ink" style={tabular}>{pad(t.number)}</Text>
+                <Text className={text.small}>{t.account ? `${t.account.waiter} · ${money(t.account.subtotal)}` : (t.zone ?? 'Libre')}</Text>
               </Pressable>
             ))}
           </View>
@@ -257,13 +257,3 @@ function TablePicker({ mode, account, busy, onClose, onPick }: {
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  scrim: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' },
-  sheet: { backgroundColor: colors.face, borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: space.lg, gap: space.md },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
-  cell: { width: '31%', minHeight: 64, padding: space.sm, borderWidth: 1, borderColor: colors.line, borderRadius: radius.md, justifyContent: 'center' },
-  cellNum: { color: colors.ink, fontSize: 22, fontWeight: '800', fontVariant: ['tabular-nums'] },
-  total: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', padding: space.lg },
-  row: { flexDirection: 'row', gap: space.sm },
-});

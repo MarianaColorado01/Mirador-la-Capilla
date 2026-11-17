@@ -7,7 +7,7 @@ import { Screen } from '@/components/Screen';
 import { StateView } from '@/components/StateView';
 import { Card, Chips, Tag } from '@/components/ui';
 import { useAllProducts } from '@/hooks/queries';
-import { colors, radius, type } from '@/theme';
+import { colors, fonts, radius, type } from '@/theme';
 import { money } from '@/utils/format';
 
 /** RF-13 / RF-14: lista de productos del dueño, con los inactivos, búsqueda y filtro por categoría (RF-11). */
@@ -75,6 +75,6 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, color: colors.ink, fontSize: 16, minHeight: 48 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, minHeight: 64, borderTopWidth: 1, borderTopColor: colors.line2 },
   name: { color: colors.ink, fontSize: 16, fontWeight: '800' },
-  low: { color: colors.amber, fontWeight: '700' },
-  out: { color: colors.red, fontWeight: '700' },
+  low: { color: colors.amber, fontFamily: fonts.bodyBold },
+  out: { color: colors.red, fontFamily: fonts.bodyBold },
 });

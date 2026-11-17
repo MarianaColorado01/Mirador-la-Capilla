@@ -7,6 +7,9 @@ const px = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, `${v}
 module.exports = {
   content: ['./src/**/*.{ts,tsx}'],
   presets: [require('nativewind/preset')],
+  // La app es siempre oscura y no usa variantes dark:. Con 'media', NativeWind en la web lanza
+  // «Cannot manually set color scheme» al cargar el CSS y la pantalla queda en error.
+  darkMode: 'class',
   theme: {
     extend: {
       colors: t.colors,

@@ -2,7 +2,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useMutation } from '@tanstack/react-query';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, Text, TextInput, View } from 'react-native';
 import { AppButton } from '@/components/AppButton';
 import { ProductCard } from '@/components/ProductCard';
 import { QuantityCounter } from '@/components/QuantityCounter';
@@ -13,7 +13,7 @@ import { useAccount, useConnection, useInvalidateFloor, useProducts, useSettings
 import { api, ApiError } from '@/services/api';
 import { useRoundDrafts, type Draft } from '@/store/round-drafts';
 import { useSession } from '@/store/session';
-import { colors, radius, space, type } from '@/theme';
+import { colors, tabular, text } from '@/theme';
 import { money, pad } from '@/utils/format';
 
 const EMPTY: Draft['items'] = [];
@@ -84,9 +84,9 @@ export default function TomarRonda() {
     <Screen
       footer={
         <>
-          <View style={styles.totalRow}>
-            <Text style={type.label}>Total ronda · {units} {units === 1 ? 'unidad' : 'unidades'}</Text>
-            <Text style={[type.figure, { fontSize: 24 }]}>{money(total)}</Text>
+          <View className="flex-row items-center justify-between">
+            <Text className={text.label}>Total ronda · {units} {units === 1 ? 'unidad' : 'unidades'}</Text>
+            <Text className="font-display text-[24px] text-ink" style={tabular}>{money(total)}</Text>
           </View>
           <AppButton
             label={conn === 'off' ? 'Confirmar · sin conexión' : singleOperator ? 'Confirmar y entregar' : 'Confirmar y enviar a barra'}
@@ -102,18 +102,18 @@ export default function TomarRonda() {
       {blocked && <StateView kind="empty" icon="lock-outline" title="La cuenta no admite rondas" message="Está por cobrar o pagada. Caja puede reabrirla." />}
       {a && a.subtotal > 0 && (
         <Card>
-          <View style={styles.prev}>
+          <View className="flex-row items-center gap-[10px] p-md">
             <MaterialCommunityIcons name="receipt" size={20} color={colors.ink3} />
-            <Text style={[type.small, { flex: 1 }]}>
-              Ya en la cuenta: {a.rounds.length} {a.rounds.length === 1 ? 'ronda' : 'rondas'} · <Text style={{ color: colors.ink, fontWeight: '700' }}>{money(a.subtotal)}</Text>
+            <Text className={`${text.small} flex-1`}>
+              Ya en la cuenta: {a.rounds.length} {a.rounds.length === 1 ? 'ronda' : 'rondas'} · <Text className="font-body-bold text-ink">{money(a.subtotal)}</Text>
             </Text>
           </View>
         </Card>
       )}
 
-      <View style={styles.search}>
+      <View className="flex-row items-center gap-sm min-h-[50px] border border-line rounded-md px-md bg-face">
         <MaterialCommunityIcons name="magnify" size={22} color={colors.ink3} />
-        <TextInput value={q} onChangeText={setQ} placeholder="Buscar por nombre…" placeholderTextColor={colors.ink3} style={styles.searchInput} />
+        <TextInput value={q} onChangeText={setQ} placeholder="Buscar por nombre…" placeholderTextColor={colors.ink3} className="flex-1 font-body text-[16px] text-ink min-h-[48px]" />
         {!!q && (
           <Pressable onPress={() => setQ('')} accessibilityLabel="Borrar búsqueda" hitSlop={10}>
             <MaterialCommunityIcons name="close" size={20} color={colors.ink3} />
@@ -137,7 +137,7 @@ export default function TomarRonda() {
           />
         ) : (
           shown.map((p) => (
-            <View key={p.id} style={styles.divider}>
+            <View key={p.id} className="border-t border-t-line2">
               <ProductCard product={p} inRound={items.find((i) => i.productId === p.id)?.qty ?? 0} onAdd={(prod) => add(accountId, prod)} onOpen={(prod) => router.push(`/producto/${prod.id}`)} />
             </View>
           ))
@@ -146,14 +146,14 @@ export default function TomarRonda() {
 
       <Card title={`Esta ronda · ${units} ${units === 1 ? 'unidad' : 'unidades'}`} right={items.length ? <Tag label="Borrador guardado" /> : undefined}>
         {items.length === 0 ? (
-          <Text style={[type.small, { padding: space.lg }]}>Toca + en un producto para agregarlo. Mantén pulsado para ver su detalle.</Text>
+          <Text className={`${text.small} p-lg`}>Toca + en un producto para agregarlo. Mantén pulsado para ver su detalle.</Text>
         ) : (
           items.map((i) => (
-            <View key={i.productId} style={styles.line}>
-              <View style={styles.lineTop}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[type.body, { fontWeight: '600' }]}>{i.name}</Text>
-                  <Text style={type.small}>
+            <View key={i.productId} className="p-md gap-sm border-t border-t-line2">
+              <View className="flex-row items-center gap-md">
+                <View className="flex-1">
+                  <Text className="font-body-semi text-[15px] text-ink">{i.name}</Text>
+                  <Text className={text.small}>
                     {money(i.price)} c/u · subtotal {money(i.price * i.qty)}
                     {i.qty >= i.stock ? ` · máx. ${i.stock}` : ''}
                   </Text>
@@ -161,16 +161,16 @@ export default function TomarRonda() {
                 <QuantityCounter value={i.qty} max={i.stock} onChange={(n) => setQty(accountId, i.productId, n)} onBelowMin={() => askRemove(i.productId, i.name)} />
               </View>
               {notesOpen[i.productId] || i.note ? (
-                <View style={{ gap: 4 }}>
+                <View className="gap-xs">
                   <TextInput
                     value={i.note}
                     onChangeText={(t) => setNote(accountId, i.productId, t)}
                     placeholder="Nota para barra, ej. sin hielo"
                     placeholderTextColor={colors.ink3}
                     maxLength={100}
-                    style={styles.note}
+                    className="min-h-[46px] border border-line rounded-md px-md font-body text-[15px] text-ink"
                   />
-                  <Text style={[type.small, { textAlign: 'right' }]}>{i.note.length}/100</Text>
+                  <Text className={`${text.small} text-right`}>{i.note.length}/100</Text>
                 </View>
               ) : (
                 <AppButton label="Agregar nota" icon="note-edit-outline" variant="text" compact onPress={() => setNotesOpen((s) => ({ ...s, [i.productId]: true }))} />
@@ -195,14 +195,3 @@ export default function TomarRonda() {
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  prev: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: space.md },
-  search: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 50, borderWidth: 1, borderColor: colors.line, borderRadius: radius.md, paddingHorizontal: 12, backgroundColor: colors.face },
-  searchInput: { flex: 1, color: colors.ink, fontSize: 16, minHeight: 48 },
-  divider: { borderTopWidth: 1, borderTopColor: colors.line2 },
-  line: { padding: space.md, gap: space.sm, borderTopWidth: 1, borderTopColor: colors.line2 },
-  lineTop: { flexDirection: 'row', alignItems: 'center', gap: space.md },
-  note: { minHeight: 46, borderWidth: 1, borderColor: colors.line, borderRadius: radius.md, paddingHorizontal: 12, color: colors.ink, fontSize: 15 },
-  totalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-});

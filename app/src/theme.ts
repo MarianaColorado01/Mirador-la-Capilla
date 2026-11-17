@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, type TextStyle } from 'react-native';
 import tokens from './tokens.json';
 
 /*
@@ -25,6 +25,19 @@ export const type = StyleSheet.create({
   small: { fontSize: 13, fontFamily: fonts.body, color: colors.ink3 },
   figure: { fontSize: 30, fontFamily: fonts.display, color: colors.ink, fontVariant: ['tabular-nums'] },
 });
+
+/** La misma escala de `type` como clases de NativeWind, para las pantallas ya migradas a className. */
+export const text = {
+  title: 'font-display text-[22px] tracking-[1.2px] text-ink',
+  h: 'font-display text-[17px] tracking-[0.6px] text-ink',
+  label: 'font-display text-[12px] tracking-[1.4px] uppercase text-ink3',
+  body: 'font-body text-[15px] text-ink',
+  small: 'font-body text-[13px] text-ink3',
+  figure: 'font-display text-[30px] text-ink',
+};
+
+// NativeWind no traduce font-variant-numeric: las cifras alineadas van por style.
+export const tabular: TextStyle = { fontVariant: ['tabular-nums'] };
 
 /** Barra superior: negro solapa, como el letrero. */
 export const headerOptions = {

@@ -1,17 +1,13 @@
 /* Piezas pequeñas compartidas: etiquetas de estado, tarjetas, chips, filas de dinero y ítems. */
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import type { ReactNode } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native';
+import { Pressable, ScrollView, Text, TextInput, View, type TextInputProps, type ViewStyle } from 'react-native';
 import type { RoundItem, RoundStatus } from '@mirador/shared';
-import { colors } from '@/theme';
+import { colors, tabular, text } from '@/theme';
 import { money } from '@/utils/format';
 
 export const ROUND_LABEL: Record<RoundStatus, string> = { tomado: 'Tomada', preparacion: 'Preparando', listo: 'Lista', entregado: 'Entregada' };
 const ROUND_COLOR: Record<RoundStatus, string> = { tomado: colors.ink, preparacion: colors.amber, listo: colors.green, entregado: colors.ink3 };
-
-// NativeWind no traduce font-variant-numeric: las cifras alineadas van por style.
-const TABULAR: TextStyle = { fontVariant: ['tabular-nums'] };
-const SMALL = 'font-body text-[13px] text-ink3';
 
 export function Tag({ label, color = colors.ink2 }: { label: string; color?: string }) {
   return (
@@ -62,7 +58,7 @@ export function MoneyRow({ label, value, strong }: { label: string; value: numbe
   return (
     <View className="flex-row justify-between py-sm border-b border-b-line2">
       <Text className={strong ? 'font-display text-[14px] tracking-[1.4px] uppercase text-ink self-center' : 'font-body text-[15px] text-ink2'}>{label}</Text>
-      <Text className={strong ? 'font-display text-[24px] text-ink' : 'font-body text-[15px] text-ink'} style={TABULAR}>
+      <Text className={strong ? 'font-display text-[24px] text-ink' : 'font-body text-[15px] text-ink'} style={tabular}>
         {typeof value === 'number' ? money(value) : value}
       </Text>
     </View>
@@ -81,7 +77,7 @@ export function ItemRow({ item, showPrice = true, onVoid }: { item: RoundItem; s
         {item.note ? <Text className="font-body text-[13px] text-amber mt-[2px]">Nota: {item.note}</Text> : null}
         {v && <Text className="font-body text-[12px] text-red mt-[2px]">Anulado · {v.by} · {v.reason}</Text>}
       </View>
-      {showPrice && <Text className={line} style={TABULAR}>{money(item.qty * item.unitPrice)}</Text>}
+      {showPrice && <Text className={line} style={tabular}>{money(item.qty * item.unitPrice)}</Text>}
       {onVoid && !v && (
         <Pressable
           accessibilityRole="button"
@@ -107,7 +103,7 @@ export function Field({ label, error, help, half, ...input }: TextInputProps & {
         {...input}
         className={`min-h-[50px] rounded-md px-md bg-face font-body text-[17px] text-ink ${error ? 'border-2 border-red' : 'border border-line'}`}
       />
-      {error ? <Text className="font-body text-[13px] text-red">{error}</Text> : help ? <Text className={SMALL}>{help}</Text> : null}
+      {error ? <Text className="font-body text-[13px] text-red">{error}</Text> : help ? <Text className={text.small}>{help}</Text> : null}
     </View>
   );
 }
@@ -119,7 +115,7 @@ export function Banner({ tone, icon, title, text }: { tone: 'red' | 'amber' | 'g
       <MaterialCommunityIcons name={icon} size={20} color={c[0]} />
       <View className="flex-1">
         <Text className="font-body-bold text-[14px] text-ink mb-[2px]">{title}</Text>
-        {text ? <Text className={SMALL}>{text}</Text> : null}
+        {text ? <Text className="font-body text-[13px] text-ink3">{text}</Text> : null}
       </View>
     </View>
   );

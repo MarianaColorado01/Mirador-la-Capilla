@@ -1,12 +1,12 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { AppButton } from '@/components/AppButton';
 import { Screen } from '@/components/Screen';
 import { StateView } from '@/components/StateView';
 import { Card } from '@/components/ui';
 import { useBillable } from '@/hooks/queries';
-import { colors, space, type } from '@/theme';
+import { colors, tabular, text } from '@/theme';
 import { clock, money, pad } from '@/utils/format';
 
 /** RF-38: cuentas por cobrar. */
@@ -18,10 +18,10 @@ export default function Caja() {
   return (
     <Screen refreshing={billable.isRefetching} onRefresh={() => billable.refetch()}>
       <Card>
-        <View style={{ padding: space.lg }}>
-          <Text style={type.label}>Por cobrar · {list.length} {list.length === 1 ? 'mesa' : 'mesas'}</Text>
-          <Text style={type.figure}>{money(sum)}</Text>
-          <Text style={type.small}>Subtotal sin propina ni impuesto</Text>
+        <View className="p-lg">
+          <Text className={text.label}>Por cobrar · {list.length} {list.length === 1 ? 'mesa' : 'mesas'}</Text>
+          <Text className={text.figure} style={tabular}>{money(sum)}</Text>
+          <Text className={text.small}>Subtotal sin propina ni impuesto</Text>
         </View>
       </Card>
       {/* RF-43: también está en el menú lateral */}
@@ -37,19 +37,19 @@ export default function Caja() {
           {list.map((a) => (
             <Pressable
               key={a.id}
-              style={({ pressed }) => [styles.row, pressed && { backgroundColor: colors.face2 }]}
+              className="flex-row items-center gap-md px-[14px] min-h-[64px] border-t border-t-line2 active:bg-face2"
               onPress={() => router.push({ pathname: '/cobro/[id]', params: { id: String(a.id) } })}
               accessibilityRole="button"
             >
-              <Text style={styles.table}>{pad(a.tableNumber)}</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={[type.body, { fontWeight: '600' }]}>{a.waiter}</Text>
-                <Text style={type.small}>
+              <Text className="font-display text-[24px] text-porCobrar min-w-[36px]" style={tabular}>{pad(a.tableNumber)}</Text>
+              <View className="flex-1">
+                <Text className="font-body-semi text-[15px] text-ink">{a.waiter}</Text>
+                <Text className={text.small}>
                   {a.rounds} {a.rounds === 1 ? 'ronda' : 'rondas'} · desde {clock(a.openedAt)}
                   {a.voidedItems ? ` · ${a.voidedItems} anulado${a.voidedItems === 1 ? '' : 's'}` : ''}
                 </Text>
               </View>
-              <Text style={styles.amount}>{money(a.subtotal)}</Text>
+              <Text className="font-display text-[17px] text-ink" style={tabular}>{money(a.subtotal)}</Text>
               <MaterialCommunityIcons name="chevron-right" size={20} color={colors.ink3} />
             </Pressable>
           ))}
@@ -58,9 +58,3 @@ export default function Caja() {
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, minHeight: 64, borderTopWidth: 1, borderTopColor: colors.line2 },
-  table: { color: colors.porCobrar, fontSize: 24, fontWeight: '800', minWidth: 36, fontVariant: ['tabular-nums'] },
-  amount: { color: colors.ink, fontWeight: '800', fontSize: 16, fontVariant: ['tabular-nums'] },
-});
