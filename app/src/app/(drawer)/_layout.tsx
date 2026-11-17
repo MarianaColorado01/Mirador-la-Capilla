@@ -5,7 +5,7 @@ import type { Role } from '@mirador/shared';
 import { ROLE_LABEL } from '@/components/Screen';
 import { useSettings } from '@/hooks/queries';
 import { useSession } from '@/store/session';
-import { colors, headerOptions, space, type } from '@/theme';
+import { colors, fonts, headerOptions, space, type } from '@/theme';
 
 type Icon = keyof typeof MaterialCommunityIcons.glyphMap;
 
@@ -91,6 +91,6 @@ export default function DrawerLayout() {
 
 const styles = StyleSheet.create({
   head: { gap: 2, paddingHorizontal: space.lg, paddingTop: space.xl + space.lg, paddingBottom: space.lg, marginBottom: space.sm, backgroundColor: colors.shell, borderBottomWidth: 3, borderBottomColor: colors.trim },
-  label: { fontWeight: '800', letterSpacing: 0.6, textTransform: 'uppercase', fontSize: 13 },
+  label: { fontFamily: fonts.display, letterSpacing: 0.6, textTransform: 'uppercase', fontSize: 13 },
   sep: { height: 1, backgroundColor: colors.line, marginVertical: space.sm, marginHorizontal: space.lg },
 });
