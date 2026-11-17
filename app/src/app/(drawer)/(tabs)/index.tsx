@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, Text, View } from 'react-native';
 import type { TableStatus, TableSummary } from '@mirador/shared';
 import { Screen } from '@/components/Screen';
 import { StateView } from '@/components/StateView';
@@ -9,7 +9,7 @@ import { Banner, Chips, Tag } from '@/components/ui';
 import { useConnection, useInvalidateFloor, useSettings, useTables } from '@/hooks/queries';
 import { api, ApiError } from '@/services/api';
 import { useSession } from '@/store/session';
-import { colors, radius, space } from '@/theme';
+import { colors, tabular } from '@/theme';
 import { minutesSince, money, pad } from '@/utils/format';
 
 type Filter = 'todas' | TableStatus;
@@ -93,27 +93,27 @@ export default function Mesas() {
       ) : shown.length === 0 ? (
         <StateView kind="empty" title="No hay mesas en este filtro" action={{ label: 'Ver todas', onPress: () => setFilter('todas') }} />
       ) : (
-        <View style={styles.grid}>
+        <View className="flex-row flex-wrap gap-md">
           {shown.map((t) => (
             <Pressable
               key={t.number}
               onPress={() => tap(t)}
               disabled={open.isPending || (!t.account && (!canOrder || conn === 'off'))}
-              style={({ pressed }) => [styles.tile, pressed && { opacity: 0.85 }]}
+              className="w-[47.8%] bg-face rounded-md border border-line overflow-hidden active:opacity-85"
               accessibilityRole="button"
               accessibilityLabel={`Mesa ${t.number}, ${BAND[t.status].label}`}
             >
-              <View style={styles.tileTop}>
-                <Text style={styles.number}>{pad(t.number)}</Text>
+              <View className="flex-row justify-between items-start p-md pb-xs">
+                <Text className="font-display text-[40px] text-ink" style={tabular}>{pad(t.number)}</Text>
                 {t.account && t.account.readyRounds > 0 && <Tag label="Lista" color={colors.green} />}
               </View>
-              <Text style={styles.meta} numberOfLines={2}>
+              <Text className="font-body text-[13px] text-ink2 px-md pb-md min-h-[46px]" numberOfLines={2}>
                 {t.account
                   ? `${t.account.waiter} · ${money(t.account.subtotal)}\n${t.status === 'por_cobrar' ? 'Pidió la cuenta' : `${minutesSince(t.account.openedAt)} min abierta`}`
                   : t.zone ?? 'Disponible'}
               </Text>
-              <View style={[styles.band, { backgroundColor: BAND[t.status].color }]}>
-                <Text style={styles.bandText}>{BAND[t.status].label}</Text>
+              <View className="h-[28px] justify-center px-md" style={{ backgroundColor: BAND[t.status].color }}>
+                <Text className="font-display text-[12px] tracking-[1.4px] uppercase text-onLight">{BAND[t.status].label}</Text>
               </View>
             </Pressable>
           ))}
@@ -122,13 +122,3 @@ export default function Mesas() {
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
-  tile: { width: '47.8%', backgroundColor: colors.face, borderRadius: radius.md, borderWidth: 1, borderColor: colors.line, overflow: 'hidden' },
-  tileTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', padding: 12, paddingBottom: 4 },
-  number: { color: colors.ink, fontSize: 40, fontWeight: '700', fontVariant: ['tabular-nums'] },
-  meta: { color: colors.ink2, fontSize: 13, paddingHorizontal: 12, paddingBottom: 12, minHeight: 46 },
-  band: { height: 28, justifyContent: 'center', paddingHorizontal: 12 },
-  bandText: { color: colors.onLight, fontSize: 12, fontWeight: '800', letterSpacing: 1.4, textTransform: 'uppercase' },
-});

@@ -17,7 +17,7 @@ Funciona **sin internet**: un PC en la caja corre el servidor y la base de datos
 | `app/` | App móvil: React Native + Expo SDK 57 + TypeScript + Expo Router |
 | `server/` | Servidor local: Express 5, SQLite (better-sqlite3), Socket.IO, JWT |
 | `shared/` | Tipos y reglas que usan los dos, por ejemplo el cálculo del cobro (sección 4.3) |
-| `documentacion/` | Requerimientos (PDF), arquitectura, wireframes, prototipo navegable y láminas de mockups |
+| `documentacion/` | Requerimientos (PDF), arquitectura, guía de prueba en Android, bitácora de la prueba con el cliente, wireframes, prototipo y mockups |
 
 ## Requisitos
 
@@ -68,5 +68,10 @@ Los datos de ejemplo se cargan solos la primera vez. Hay seis perfiles (Ana, Lui
 - [x] Factura en PDF: «Compartir PDF» en el detalle de la factura la genera en el celular (sin servidor ni internet) y la comparte por WhatsApp, correo, etc. (RF-45)
 - [x] Compras por proveedor: pestaña «Por proveedor» en Compras con total, % del total, número de compras, última fecha y productos principales por proveedor (incluidos inactivos) para Hoy / 7 días / Mes; al tocar uno se ve su historial (RF-56)
 - [x] Respaldos: copia diaria automática en `server/backups/` (se guardan las últimas 14), copia manual, exportar al celular para compartir y restaurar con confirmación «RESTAURAR» y copia de seguridad previa; todas las apps se refrescan al restaurar (RF-71)
+- [x] Estilos (bloque 6.1): NativeWind 4.2.7 con los tokens del tema en `app/src/tokens.json` (una sola fuente para `theme.ts` y `tailwind.config.js`), fuentes Barlow Condensed (títulos, cifras, etiquetas) e Inter (texto) empaquetadas, y componentes base (`AppButton`, `StateView`, `Screen`, `components/ui.tsx`) con `className`
+- [x] Estilos (bloque 6.2): las pantallas del proceso principal (login, Mesas, Barra, Caja, cuenta de la mesa, ronda, cobro y factura) y `ProductCard`, `QuantityCounter`, `VoidItemSheet` y `Notices` pasan a `className`, sin `StyleSheet` propio ni `fontWeight` sobre las fuentes nuevas; el resto de pantallas sigue con StyleSheet
+- [x] Guía de prueba en Android con cada evidencia del curso: [documentacion/guia-prueba-android.md](documentacion/guia-prueba-android.md)
+- [ ] Revisión en un teléfono Android siguiendo esa guía
+- [ ] Prueba con el cliente en el local, registrada en [documentacion/bitacora.md](documentacion/bitacora.md)
 
 Ver [documentacion/arquitectura.md](documentacion/arquitectura.md) para el plan por fases.

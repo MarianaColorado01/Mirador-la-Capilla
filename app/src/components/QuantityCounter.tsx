@@ -1,6 +1,6 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, radius } from '@/theme';
+import { Pressable, Text, View } from 'react-native';
+import { colors, tabular } from '@/theme';
 
 export interface QuantityCounterProps {
   value: number;
@@ -10,24 +10,20 @@ export interface QuantityCounterProps {
   onBelowMin: () => void;
 }
 
+const BTN = 'w-[46px] h-[46px] items-center justify-center';
+
 /** Contador + / − con mínimo 1 y máximo igual al stock disponible (RF-24). */
 export function QuantityCounter({ value, max, onChange, onBelowMin }: QuantityCounterProps) {
   const atMax = value >= max;
   return (
-    <View style={styles.box} accessibilityRole="adjustable" accessibilityValue={{ min: 1, max, now: value }}>
-      <Pressable style={styles.btn} accessibilityLabel="Restar" onPress={() => (value <= 1 ? onBelowMin() : onChange(value - 1))}>
+    <View className="flex-row items-center border border-line rounded-md bg-face" accessibilityRole="adjustable" accessibilityValue={{ min: 1, max, now: value }}>
+      <Pressable className={BTN} accessibilityLabel="Restar" onPress={() => (value <= 1 ? onBelowMin() : onChange(value - 1))}>
         <MaterialCommunityIcons name="minus" size={22} color={colors.ink} />
       </Pressable>
-      <Text style={styles.value}>{value}</Text>
-      <Pressable style={styles.btn} accessibilityLabel="Sumar" disabled={atMax} onPress={() => onChange(value + 1)}>
+      <Text className="min-w-[36px] text-center font-display text-[22px] text-ink" style={tabular}>{value}</Text>
+      <Pressable className={BTN} accessibilityLabel="Sumar" disabled={atMax} onPress={() => onChange(value + 1)}>
         <MaterialCommunityIcons name="plus" size={22} color={atMax ? colors.line : colors.ink} />
       </Pressable>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  box: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: colors.line, borderRadius: radius.md, backgroundColor: colors.face },
-  btn: { width: 46, height: 46, alignItems: 'center', justifyContent: 'center' },
-  value: { minWidth: 36, textAlign: 'center', fontSize: 20, fontWeight: '800', color: colors.ink, fontVariant: ['tabular-nums'] },
-});

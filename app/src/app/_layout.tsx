@@ -1,4 +1,10 @@
+import '../../global.css';
+import { BarlowCondensed_700Bold } from '@expo-google-fonts/barlow-condensed/700Bold';
+import { Inter_400Regular } from '@expo-google-fonts/inter/400Regular';
+import { Inter_600SemiBold } from '@expo-google-fonts/inter/600SemiBold';
+import { Inter_700Bold } from '@expo-google-fonts/inter/700Bold';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState, type ReactNode } from 'react';
@@ -34,8 +40,10 @@ function IdleLogout({ children }: { children: ReactNode }) {
 export default function RootLayout() {
   const [queryClient] = useState(() => new QueryClient({ defaultOptions: { queries: { retry: 1 } } }));
   const { hydrated, serverUrl, user } = useSession();
+  // Fuentes empaquetadas (sin internet). Si fallan, la app sigue con la del sistema.
+  const [fontsLoaded, fontsError] = useFonts({ BarlowCondensed_700Bold, Inter_400Regular, Inter_600SemiBold, Inter_700Bold });
 
-  if (!hydrated) {
+  if (!hydrated || (!fontsLoaded && !fontsError)) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator color={colors.ink2} />

@@ -3,7 +3,7 @@ import { DrawerToggleButton } from 'expo-router/drawer';
 import { Tabs } from 'expo-router/js-tabs';
 import type { Role } from '@mirador/shared';
 import { useSession } from '@/store/session';
-import { colors, headerOptions } from '@/theme';
+import { colors, fonts, headerOptions } from '@/theme';
 
 /** Pestañas según el rol (RF-06). El servidor también niega lo que el rol no puede hacer. */
 const TABS: Record<'index' | 'barra' | 'caja' | 'inventario', Role[]> = {
@@ -28,7 +28,7 @@ export default function TabsLayout() {
         tabBarActiveTintColor: colors.ink,
         tabBarInactiveTintColor: colors.ink3,
         tabBarStyle: visible > 1 ? { backgroundColor: colors.face, borderTopColor: colors.line } : { display: 'none' },
-        tabBarLabelStyle: { fontWeight: '800', letterSpacing: 0.6, textTransform: 'uppercase', fontSize: 11 },
+        tabBarLabelStyle: { fontFamily: fonts.display, letterSpacing: 0.6, textTransform: 'uppercase', fontSize: 11 },
         sceneStyle: { backgroundColor: colors.bg },
       }}
     >

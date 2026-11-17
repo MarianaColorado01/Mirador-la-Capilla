@@ -21,6 +21,7 @@
       "package": "com.miradorlacapilla.pos"
     },
     "web": {
+      "bundler": "metro",
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },

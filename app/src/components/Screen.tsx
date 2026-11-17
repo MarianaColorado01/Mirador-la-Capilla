@@ -1,10 +1,12 @@
 import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useConnection } from '@/hooks/queries';
 import { useSession } from '@/store/session';
 import { colors, space } from '@/theme';
 import { Banner } from './ui';
+
+const STRIP_TEXT = 'font-display text-[12px] tracking-[1.2px] uppercase';
 
 export const ROLE_LABEL = { todo: 'Todo en uno', mesero: 'Mesero', barra: 'Barra', caja: 'Caja', dueno: 'Dueño' } as const;
 
@@ -15,11 +17,11 @@ export function ConnectionStrip() {
   const color = conn === 'ok' ? colors.green : conn === 'off' ? colors.red : colors.amber;
   const label = { ok: 'Conectado', reconnecting: 'Reconectando', off: 'Sin conexión', checking: 'Conectando' }[conn];
   return (
-    <View style={styles.strip}>
-      <Text style={styles.who}>{user ? `${user.name} · ${ROLE_LABEL[user.role]}` : 'Mirador La Capilla'}</Text>
-      <View style={styles.lamp}>
-        <View style={[styles.dot, { backgroundColor: color }]} />
-        <Text style={[styles.lampText, { color }]}>{label}</Text>
+    <View className="flex-row justify-between items-center px-lg h-[34px] bg-shell2 border-b-[3px] border-b-trim">
+      <Text className={`${STRIP_TEXT} text-ink2`}>{user ? `${user.name} · ${ROLE_LABEL[user.role]}` : 'Mirador La Capilla'}</Text>
+      <View className="flex-row items-center gap-[6px]">
+        <View className="w-[8px] h-[8px] rounded-[4px]" style={{ backgroundColor: color }} />
+        <Text className={STRIP_TEXT} style={{ color }}>{label}</Text>
       </View>
     </View>
   );
@@ -39,10 +41,10 @@ export function Screen({ children, footer, refreshing, onRefresh, bare }: Screen
   const insets = useSafeAreaInsets();
   const conn = useConnection();
   return (
-    <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView className="flex-1 bg-bg" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       {!bare && <ConnectionStrip />}
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerClassName="p-lg gap-lg pb-[40px]"
         keyboardShouldPersistTaps="handled"
         refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={colors.ink2} /> : undefined}
       >
@@ -51,21 +53,7 @@ export function Screen({ children, footer, refreshing, onRefresh, bare }: Screen
         )}
         {children}
       </ScrollView>
-      {footer && <View style={[styles.footer, { paddingBottom: space.md + insets.bottom }]}>{footer}</View>}
+      {footer && <View className="p-md gap-sm bg-face border-t border-t-line" style={{ paddingBottom: space.md + insets.bottom }}>{footer}</View>}
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
-  strip: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, height: 34,
-    backgroundColor: colors.shell2, borderBottomWidth: 3, borderBottomColor: colors.trim,
-  },
-  who: { color: colors.ink2, fontSize: 12, fontWeight: '800', letterSpacing: 1.2, textTransform: 'uppercase' },
-  lamp: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  dot: { width: 8, height: 8, borderRadius: 4 },
-  lampText: { fontSize: 12, fontWeight: '800', letterSpacing: 1.2, textTransform: 'uppercase' },
-  content: { padding: space.lg, gap: space.lg, paddingBottom: 40 },
-  footer: { padding: space.md, gap: space.sm, backgroundColor: colors.face, borderTopWidth: 1, borderTopColor: colors.line },
-});

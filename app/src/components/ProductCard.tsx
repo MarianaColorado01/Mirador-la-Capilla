@@ -2,7 +2,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Image } from 'expo-image';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { ProductModel } from '@/services/mappers';
-import { colors, radius } from '@/theme';
+import { colors } from '@/theme';
 import { money } from '@/utils/format';
 
 export interface ProductCardProps {
@@ -19,7 +19,7 @@ export function ProductCard({ product: p, inRound, onAdd, onOpen }: ProductCardP
   const out = p.outOfStock;
   const left = p.stock - inRound;
   return (
-    <View style={[styles.row, out && { opacity: 0.55 }]}>
+    <View className={`flex-row items-center gap-md px-[14px] py-[10px] min-h-[66px] ${out ? 'opacity-55' : ''}`}>
       {/* Solo la parte izquierda abre el detalle, así el botón + sigue siendo un control aparte. */}
       <Pressable
         onLongPress={onOpen && (() => onOpen(p))}
@@ -28,20 +28,20 @@ export function ProductCard({ product: p, inRound, onAdd, onOpen }: ProductCardP
         accessibilityHint={onOpen ? 'Mantén pulsado para ver el detalle' : undefined}
         accessibilityActions={onOpen ? [{ name: 'longpress', label: 'Ver detalle' }] : undefined}
         onAccessibilityAction={() => onOpen?.(p)}
-        style={styles.main}
+        className="flex-1 flex-row items-center gap-md min-h-[46px]"
       >
-        <View style={styles.thumb}>
+        <View className="w-[46px] h-[46px] rounded-sm bg-face2 border border-line items-center justify-center overflow-hidden">
           {p.imageSource ? (
             <Image source={p.imageSource} style={StyleSheet.absoluteFill} contentFit="cover" />
           ) : (
             <MaterialCommunityIcons name="bottle-wine-outline" size={26} color={colors.ink3} />
           )}
         </View>
-        <View style={styles.info}>
-          <Text style={styles.name}>{p.name}</Text>
-          <Text style={styles.meta}>
+        <View className="flex-1 min-w-0">
+          <Text className="font-body-semi text-[15px] text-ink">{p.name}</Text>
+          <Text className="font-body text-[13px] text-ink3 mt-[2px]">
             {money(p.price)} ·{' '}
-            <Text style={out ? styles.out : p.lowStock ? styles.low : undefined}>
+            <Text className={out ? 'font-body-bold text-red' : p.lowStock ? 'font-body-bold text-amber' : undefined}>
               {out ? 'Agotado' : `${p.stock} ${p.stock === 1 ? 'disponible' : 'disponibles'}`}
             </Text>
           </Text>
@@ -53,24 +53,11 @@ export function ProductCard({ product: p, inRound, onAdd, onOpen }: ProductCardP
           accessibilityLabel={`Agregar ${p.name}`}
           disabled={left <= 0}
           onPress={() => onAdd(p)}
-          style={[styles.add, left <= 0 && { opacity: 0.4 }]}
+          className={`w-[46px] h-[46px] rounded-sm border border-line items-center justify-center ${left <= 0 ? 'opacity-40' : ''}`}
         >
-          {inRound > 0 ? <Text style={styles.count}>{inRound}</Text> : <MaterialCommunityIcons name="plus" size={22} color={colors.ink} />}
+          {inRound > 0 ? <Text className="font-display text-[19px] text-ink">{inRound}</Text> : <MaterialCommunityIcons name="plus" size={22} color={colors.ink} />}
         </Pressable>
       )}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 10, minHeight: 66 },
-  main: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 46 },
-  thumb: { width: 46, height: 46, borderRadius: radius.sm, backgroundColor: colors.face2, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  info: { flex: 1, minWidth: 0 },
-  name: { color: colors.ink, fontSize: 15, fontWeight: '600' },
-  meta: { color: colors.ink3, fontSize: 13, marginTop: 2 },
-  low: { color: colors.amber, fontWeight: '700' },
-  out: { color: colors.red, fontWeight: '700' },
-  add: { width: 46, height: 46, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center' },
-  count: { color: colors.ink, fontSize: 17, fontWeight: '800' },
-});
