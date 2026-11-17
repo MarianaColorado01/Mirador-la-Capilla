@@ -43,7 +43,8 @@
         {
           "locationWhenInUsePermission": "Mirador La Capilla usa tu ubicación solo mientras ves el mapa, para mostrarte junto al bar y los proveedores."
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -44,6 +44,11 @@ Decisiones del bloque 5.1 (RF-46, dividir pago):
 - **Servidor:** recalcula todo, inserta una fila de `payments` por pago en la misma transacción que la factura; si algo falla no queda nada.
 - **Lecturas:** `Invoice.payments` trae `{method, amount, received, change}[]` y `Invoice.method` es el resumen (`mixto` con varios pagos). La lista de facturas agrupa por factura (sin filas duplicadas). Los reportes suman desde `invoices`, así que las ventas no se duplican.
 
+Decisiones del bloque 5.2 (RF-45, factura en PDF):
+
+- **Sin endpoint nuevo:** el PDF se arma en el celular con la factura ya cargada (`GET /invoices/:id`), así no depende del servidor ni de internet. `expo-print` (`printToFileAsync` con HTML) y `expo-sharing` (`shareAsync`, `application/pdf` / `com.adobe.pdf`); ambos vienen en Expo Go.
+- **HTML en shared:** `invoiceHtml(invoice, businessName)` en `shared/src/invoice-html.ts`, función pura sin recursos externos y con `escapeHtml` en todo texto de usuario (pruebas en `invoice-html.test.ts`). Hoja A4 con una columna angosta tipo tirilla; ítems anulados tachados con su motivo; si la factura está anulada, sello «ANULADA» con motivo. `money`, `pad`, `clock` y `dateTime` pasaron a `shared/src/format.ts` (la app los reexporta desde `utils/format.ts`).
+
 Decisiones del bloque 4.1:
 
 - **Mover (RF-20):** caja, todo en uno o dueño. La mesa destino debe estar libre (409 si tiene cuenta, RN-01). La cuenta conserva id, rondas y mesero.
@@ -134,7 +139,7 @@ login.tsx                   perfil y PIN
 mesa/[id].tsx               cuenta de la mesa
 mesa/[id]/ronda.tsx         tomar ronda
 cobro/[id].tsx              cobrar (un pago o «Dividir pago», RF-46)
-factura/[id].tsx            factura (el dueño la anula, RF-44)
+factura/[id].tsx            factura (el dueño la anula, RF-44; «Compartir PDF», RF-45)
 producto/[id].tsx           detalle (RF-12); se abre desde Productos o con pulsación larga en la ronda
 producto/editar.tsx         crear producto, o editar/desactivar con ?id= (dueño, RF-13/14)
 producto/ajuste.tsx         entrada, salida o conteo físico con ?id= (dueño, RF-48)

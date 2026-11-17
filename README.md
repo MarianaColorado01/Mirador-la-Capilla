@@ -65,6 +65,7 @@ Los datos de ejemplo se cargan solos la primera vez. Hay seis perfiles (Ana, Lui
 - [x] Gastos y resumen: registrar y listar gastos (RF-57), resumen Hoy / 7 días / Mes con ventas, costo de lo vendido, surtido aparte, otros gastos y utilidad estimada (RF-58), gráfica por día, más vendidos y ventas por mesero (RF-59) y margen por producto (RF-60)
 - [x] Mapa y ubicación: pantalla Ubicación para todos con OpenStreetMap + Leaflet en WebView, bar, proveedores y el celular con marcadores distintos (RF-61, RF-62), «Mi ubicación» (RF-63), seguimiento con pausar/reanudar que se libera al salir (RF-64), permiso denegado, GPS apagado y mapa sin internet (RF-65) y «Ver en el mapa» desde el proveedor (RF-66)
 - [x] Dividir pago: una factura con varios pagos (efectivo, tarjeta, transferencia), partes iguales con redondeo en el último, lo que falta por cubrir en vivo y cambio por pago en efectivo (RF-46)
-- [ ] Respaldos, PDF
+- [x] Factura en PDF: «Compartir PDF» en el detalle de la factura la genera en el celular (sin servidor ni internet) y la comparte por WhatsApp, correo, etc. (RF-45)
+- [ ] Respaldos
 
 Ver [documentacion/arquitectura.md](documentacion/arquitectura.md) para el plan por fases.
