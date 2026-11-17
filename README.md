@@ -67,6 +67,6 @@ Los datos de ejemplo se cargan solos la primera vez. Hay seis perfiles (Ana, Lui
 - [x] Dividir pago: una factura con varios pagos (efectivo, tarjeta, transferencia), partes iguales con redondeo en el último, lo que falta por cubrir en vivo y cambio por pago en efectivo (RF-46)
 - [x] Factura en PDF: «Compartir PDF» en el detalle de la factura la genera en el celular (sin servidor ni internet) y la comparte por WhatsApp, correo, etc. (RF-45)
 - [x] Compras por proveedor: pestaña «Por proveedor» en Compras con total, % del total, número de compras, última fecha y productos principales por proveedor (incluidos inactivos) para Hoy / 7 días / Mes; al tocar uno se ve su historial (RF-56)
-- [ ] Respaldos
+- [x] Respaldos: copia diaria automática en `server/backups/` (se guardan las últimas 14), copia manual, exportar al celular para compartir y restaurar con confirmación «RESTAURAR» y copia de seguridad previa; todas las apps se refrescan al restaurar (RF-71)
 
 Ver [documentacion/arquitectura.md](documentacion/arquitectura.md) para el plan por fases.

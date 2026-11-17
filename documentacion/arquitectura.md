@@ -54,6 +54,15 @@ Decisiones del bloque 5.3 (RF-56, compras por proveedor):
 - **Endpoint:** `GET /reports/purchases-by-supplier?from&to` (solo dueño) en `reports.routes.ts`, con el mismo `DateRangeSchema` que el Resumen (400 con `field`). Lectura `loadPurchasesBySupplier` en `views.ts`: compras con `date` en el rango agrupadas por proveedor **aunque esté inactivo** (RN-04: sus compras siguen siendo historia); por proveedor `purchases`, `total`, `lastDate`, `active` y `products` (todos, de mayor a menor total = Σ qty × costo); `total` general. Orden por total descendente (empate por nombre). Proveedores sin compras en el rango no salen. Pruebas en `reports.test.ts`.
 - **App:** pestaña «Por proveedor» dentro de `(drawer)/compras.tsx` (Chips Historial / Por proveedor) con el selector Hoy / 7 días / Mes de `periodRange` (por defecto Mes). Cada proveedor es una tarjeta con su total, barra horizontal con `View` de su % del total, número de compras, última fecha y sus 3 productos principales. Tocarla vuelve al Historial filtrado por ese proveedor y las fechas del período. La clave cuelga de `['reports']`, así que se invalida al guardar una compra.
 
+Decisiones del bloque 5.4 (RF-71, respaldos):
+
+- **Archivos:** `server/backups/` (fuera del repo; `createApp(db, emit, backupDir)` recibe otra carpeta en las pruebas). Nombre por fecha y hora local: `mirador-AAAA-MM-DD_HHMMSS.db` (diaria), `-manual.db` y `-seguridad.db` (la que se hace antes de restaurar). El `id` de la URL es el nombre y solo se acepta si cumple ese patrón exacto (sin `..`, `/` ni `\`); si no, 404.
+- **Copia:** `db.backup()` de better-sqlite3 (en línea, segura con la base abierta) a un `.tmp`, se pasa a `journal_mode = DELETE` (un solo archivo, sin `-wal`) y se renombra: en la lista solo aparecen copias completas. Copias y restauraciones van en cola, de a una.
+- **Diaria:** `startDailyBackups` en `index.ts`: al arrancar y cada hora (`setInterval`, sin cron) revisa si hoy hay copia automática; si no, la hace y poda. Se conservan las 14 diarias más recientes; las manuales y las de seguridad nunca se borran. `needsDailyBackup` y `backupsToPrune` son funciones puras con pruebas (`lib/backups.ts`).
+- **Restaurar en caliente** sin cambiar la conexión que comparten los módulos: (1) abre la copia de solo lectura y exige `integrity_check = ok` y todas las tablas del esquema actual, si no 400; (2) copia de seguridad del estado actual; (3) `foreign_keys = OFF` y `ATTACH` (fuera de la transacción, donde sí tienen efecto); (4) en una transacción, por cada tabla `DELETE` + `INSERT … SELECT` con las columnas comunes (una copia de antes de `merged_into`/`body_hash` sirve: esas columnas quedan en NULL y el esquema actual no cambia, así que no hace falta volver a migrar); auditoría `restaurar`; `foreign_key_check` vacío o se revierte; (5) `DETACH` y `foreign_keys = ON` siempre. Si algo falla, nada cambia. La auditoría queda sin usuario si el dueño no existía en la copia.
+- **Tiempo real:** `datos:restaurados` a todos los roles; `use-realtime` invalida todas las consultas y borra todos los borradores de rondas del celular (sus id de cuenta pueden apuntar a otra mesa tras restaurar).
+- **App:** `(drawer)/respaldos.tsx` (dueño): lista con fecha, tipo y tamaño, «Hacer copia ahora», «Exportar» (`File.downloadFileAsync` de `expo-file-system` al caché con el header Authorization y `shareAsync`) y «Restaurar» con hoja que explica que se reemplazan todos los datos y pide escribir RESTAURAR. Importar una copia desde el celular quedó fuera de alcance: para usar un archivo externo se copia a mano a `server/backups/` con un nombre válido.
+
 Decisiones del bloque 4.1:
 
 - **Mover (RF-20):** caja, todo en uno o dueño. La mesa destino debe estar libre (409 si tiene cuenta, RN-01). La cuenta conserva id, rondas y mesero.
@@ -112,11 +121,11 @@ Decisiones del bloque 4.7 (mapa y ubicación):
 | suppliers / purchases | `GET /suppliers/locations` (todos, RF-61) ✅ · `GET /suppliers` · `GET /suppliers/:id` · `POST /suppliers` `{name, phone?, notes?, address?, lat?, lng?}` · `PATCH /suppliers/:id` (lo mismo + `active`) · `POST /purchases` `{supplierId, date, items: [{productId, qty, unitCost}]}` · `GET /purchases?supplierId&from&to` · `GET /purchases/:id` (dueño) ✅ · `GET /reports/purchases-by-supplier?from&to` (dueño, RF-56) ✅ | 52–56, 61 |
 | expenses / reports | `POST /expenses` `{concept, amount, date}` · `GET /expenses?from&to` · `GET /reports/summary?from&to` (dueño) ✅; el margen (RF-60) usa `GET /products?all=1` | 57–60 |
 | settings / users | `GET /settings` (todos) · `PATCH /settings` (dueño) · `GET /users` · `POST /users` `{name, role, pin}` · `PATCH /users/:id` `{name?, role?, pin?, active?}` (dueño) ✅ | 04, 07 |
-| backups | `GET/POST /backups` · `POST /backups/:id/restore` | 71 |
+| backups | `GET /backups` · `POST /backups` · `GET /backups/:id/download` · `POST /backups/:id/restore` `{confirm: "RESTAURAR"}` (dueño) ✅ | 71 |
 
 ### Eventos de tiempo real
 
-Están definidos en `shared/src/types.ts`, en `ServerEvents`: `ronda:creada`, `ronda:estado`, `item:anulado`, `item:editado`, `mesa:actualizada` y `stock:bajo`. `stock:bajo` va solo al dueño (roles `[]`) tras confirmar ronda, editar ítem o ajuste manual. Mover y unir emiten `mesa:actualizada` para la mesa origen (libre) y la destino. Se emiten con `emit(evento, payload, roles)` **después** de que la transacción se confirma.
+Están definidos en `shared/src/types.ts`, en `ServerEvents`: `ronda:creada`, `ronda:estado`, `item:anulado`, `item:editado`, `mesa:actualizada`, `stock:bajo` y `datos:restaurados` (RF-71, a todos tras restaurar una copia). `stock:bajo` va solo al dueño (roles `[]`) tras confirmar ronda, editar ítem o ajuste manual. Mover y unir emiten `mesa:actualizada` para la mesa origen (libre) y la destino. Se emiten con `emit(evento, payload, roles)` **después** de que la transacción se confirma.
 
 ## App (`app/`)
 
@@ -141,6 +150,7 @@ login.tsx                   perfil y PIN
 (drawer)/compras.tsx        historial de compras por proveedor y fechas (RF-55) y pestaña «Por proveedor» (RF-56) (dueño)
 (drawer)/dashboard.tsx      Resumen: Hoy / 7 días / Mes, utilidad, gráfica por día, más vendidos, por mesero y margen (dueño, RF-58 a RF-60)
 (drawer)/gastos.tsx         registrar gasto y lista por período (dueño, RF-57)
+(drawer)/respaldos.tsx      copias de la base: hacer, exportar y restaurar (dueño, RF-71)
 mesa/[id].tsx               cuenta de la mesa
 mesa/[id]/ronda.tsx         tomar ronda
 cobro/[id].tsx              cobrar (un pago o «Dividir pago», RF-46)
@@ -168,4 +178,4 @@ El diseño de referencia es `documentacion/wireframes/wireframes-mirador-tablero
 2. **Proceso principal** ✅: mesas, rondas con transacción e idempotencia, barra, pedir cuenta, cobro y factura. En la app: setup, login, mesas, ronda, cuenta y cobro.
 3. **Tiempo real y sin conexión** ✅: Socket.IO invalida las consultas afectadas, avisos de ronda lista y stock bajo, refresco completo al reconectar.
 4. **Funciones complementarias:** inventario, proveedores y compras, gastos, resumen, mapa.
-5. **Prioridad Baja:** respaldos, PDF, dividir cuenta, reportes.
+5. **Prioridad Baja** ✅: respaldos, PDF, dividir cuenta, reportes.

@@ -319,6 +319,17 @@ export interface PurchasesBySupplier {
   }[];
 }
 
+/** RF-71: copia de la base en el PC de caja. `auto` = diaria, `seguridad` = la que se hace antes de restaurar. */
+export type BackupKind = 'auto' | 'manual' | 'seguridad';
+
+export interface BackupInfo {
+  /** Nombre del archivo, p. ej. mirador-2026-11-17_030000.db */
+  id: string;
+  kind: BackupKind;
+  createdAt: string;
+  size: number;
+}
+
 export interface HealthResponse {
   ok: true;
   business: string;
@@ -334,6 +345,8 @@ export interface ServerEvents {
   'item:editado': { accountId: number; roundId: number; itemId: number };
   'mesa:actualizada': { accountId: number; tableNumber: number; status: TableStatus };
   'stock:bajo': { productId: number; name: string; stock: number; minStock: number };
+  /** RF-71: se restauró un respaldo; las apps vuelven a leer todo. */
+  'datos:restaurados': { backupId: string };
 }
 
 export interface ApiError {

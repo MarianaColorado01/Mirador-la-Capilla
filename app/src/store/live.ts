@@ -5,7 +5,7 @@ export type SocketState = 'connecting' | 'connected' | 'reconnecting';
 export interface Notice {
   id: number;
   tone: 'green' | 'amber' | 'red';
-  icon: 'bell-ring-outline' | 'alert-outline' | 'wifi' | 'close-circle-outline';
+  icon: 'bell-ring-outline' | 'alert-outline' | 'wifi' | 'close-circle-outline' | 'backup-restore';
   title: string;
   text?: string;
   /** Cuenta a abrir al tocar el aviso. */

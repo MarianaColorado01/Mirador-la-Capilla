@@ -36,6 +36,7 @@ export const keys = {
   reports: ['reports'] as const,
   summary: (r: DateRange) => ['reports', 'summary', r] as const,
   purchasesBySupplier: (r: DateRange) => ['reports', 'purchases-by-supplier', r] as const,
+  backups: ['backups'] as const,
 };
 
 // Los cambios llegan por Socket.IO (use-realtime). Esto es solo una red de seguridad
@@ -71,6 +72,7 @@ export const useExpenses = (r: DateRange) => useQuery({ queryKey: keys.expenses(
 export const useSummary = (r: DateRange) => useQuery({ queryKey: keys.summary(r), queryFn: () => api.summary(r), placeholderData: keepPreviousData });
 export const usePurchasesBySupplier = (r: DateRange, enabled: boolean) =>
   useQuery({ queryKey: keys.purchasesBySupplier(r), queryFn: () => api.purchasesBySupplier(r), placeholderData: keepPreviousData, enabled });
+export const useBackups = () => useQuery({ queryKey: keys.backups, queryFn: api.backups });
 export const usePurchase = (id: number) => useQuery({ queryKey: keys.purchase(id), queryFn: () => api.purchase(id), enabled: validId(id), retry: no404 });
 
 /**
