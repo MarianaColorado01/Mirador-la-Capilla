@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bar POS Láminas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Roboto+Condensed:wght@500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="mockup.css">
+<link rel="stylesheet" href="mockup-extra.css">
+<style>
+.dk{
+    --page:#060607; --page-ink:#F2F2F2; --page-ink2:#A9AFB7;
+    --bg:#0D0D0F; --face:#18181B; --face2:#121214; --line:#2F3136; --line2:#24262A;
+    --ink:#F2F2F2; --ink2:#BCC1C8; --ink3:#9298A1;
+    --green:#45D483; --orange:#FF8F33; --red:#FF6B63; --amber:#FFC53D;
+    --green-bg:rgba(69,212,131,.13); --orange-bg:rgba(255,143,51,.14); --red-bg:rgba(255,92,84,.14); --amber-bg:rgba(255,197,61,.13);
+    --inv:#F2F2F2; --on-inv:#0D0D0F; --scrim:rgba(0,0,0,.62);
+    --shell:#000000; --shell2:#141416; --shell-line:#2A2C30;
+    --cell:#222327; --cell-split:#0D0D0F;
+    color-scheme: dark;
+    --trim:#FFC53D; --sun:#FFC53D; --carve:#F2F2F2;
+}
+.dk .band{color:#0D0D0F}
+body{background:#C9CDD2}
+.deck{max-width:1600px;margin:0 auto;padding:28px 24px 60px;display:flex;flex-direction:column;gap:28px}
+.deck-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px 24px;color:#111214}
+.deck-h h1{margin:0;font:600 30px/1.1 Cinzel,Georgia,serif;letter-spacing:.06em}
+.deck-h p{margin:0;color:#41464E;font-size:14px}
+.deck-h a{color:#111214;font:600 13px/1 "Roboto Condensed";letter-spacing:.1em;text-transform:uppercase;margin-left:14px}
+.lw{position:relative;width:100%;aspect-ratio:16/9;border-radius:6px;overflow:hidden;box-shadow:0 20px 40px -24px rgba(0,0,0,.5)}
+.lam{position:absolute;left:0;top:0;width:1600px;height:900px;overflow:hidden;background:var(--page);color:var(--page-ink);transform-origin:0 0;transform:scale(var(--s,1))}
+.lam .tx{position:absolute;left:88px;top:84px;width:470px;display:flex;flex-direction:column;gap:18px}
+.lam h2{margin:0;font:600 50px/1.06 Cinzel,Georgia,serif;letter-spacing:.03em;color:var(--page-ink)}
+.lam .sub{margin:0;font-size:20px;line-height:1.5;color:var(--page-ink2);max-width:46ch}
+.lam .num{font-variant-numeric:tabular-nums}
+.lam .pg{position:absolute;left:96px;bottom:54px;display:flex;gap:16px;align-items:center;font:600 14px/1 "Roboto Condensed";letter-spacing:.16em;text-transform:uppercase;color:var(--page-ink2)}
+.lam .pg i{display:inline-block;width:40px;height:4px;background:#FFC53D}
+.calls{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:14px;counter-reset:c}
+.calls li{counter-increment:c;display:grid;grid-template-columns:40px 1fr;gap:12px;font-size:16px;line-height:1.45;color:var(--page-ink2)}
+.calls li::before{content:counter(c);width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:#FFC53D;color:#111214;font:700 16px/1 "Roboto Condensed"}
+.calls b{color:var(--page-ink);font-weight:500}
+.calls .rf{display:block;font:600 13px/1.4 "Roboto Condensed";letter-spacing:.08em;color:var(--page-ink2);margin-top:2px}
+.phones{position:absolute;right:64px;bottom:0;top:96px;display:flex;gap:30px;align-items:flex-start}
+.phones{--k:.72;gap:26px}
+.phones.two{--k:.8375;gap:34px}
+.phones.cvr{--k:.68;gap:22px}
+.dv{width:calc(404px*var(--k));height:calc(868px*var(--k));flex:none;position:relative}
+.dv .device{position:absolute;left:0;top:0;transform:scale(var(--k));transform-origin:0 0}
+.dv .lbl2{position:absolute;left:0;right:0;top:-34px;text-align:center;font:600 14px/1 "Roboto Condensed";letter-spacing:.14em;text-transform:uppercase;color:var(--page-ink2)}
+.ridge{position:absolute;left:0;right:0;bottom:0;height:240px;pointer-events:none}
+.dk .lam,.lam.dk{background:#08090A}
+/* portada */
+.cover .cwm{font:600 88px/.95 Cinzel,Georgia,serif;letter-spacing:.05em;color:#F2F2F2;margin:0}
+.cover .cwm2{font:600 28px/1 Cinzel,Georgia,serif;letter-spacing:.22em;color:#B6BBC2;margin:16px 0 0}
+.cover .cmeta{position:absolute;left:96px;bottom:84px;display:flex;flex-direction:column;gap:6px;color:#B6BBC2;font-size:17px}
+.cover .cmeta b{color:#F2F2F2;font-weight:500}
+/* sistema */
+.sys{position:absolute;left:88px;right:96px;top:290px;bottom:110px;display:grid;grid-template-columns:1.05fr 1fr 1.1fr;gap:56px}
+.sys h3{margin:0 0 16px;font:600 15px/1 "Roboto Condensed";letter-spacing:.16em;text-transform:uppercase;color:var(--page-ink2)}
+.sw-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.swc{display:flex;flex-direction:column;gap:8px;font-size:13.5px;color:var(--page-ink2)}
+.swc i{height:64px;border-radius:10px;border:1px solid rgba(255,255,255,.12)}
+.swc b{color:var(--page-ink);font-weight:500;font-size:14.5px}
+.type-s p{margin:0 0 18px;color:var(--page-ink2);font-size:14px}
+.type-s .a{font:600 64px/1 Cinzel,serif;color:var(--page-ink);display:block;margin-bottom:6px}
+.type-s .b{font:600 30px/1 "Roboto Condensed";letter-spacing:.08em;text-transform:uppercase;color:var(--page-ink);display:block;margin-bottom:6px}
+.type-s .c{font:400 22px/1.3 Roboto;color:var(--page-ink);display:block;margin-bottom:6px}
+.comp{display:flex;flex-direction:column;gap:14px;background:var(--bg);padding:20px;border-radius:14px}
+.comp .mesas{grid-template-columns:repeat(3,1fr)}
+body.solo{background:none;margin:0}
+body.solo .deck{padding:0;max-width:none;gap:0}
+body.solo .deck-h{display:none}
+body.solo .lw{border-radius:0;box-shadow:none;width:1600px;aspect-ratio:auto;height:900px}
+@media (max-width:640px){.deck{padding:16px 12px 40px}.deck-h h1{font-size:22px}}
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+  <header class="deck-h"><div><h1>Mirador La Capilla · Bar POS</h1><p>Láminas de mockups · 7 láminas 16:9 · también exportadas como PNG en la carpeta «png»</p></div><nav><a href="prototipo.html">Abrir prototipo</a><a href="../wireframes-mirador-tablero.html">Wireframes</a></nav></header>
+</div>
+<script>/* reloj fijo para que todas las láminas muestren el mismo momento del turno */
+const FIX=new Date(2026,10,4,19,58).getTime(),_D=Date;window.Date=class extends _D{constructor(...a){super(...(a.length?a:[FIX]))}static now(){return FIX}};</script>
+<script src="mockup-app.js"></script>
+<script>
+const { createApp } = BarPOS;
+const H = () => ({});
+const ridge = (op = 1, sx = 470) => `<svg class="ridge" viewBox="0 0 1600 240" preserveAspectRatio="none" aria-hidden="true"><path d="M0 240 L0 120 C 120 90 220 60 340 98 S 560 40 700 70 S 960 150 1120 96 S 1400 30 1600 80 L1600 240Z" fill="#B6BBC2" opacity="${.10 * op}"/><path d="M0 240 L0 180 C 160 150 300 176 470 160 S 760 130 920 170 S 1260 196 1420 160 S 1560 150 1600 168 L1600 240Z" fill="#3A3D42" opacity="${.55 * op}"/><circle cx="${sx}" cy="96" r="22" fill="#FFC53D" opacity=".85"/></svg>`;
+const pgf = (n, t) => `<div class="pg"><i></i>${String(n).padStart(2, '0')} · ${t}</div>`;
+const phoneSlot = (id, label = '') => `<div class="dv">${label ? `<span class="lbl2">${label}</span>` : ''}<div class="device static"><div class="screen" id="${id}"></div></div></div>`;
+
+/* escenas: cada una prepara el estado y la pantalla */
+const at = (S, id) => S.accounts.find(a => a.id === id);
+const it = (S, pid, q, note = '') => { const p = S.products.find(x => x.id === pid); return { pid, q, price: p.price, cost: p.cost, note, void: null }; };
+const SC = {
+  login: (S) => { S.stack = [{ s: 'login', p: { sel: 'ana', pin: '12' } }]; },
+  mesasNotif: (S, h) => { h.login('ana'); at(S, 'a4').rounds[0].status = 'listo'; S.notifs.push({ to: 'Ana', acc: 'a4', text: 'Ronda 1 de la mesa 7 está lista', seen: false }); },
+  ronda: (S, h) => { h.login('ana'); S.drafts.a1 = { items: [{ pid: 6, q: 2, note: 'sin azúcar', noteOpen: 1 }, { pid: 1, q: 2, note: '' }], at: Date.now() }; S.stack = [{ s: 'mesas', p: {} }, { s: 'mesa', p: { id: 'a1' } }, { s: 'ronda', p: { id: 'a1', cat: 1 } }]; },
+  cuenta: (S, h) => { h.login('ana'); const r = { id: 'r9', n: 2, by: 'Ana', at: Date.now() - 9 * 60000, status: 'listo', items: [it(S, 2, 2), it(S, 7, 1)] }; r.items[1].void = 'Cajero · 19:57 · cliente cambió de opinión'; at(S, 'a1').rounds.push(r); S.stack = [{ s: 'mesas', p: {} }, { s: 'mesa', p: { id: 'a1' } }]; },
+  barra: (S, h) => { h.login('prep'); const r = { id: 'r9', n: 2, by: 'Ana', at: Date.now() - 2 * 60000, status: 'tomado', items: [it(S, 2, 2), it(S, 7, 1)] }; r.items[1].void = 'Cajero · 19:57'; at(S, 'a1').rounds.push(r); at(S, 'a3').rounds[0].at = Date.now() - 14 * 60000; },
+  barraPrep: (S, h) => { h.login('prep'); S.stack = [{ s: 'barra', p: { tab: 1 } }]; S.toast = { text: 'Aviso enviado a Ana', icon: 'bell', at: Date.now() }; },
+  cobro: (S, h) => { h.login('caj'); const a = at(S, 'a1'); a.status = 'por_cobrar'; S.stack = [{ s: 'caja', p: {} }, { s: 'cobro', p: { id: 'a1', form: { desc: '3000', tip: '10', method: 'Efectivo', recv: '80000' } } }]; },
+  cobroErr: (S, h) => { h.login('caj'); const a = at(S, 'a1'); a.status = 'por_cobrar'; S.stack = [{ s: 'caja', p: {} }, { s: 'cobro', p: { id: 'a1', form: { desc: '-500', tip: '120', method: 'Efectivo', recv: '20000' } } }]; },
+  factura: (S, h) => { h.login('caj'); S.invoices.push({ id: 129, at: Date.now(), table: 2, waiter: 'Ana', method: 'Efectivo', subtotal: 53000, desc: 3000, tip: 5000, tax: 4000, total: 59000, recv: 60000, cost: 35000, status: 'pagada', items: [it(S, 1, 2), it(S, 3, 1, 'sin hielo')] }); S.stack = [{ s: 'caja', p: {} }, { s: 'factura', p: { id: 129, fresh: true } }]; },
+  resumen: (S, h) => { h.login('due'); S.stack = [{ s: 'mesas', p: {} }, { s: 'resumen', p: {} }]; },
+  inventario: (S, h) => { h.login('due'); S.stack = [{ s: 'inventario', p: {} }]; },
+  anular: (S, h) => { h.login('due'); S.stack = [{ s: 'mesas', p: {} }, { s: 'mesa', p: { id: 'a4' } }]; S.ui = { void: { r: 'r4', i: 0, reason: 0, restock: true } }; },
+  offline: (S, h) => { h.login('ana'); S.conn = 'off'; S.drafts.a1 = { items: [{ pid: 1, q: 3, note: '' }], at: Date.now() }; S.stack = [{ s: 'mesas', p: {} }, { s: 'mesa', p: { id: 'a1' } }, { s: 'ronda', p: { id: 'a1', q: 'tequila', cat: 3 } }]; },
+  drawer: (S, h) => { h.login('due'); S.ui = { drawer: 1 }; },
+  ubicacion: (S, h) => { h.login('ana'); S.stack = [{ s: 'mesas', p: {} }, { s: 'ubicacion', p: {} }]; },
+  mesasTodo: (S, h) => { h.login('op'); },
+};
+
+const LAMS = [
+  { dk: true, cls: 'cover', html: () => `${ridge(1.4, 610)}<div class="tx" style="top:130px;width:600px"><p class="cwm">MIRADOR</p><p class="cwm2">LA CAPILLA · BAR POS</p><p class="sub" style="color:#B6BBC2;margin-top:26px;max-width:30ch">Pedidos, cuentas, inventario y surtido para el mirador cafetero, funcionando en el Wi-Fi del local.</p></div>
+      <div class="cmeta"><b>Proyecto Final · Desarrollo Móvil II</b><span>Julian Hinestroza · Mariana Colorado Esguerra</span><span>React Native · Expo · TypeScript · noviembre 2026</span></div>
+      <div class="phones cvr" style="top:150px;right:64px">${phoneSlot('p-login')}${phoneSlot('p-mesasT')}${phoneSlot('p-cobro0')}</div>`,
+    phones: { 'p-login': 'login', 'p-mesasT': 'mesasNotif', 'p-cobro0': 'cobro' } },
+  { dk: false, html: () => `<div class="tx"><h2>Atender una mesa</h2><p class="sub">El camino del mesero tiene pocos toques: mesa, productos y confirmar. El servidor valida el stock antes de aceptar la ronda.</p>
+      <ol class="calls"><li><span><b>Mapa de mesas por color.</b> Verde libre, naranja ocupada, rojo por cobrar. El aviso de barra aparece arriba.<span class="rf">RF-16 · RF-32 · RF-70</span></span></li><li><span><b>Catálogo con búsqueda y categorías.</b> El contador nunca supera el stock y cada ítem lleva su nota.<span class="rf">RF-10 · RF-11 · RF-23 · RF-24 · RF-25</span></span></li><li><span><b>Borrador guardado.</b> Si se cierra la app o se cae el Wi-Fi, la ronda sigue ahí.<span class="rf">RF-26</span></span></li><li><span><b>Cuenta con rondas.</b> Lo anulado queda tachado y no suma.<span class="rf">RF-18 · RF-28 · RF-36</span></span></li></ol></div>
+      ${pgf(2, 'Mesero')}<div class="phones">${phoneSlot('p-m1', 'Mesas')}${phoneSlot('p-m2', 'Tomar ronda')}${phoneSlot('p-m3', 'Cuenta')}</div>`,
+    phones: { 'p-m1': 'mesasNotif', 'p-m2': 'ronda', 'p-m3': 'cuenta' }, wide: true },
+  { dk: true, html: () => `${ridge(.7)}<div class="tx"><h2>Barra en tiempo real</h2><p class="sub">Las rondas llegan solas, ordenadas por tiempo de espera. La barra de cada comanda crece mientras espera y se vuelve roja a los 12 minutos.</p>
+      <ol class="calls"><li><span><b>Pendientes, preparando y listas.</b> Cada toque mueve la ronda al siguiente estado.<span class="rf">RF-30 · RF-31</span></span></li><li><span><b>Notas resaltadas</b> y sin precios: barra solo ve lo que debe preparar.<span class="rf">RF-25 · RF-31</span></span></li><li><span><b>Anulado en vivo.</b> Si caja anula un ítem, barra lo ve tachado al instante.<span class="rf">RF-36 · RF-70</span></span></li><li><span><b>Aviso al mesero</b> al marcar la ronda como lista.<span class="rf">RF-32</span></span></li></ol></div>
+      ${pgf(3, 'Barra')}<div class="phones two">${phoneSlot('p-b1', 'Pendientes')}${phoneSlot('p-b2', 'Preparando')}</div>`,
+    phones: { 'p-b1': 'barra', 'p-b2': 'barraPrep' } },
+  { dk: false, html: () => `<div class="tx"><h2>Cobro y factura</h2><p class="sub">Total = (subtotal − descuento) × (1 + (propina + impuesto) / 100). Cada error dice qué falló y cómo corregirlo.</p>
+      <ol class="calls"><li><span><b>Cálculo en vivo</b> con impuesto definido por el dueño.<span class="rf">RF-39 · RF-04</span></span></li><li><span><b>Validaciones por campo.</b> Nada negativo, propina entre 0 y 100, efectivo suficiente.<span class="rf">RF-40 · RF-41</span></span></li><li><span><b>Factura consecutiva</b> y mesa liberada en todos los celulares.<span class="rf">RF-42 · RF-45</span></span></li></ol></div>
+      ${pgf(4, 'Caja')}<div class="phones">${phoneSlot('p-c1', 'Cobrar')}${phoneSlot('p-c2', 'Validaciones')}${phoneSlot('p-c3', 'Factura')}</div>`,
+    phones: { 'p-c1': 'cobro', 'p-c2': 'cobroErr', 'p-c3': 'factura' }, wide: true },
+  { dk: true, html: () => `${ridge(.7)}<div class="tx"><h2>El negocio, para el dueño</h2><p class="sub">Utilidad estimada = ventas − costo de lo vendido − otros gastos. El surtido se reporta aparte porque ya entra como costo.</p>
+      <ol class="calls"><li><span><b>Resumen por día, semana o mes</b> con margen por producto.<span class="rf">RF-58 · RF-59 · RF-60</span></span></li><li><span><b>Inventario con alertas.</b> Lo que está bajo el mínimo va primero.<span class="rf">RF-47 · RF-50</span></span></li><li><span><b>Anular con motivo.</b> Queda quién, cuándo y por qué; nada se borra.<span class="rf">RF-34 · RF-35 · RF-37</span></span></li></ol></div>
+      ${pgf(5, 'Dueño')}<div class="phones">${phoneSlot('p-d1', 'Resumen')}${phoneSlot('p-d2', 'Inventario')}${phoneSlot('p-d3', 'Anular ítem')}</div>`,
+    phones: { 'p-d1': 'resumen', 'p-d2': 'inventario', 'p-d3': 'anular' }, wide: true },
+  { dk: false, html: () => `<div class="tx"><h2>Sin internet, sin sorpresas</h2><p class="sub">Todo corre en la red local del bar. Si el celular pierde el PC de caja, la app lo dice y no muestra confirmaciones falsas.</p>
+      <ol class="calls"><li><span><b>Indicador de conexión</b> siempre visible bajo la barra superior.<span class="rf">RF-03 · RF-67</span></span></li><li><span><b>Búsqueda sin resultados</b> que explica cómo salir del filtro.<span class="rf">RF-11 · RF-68</span></span></li><li><span><b>Menú según el rol</b> y mapa del mirador y sus proveedores.<span class="rf">RF-06 · RF-61</span></span></li></ol></div>
+      ${pgf(6, 'Estados')}<div class="phones">${phoneSlot('p-e1', 'Sin conexión')}${phoneSlot('p-e2', 'Menú del dueño')}${phoneSlot('p-e3', 'Ubicación')}</div>`,
+    phones: { 'p-e1': 'offline', 'p-e2': 'drawer', 'p-e3': 'ubicacion' }, wide: true },
+  { dk: true, html: () => `${ridge(.6, 1500)}<div class="tx" style="width:900px"><h2>Sistema visual</h2><p class="sub" style="max-width:70ch">Identidad del letrero tallado del Instagram del mirador, en la paleta del tablero: negro, acero, blanco y ámbar. Los estados de mesa siguen el RF-16.</p></div>
+      <div class="sys">
+        <div><h3>Color</h3><div class="sw-row">${[['#111214', 'Negro solapa', 'Barra superior'], ['#B6BBC2', 'Acero', 'Montañas, bordes'], ['#F2F2F2', 'Blanco solapa', 'Texto y acción'], ['#FFC53D', 'Ámbar', 'Franja y foco'], ['#45D483', 'Libre', 'RF-16'], ['#FF8F33', 'Ocupada', 'RF-16'], ['#FF5C54', 'Por cobrar', 'RF-16'], ['#18181B', 'Superficie', 'Tarjetas'], ['#0D0D0F', 'Fondo', 'Pantalla']].map(([c, n, u]) => `<div class="swc"><i style="background:${c}"></i><b>${n}</b><span>${c} · ${u}</span></div>`).join('')}</div></div>
+        <div class="type-s"><h3>Tipografía</h3><span class="a">Mesa 02</span><p>Cinzel · títulos, números de mesa y totales</p><span class="b">Confirmar ronda</span><p>Roboto Condensed · botones, pestañas, etiquetas</p><span class="c">2 × Club Colombia · nota: sin hielo</span><p>Roboto · texto y datos (Material 3)</p></div>
+        <div><h3>Componentes</h3><div class="comp" id="comp"></div></div>
+      </div>${pgf(7, 'Sistema')}`, phones: {}, after: el => {
+      el.querySelector('#comp').innerHTML = `<div class="mesas"><button class="mesa"><div class="top-m"><span class="flap lg"><i class="c">01</i></span></div><div class="meta">Disponible</div><div class="band g">Libre</div></button><button class="mesa"><div class="top-m"><span class="flap lg"><i class="c">02</i></span></div><div class="meta">Ana · $63.000</div><div class="band o">Ocupada</div></button><button class="mesa"><div class="top-m"><span class="flap lg"><i class="c">03</i></span></div><div class="meta">Luis · $10.000</div><div class="band r">Por cobrar</div></button></div>
+        <div class="btns"><button class="btn p">Confirmar</button><button class="btn o">Pedir la cuenta</button></div>
+        <div class="chips"><button class="chip" aria-pressed="true">Café</button><button class="chip">Cervezas</button><button class="chip">Licores</button></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><span class="tag k">Tomada</span><span class="tag a">Preparando</span><span class="tag g">Lista</span><span class="tag n">Entregada</span><span class="counter"><button>−</button><span class="v">2</span><button>+</button></span></div>`;
+    } },
+];
+
+const params = new URLSearchParams(location.search), solo = +params.get('solo') || 0;
+if (solo) document.body.classList.add('solo');
+const deck = document.getElementById('deck');
+LAMS.forEach((L, k) => {
+  if (solo && solo !== k + 1) return;
+  const w = document.createElement('section'); w.className = 'lw' + (L.dk ? ' dk' : ''); w.setAttribute('aria-label', 'Lámina ' + (k + 1));
+  w.innerHTML = `<div class="lam ${L.cls || ''}">${L.html()}</div>`; deck.appendChild(w);
+  for (const [id, scene] of Object.entries(L.phones)) {
+    const el = w.querySelector('#' + id);
+    createApp(el, { interactive: false, clock: '19:58', setup: (S, h) => SC[scene](S, h) });
+  }
+  if (L.after) L.after(w);
+});
+function fit() { document.querySelectorAll('.lw').forEach(w => w.querySelector('.lam').style.setProperty('--s', solo ? 1 : w.clientWidth / 1600)); }
+fit(); addEventListener('resize', fit);
+</script>
+</body>
+</html>

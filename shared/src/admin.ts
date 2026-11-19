@@ -1,0 +1,166 @@
+/* Reglas de Ajustes (RF-04), Usuarios (RF-07), Productos y categorías (RF-13 a RF-15) Mesas (RF-22), Inventario (RF-48), Proveedores y compras (RF-52, RF-53). Las usa la app para validar en vivo
+   y el servidor para decidir: los mensajes son los mismos en ambos lados. */
+import { z } from 'zod';
+
+export const ROLES = ['todo', 'mesero', 'barra', 'caja', 'dueno'] as const;
+
+const number = z.number({ error: 'Escribe un número' });
+const percent = number.min(0, 'No puede ser negativo').max(100, 'Máximo 100 %');
+const whole = (max: number) => number.int('Escribe un número entero').min(1, 'Debe ser al menos 1').max(max, `Máximo ${max}`);
+
+export const SettingsSchema = z.object({
+  businessName: z.string().trim().min(2, 'Escribe el nombre del negocio').max(60, 'Máximo 60 caracteres'),
+  taxPercent: percent,
+  suggestedTipPercent: percent,
+  singleOperator: z.boolean(),
+  maxPinAttempts: whole(10),
+  lockMinutes: whole(120),
+  idleLogoutMinutes: whole(240),
+  barLat: number.min(-90, 'La latitud va de -90 a 90').max(90, 'La latitud va de -90 a 90'),
+  barLng: number.min(-180, 'La longitud va de -180 a 180').max(180, 'La longitud va de -180 a 180'),
+});
+
+/** PATCH /settings: cualquier subconjunto de los ajustes. */
+export const SettingsPatchSchema = SettingsSchema.partial();
+
+export const UserCreateSchema = z.object({
+  name: z.string().trim().min(2, 'El nombre debe tener al menos 2 letras').max(30, 'Máximo 30 caracteres'),
+  role: z.enum(ROLES, { error: 'Elige un rol' }),
+  pin: z.string().regex(/^\d{4}$/, 'El PIN debe tener 4 dígitos'),
+});
+
+/** PATCH /users/:id: lo que cambie; el PIN solo si se escribe uno nuevo. Desactivar es `active: false` (RN-04). */
+export const UserUpdateSchema = UserCreateSchema.partial().extend({ active: z.boolean().optional() });
+
+const name = (max: number) => z.string({ error: 'Escribe el nombre' }).trim().min(1, 'Escribe el nombre').max(max, `Máximo ${max} caracteres`);
+const pesos = (what: string) => number.int('Escribe un número entero').positive(`El ${what} debe ser mayor que 0`);
+
+/** RF-13: el stock no está aquí; solo cambia con movimientos de inventario (RN-02). */
+export const ProductSchema = z.object({
+  name: name(60),
+  categoryId: z.number({ error: 'Elige una categoría' }).int().positive('Elige una categoría'),
+  price: pesos('precio'),
+  cost: pesos('costo'),
+  minStock: number.int('Escribe un número entero').min(0, 'No puede ser negativo'),
+  // Vacío = sin imagen: la app muestra la imagen alternativa (RF-10).
+  imageUrl: z
+    .string()
+    .trim()
+    .max(500, 'Máximo 500 caracteres')
+    .refine((v) => v === '' || /^https?:\/\/\S+$/.test(v), 'Escribe una dirección que empiece por http:// o https://')
+    .nullable()
+    .optional(),
+});
+
+/** PATCH /products/:id: lo que cambie. Desactivar es `active: false` (RF-14, RN-04). */
+export const ProductUpdateSchema = ProductSchema.partial().extend({ active: z.boolean().optional() });
+
+/** RF-15: categorías con nombre único. */
+export const CategorySchema = z.object({ name: name(30) });
+export const CategoryUpdateSchema = CategorySchema.partial().extend({ active: z.boolean().optional() });
+
+/** RF-22: mesas con número único y zona opcional. */
+export const TableCreateSchema = z.object({
+  number: number.int('Escribe un número entero').min(1, 'Debe ser al menos 1').max(999, 'Máximo 999'),
+  zone: z.string().trim().max(30, 'Máximo 30 caracteres').nullable().optional(),
+});
+export const TableUpdateSchema = TableCreateSchema.pick({ zone: true }).extend({ active: z.boolean().optional() });
+
+/**
+ * RF-48: ajuste manual de inventario. entrada suma y salida resta `qty` (≥ 1). En «ajuste» (conteo físico)
+ * `qty` es el stock real contado (≥ 0) y el servidor registra la diferencia contra el stock del sistema.
+ */
+export const STOCK_ADJUST_TYPES = ['entrada', 'salida', 'ajuste'] as const;
+export const StockAdjustmentSchema = z
+  .object({
+    productId: z.number({ error: 'Elige un producto' }).int().positive('Elige un producto'),
+    type: z.enum(STOCK_ADJUST_TYPES, { error: 'Elige el tipo de movimiento' }),
+    qty: number.int('Escribe un número entero').min(0, 'No puede ser negativo').max(100000, 'Máximo 100000'),
+    reason: z.string({ error: 'Escribe el motivo' }).trim().min(3, 'Escribe el motivo (mínimo 3 letras)').max(100, 'Máximo 100 caracteres'),
+  })
+  .refine((b) => b.type === 'ajuste' || b.qty >= 1, { message: 'Debe ser al menos 1', path: ['qty'] });
+
+/** Texto opcional: vacío se guarda como null. */
+const optional = (max: number) => z.string().trim().max(max, `Máximo ${max} caracteres`).nullable().optional();
+
+/** RF-52: proveedor. Latitud y longitud van las dos o ninguna; en PATCH, si se manda una se manda la otra. */
+const SupplierFields = z.object({
+  name: name(60),
+  phone: optional(20).refine((v) => !v || /^[\d +()-]+$/.test(v), 'Escribe solo números, espacios, + o -'),
+  notes: optional(200),
+  address: optional(120),
+  lat: number.min(-90, 'La latitud va de -90 a 90').max(90, 'La latitud va de -90 a 90').nullable().optional(),
+  lng: number.min(-180, 'La longitud va de -180 a 180').max(180, 'La longitud va de -180 a 180').nullable().optional(),
+});
+const bothOrNone = (s: { lat?: number | null; lng?: number | null }, ctx: z.RefinementCtx) => {
+  const lat = s.lat != null;
+  const lng = s.lng != null;
+  if (lat && !lng) ctx.addIssue({ code: 'custom', message: 'Escribe también la longitud, o deja las dos vacías', path: ['lng'] });
+  else if (lng && !lat) ctx.addIssue({ code: 'custom', message: 'Escribe también la latitud, o deja las dos vacías', path: ['lat'] });
+  else if ((s.lat === undefined) !== (s.lng === undefined)) ctx.addIssue({ code: 'custom', message: 'Manda latitud y longitud juntas', path: ['lat'] });
+};
+export const SupplierSchema = SupplierFields.superRefine(bothOrNone);
+/** PATCH /suppliers/:id: lo que cambie. Desactivar es `active: false` (RN-04). */
+export const SupplierUpdateSchema = SupplierFields.partial().extend({ active: z.boolean().optional() }).superRefine(bothOrNone);
+
+/** Fecha local de hoy como AAAA-MM-DD (el servidor y los celulares están en el mismo local). */
+export const localDate = (d = new Date()) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+/** AAAA-MM-DD que existe en el calendario (2026-02-30 no). */
+export const isDate = (v: string) => {
+  const t = Date.parse(`${v}T00:00:00Z`);
+  return /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(t) && new Date(t).toISOString().startsWith(v);
+};
+
+/** RF-53: ítem de compra. */
+export const PurchaseItemSchema = z.object({
+  productId: z.number({ error: 'Elige un producto' }).int().positive('Elige un producto'),
+  qty: number.int('Escribe un número entero').positive('La cantidad debe ser mayor que 0').max(100000, 'Máximo 100000'),
+  unitCost: pesos('costo'),
+});
+
+const pastDate = z
+  .string({ error: 'Escribe la fecha' })
+  .refine(isDate, 'Escribe una fecha válida como AAAA-MM-DD')
+  .refine((v) => v <= localDate(), 'La fecha no puede ser futura');
+
+/** RF-53: compra con proveedor, fecha no futura y al menos un ítem. El total lo calcula el servidor. */
+export const PurchaseSchema = z.object({
+  supplierId: z.number({ error: 'Elige un proveedor' }).int().positive('Elige un proveedor'),
+  date: pastDate,
+  items: z.array(PurchaseItemSchema, { error: 'Agrega al menos un producto' }).min(1, 'Agrega al menos un producto'),
+});
+
+/** RF-57: gasto adicional (hielo, gas, servicios) con concepto, monto entero > 0 y fecha no futura. */
+export const ExpenseSchema = z.object({
+  concept: z.string({ error: 'Escribe el concepto' }).trim().min(1, 'Escribe el concepto').max(60, 'Máximo 60 caracteres'),
+  amount: pesos('monto'),
+  date: pastDate,
+});
+
+/** Rango de fechas locales AAAA-MM-DD, ambos días incluidos (sección 4.3: desde ≤ hasta). */
+export const DateRangeSchema = z
+  .object({
+    from: z.string({ error: 'Falta la fecha inicial' }).refine(isDate, 'Escribe la fecha inicial como AAAA-MM-DD'),
+    to: z.string({ error: 'Falta la fecha final' }).refine(isDate, 'Escribe la fecha final como AAAA-MM-DD'),
+  })
+  .refine((r) => r.from <= r.to, { message: 'La fecha final no puede ser anterior a la inicial', path: ['to'] });
+
+export const PERIODS = ['hoy', 'semana', 'mes'] as const;
+export type Period = (typeof PERIODS)[number];
+
+/** RF-58: hoy; semana = los últimos 7 días contando hoy; mes = del día 1 del mes actual a hoy. */
+export function periodRange(p: Period, now = new Date()): { from: string; to: string } {
+  const start = new Date(now);
+  if (p === 'semana') start.setDate(now.getDate() - 6);
+  if (p === 'mes') start.setDate(1);
+  return { from: localDate(start), to: localDate(now) };
+}
+
+/** Primer mensaje de error por campo, para mostrarlo bajo cada campo del formulario. */
+export function fieldErrors(error: z.ZodError | undefined): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const i of error?.issues ?? []) out[String(i.path[0])] ??= i.message;
+  return out;
+}
