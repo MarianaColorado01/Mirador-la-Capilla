@@ -7,14 +7,17 @@ import { noopEmit, type Emit } from './lib/events';
 import { errorHandler } from './lib/http';
 import { accountRoutes } from './modules/accounts.routes';
 import { authRoutes } from './modules/auth.routes';
+import { categoryRoutes, inventoryRoutes } from './modules/inventory.routes';
 import { invoiceRoutes } from './modules/invoices.routes';
 import { productRoutes } from './modules/products.routes';
+import { reportRoutes } from './modules/reports.routes';
 import { roundRoutes } from './modules/rounds.routes';
+import { expenseRoutes, purchaseRoutes, supplierRoutes } from './modules/supply.routes';
 import { tableRoutes } from './modules/tables.routes';
 
-export const VERSION = '0.2.0';
+export const VERSION = '0.4.0';
 
-const ENDPOINTS = ['/health', '/auth/profiles', '/auth/login', '/settings', '/products', '/tables', '/accounts', '/rounds', '/invoices'];
+const ENDPOINTS = ['/health', '/auth/profiles', '/auth/login', '/settings', '/products', '/tables', '/accounts', '/rounds', '/invoices', '/categories', '/inventory', '/suppliers', '/purchases', '/expenses', '/reports/summary'];
 
 /**
  * Crea la app Express. Recibe la base (en las pruebas, una en memoria) y la
@@ -47,7 +50,13 @@ export function createApp(db: DB, emit: Emit = noopEmit) {
   app.use('/accounts', accountRoutes(db, emit));
   app.use('/rounds', roundRoutes(db, emit));
   app.use('/invoices', invoiceRoutes(db));
-  // Próximos módulos: /inventory, /suppliers, /purchases, /expenses, /reports, /users, /backups
+  app.use('/categories', categoryRoutes(db));
+  app.use('/inventory', inventoryRoutes(db, emit));
+  app.use('/suppliers', supplierRoutes(db));
+  app.use('/purchases', purchaseRoutes(db));
+  app.use('/expenses', expenseRoutes(db));
+  app.use('/reports', reportRoutes(db));
+  // Próximos módulos (fase 5): /users, /settings (edición), /backups
 
   app.use((_req, res) => res.status(404).json({ error: 'Ruta no encontrada' }));
   app.use(errorHandler);

@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Notices } from '@/components/Notices';
 import { useRealtime } from '@/hooks/use-realtime';
@@ -32,6 +33,7 @@ export default function RootLayout() {
   }
 
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <StatusBar style="light" />
@@ -44,15 +46,24 @@ export default function RootLayout() {
             <Stack.Screen name="login" options={{ headerShown: false }} />
           </Stack.Protected>
           <Stack.Protected guard={!!serverUrl && !!user}>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
             <Stack.Screen name="mesa/[id]" options={{ title: 'Mesa' }} />
             <Stack.Screen name="mesa/[id]/ronda" options={{ title: 'Ronda' }} />
             <Stack.Screen name="cobro/[id]" options={{ title: 'Cobrar' }} />
             <Stack.Screen name="factura/[id]" options={{ title: 'Factura' }} />
+            <Stack.Screen name="producto/[id]" options={{ title: 'Producto' }} />
+            <Stack.Screen name="producto/editar" options={{ title: 'Producto' }} />
+            <Stack.Screen name="categorias" options={{ title: 'Categorías' }} />
+            <Stack.Screen name="inventario/ajuste" options={{ title: 'Ajustar stock' }} />
+            <Stack.Screen name="proveedor/[id]" options={{ title: 'Proveedor' }} />
+            <Stack.Screen name="proveedor/editar" options={{ title: 'Proveedor' }} />
+            <Stack.Screen name="compra/nueva" options={{ title: 'Nueva compra' }} />
+            <Stack.Screen name="compras" options={{ title: 'Compras' }} />
           </Stack.Protected>
         </Stack>
         {user && <Notices />}
       </QueryClientProvider>
     </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

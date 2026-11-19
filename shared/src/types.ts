@@ -156,6 +156,10 @@ export interface Settings {
   maxPinAttempts: number; // RF-08
   lockMinutes: number;
   idleLogoutMinutes: number; // RF-09
+  /** Ubicación del bar para el mapa (RF-61). Aproximada hasta confirmarla con el docente. */
+  barLat: number;
+  barLng: number;
+  barAddress: string;
 }
 
 export interface HealthResponse {
@@ -177,4 +181,93 @@ export interface ServerEvents {
 export interface ApiError {
   error: string;
   field?: string;
+}
+
+/* ---------- Fase 4: inventario, surtido, gastos y resumen ---------- */
+
+export interface Category {
+  id: number;
+  name: string;
+  active: boolean;
+  products: number;
+}
+
+export interface StockMovement {
+  id: number;
+  type: MovementType;
+  qty: number;
+  reason: string | null;
+  reference: string | null;
+  user: string | null;
+  createdAt: string;
+}
+
+export interface RestockSuggestion {
+  productId: number;
+  name: string;
+  stock: number;
+  minStock: number;
+  soldLast7Days: number;
+  suggestedQty: number;
+  supplierId: number | null;
+}
+
+export interface Supplier {
+  id: number;
+  name: string;
+  phone: string;
+  notes: string;
+  address: string;
+  lat: number | null;
+  lng: number | null;
+  active: boolean;
+  lastPurchase: { date: string; total: number } | null;
+}
+
+export interface PurchaseItem {
+  productId: number;
+  productName: string;
+  qty: number;
+  unitCost: number;
+  total: number;
+}
+
+export interface Purchase {
+  id: number;
+  supplierId: number;
+  supplierName: string;
+  date: string;
+  total: number;
+  user: string;
+  items: PurchaseItem[];
+}
+
+export interface Expense {
+  id: number;
+  concept: string;
+  amount: number;
+  date: string;
+  user: string;
+}
+
+export interface SummaryReport {
+  from: string;
+  to: string;
+  sales: number; // ventas netas (subtotal − descuento) de facturas no anuladas
+  costOfSales: number;
+  otherExpenses: number;
+  purchases: number; // surtido: se reporta aparte, no se resta (sección 4.3)
+  profit: number;
+  invoices: number;
+  salesByDay: { date: string; sales: number }[];
+  topProducts: { productId: number; name: string; qty: number; sales: number }[];
+  salesByWaiter: { waiter: string; sales: number; invoices: number }[];
+  margins: { productId: number; name: string; price: number; cost: number; margin: number }[];
+}
+
+export interface PurchasesBySupplier {
+  supplierId: number;
+  name: string;
+  purchases: number;
+  total: number;
 }

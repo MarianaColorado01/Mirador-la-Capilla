@@ -46,7 +46,10 @@ export function seed(db: DB): boolean {
     const table = db.prepare('INSERT INTO tables(number, zone) VALUES(?, ?)');
     for (let i = 1; i <= 8; i++) table.run(i, i <= 4 ? 'Terraza' : 'Salón');
 
-    db.prepare("INSERT INTO suppliers(name, phone, notes) VALUES('Distribuidora X', '300 000 0101', 'Datos de ejemplo')").run();
+    // Proveedores de ejemplo con coordenadas aproximadas cerca de Belalcázar (para el mapa, RF-61).
+    const sup = db.prepare('INSERT INTO suppliers(name, phone, notes, address, lat, lng) VALUES(?, ?, ?, ?, ?, ?)');
+    sup.run('Distribuidora X', '300 000 0101', 'Datos de ejemplo · cervezas y licores', 'Belalcázar, Caldas', 4.9958, -75.8121);
+    sup.run('Bebidas del Norte', '300 000 0102', 'Datos de ejemplo · gaseosas y agua', 'La Virginia, Risaralda', 4.8996, -75.8826);
   })();
   return true;
 }

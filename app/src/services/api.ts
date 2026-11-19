@@ -1,9 +1,14 @@
 import { AxiosError, create, type AxiosInstance } from 'axios';
 import type {
-  Account, BarTicket, BillableAccount, ChargeRequest, CreateRoundRequest, HealthResponse, Invoice, Product, Profile,
-  RoundStatus, SessionUser, Settings, TableSummary, VoidItemRequest,
+  Account, AdjustmentInput, BarTicket, BillableAccount, Category, CategoryInput, ChargeRequest, CreateRoundRequest, Expense, ExpenseInput,
+  HealthResponse, Invoice, Product, ProductInput, ProductOwnerView, Profile, Purchase, PurchaseInput, PurchasesBySupplier, RestockSuggestion,
+  RoundStatus, SessionUser, Settings, StockMovement, SummaryReport, Supplier, SupplierInput, TableSummary, VoidItemRequest,
 } from '@mirador/shared';
 import { useSession } from '@/store/session';
+
+export type InventoryItem = ProductOwnerView & { low: boolean };
+export interface InvoiceRow { id: number; number: number; total: number; createdAt: string; voided: boolean; tableNumber: number; method: string }
+type Range = { from?: string; to?: string };
 
 /** Instancia central de Axios; la baseURL sale de la dirección guardada (RF-01). */
 function client(): AxiosInstance {
@@ -59,4 +64,28 @@ export const api = {
   billable: () => call<BillableAccount[]>((c) => c.get('/accounts', { params: { status: 'por_cobrar' } })),
   charge: (accountId: number, body: ChargeRequest) => call<Invoice>((c) => c.post(`/accounts/${accountId}/charge`, body)),
   invoice: (id: number) => call<Invoice>((c) => c.get(`/invoices/${id}`)),
+  invoices: (q: string) => call<InvoiceRow[]>((c) => c.get('/invoices', { params: { q } })),
+
+  // Fase 4: productos, inventario, surtido, gastos y resumen
+  product: (id: number) => call<Product | ProductOwnerView>((c) => c.get(`/products/${id}`)),
+  allProducts: () => call<ProductOwnerView[]>((c) => c.get('/products', { params: { all: '1' } })),
+  movements: (id: number) => call<StockMovement[]>((c) => c.get(`/products/${id}/movements`)),
+  createProduct: (body: ProductInput) => call<ProductOwnerView>((c) => c.post('/products', body)),
+  updateProduct: (id: number, body: Partial<ProductInput>) => call<ProductOwnerView>((c) => c.patch(`/products/${id}`, body)),
+  categories: () => call<Category[]>((c) => c.get('/categories')),
+  createCategory: (body: CategoryInput) => call<Category>((c) => c.post('/categories', body)),
+  updateCategory: (id: number, body: Partial<CategoryInput>) => call<Category>((c) => c.patch(`/categories/${id}`, body)),
+  inventory: () => call<InventoryItem[]>((c) => c.get('/inventory')),
+  adjust: (body: AdjustmentInput) => call<{ productId: number; stock: number; delta: number }>((c) => c.post('/inventory/adjustments', body)),
+  suggestions: () => call<RestockSuggestion[]>((c) => c.get('/inventory/suggestions')),
+  suppliers: (all = false) => call<Supplier[]>((c) => c.get('/suppliers', { params: all ? { all: '1' } : undefined })),
+  supplier: (id: number) => call<Supplier>((c) => c.get(`/suppliers/${id}`)),
+  createSupplier: (body: SupplierInput) => call<Supplier>((c) => c.post('/suppliers', body)),
+  updateSupplier: (id: number, body: Partial<SupplierInput>) => call<Supplier>((c) => c.patch(`/suppliers/${id}`, body)),
+  purchases: (params: Range & { supplierId?: number }) => call<Purchase[]>((c) => c.get('/purchases', { params })),
+  purchasesBySupplier: (params: Range) => call<PurchasesBySupplier[]>((c) => c.get('/purchases/by-supplier', { params })),
+  createPurchase: (body: PurchaseInput) => call<Purchase>((c) => c.post('/purchases', body)),
+  expenses: (params: Range) => call<Expense[]>((c) => c.get('/expenses', { params })),
+  createExpense: (body: ExpenseInput) => call<Expense>((c) => c.post('/expenses', body)),
+  summary: (params: { from: string; to: string }) => call<SummaryReport>((c) => c.get('/reports/summary', { params })),
 };

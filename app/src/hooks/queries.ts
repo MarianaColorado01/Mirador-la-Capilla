@@ -14,6 +14,19 @@ export const keys = {
   bar: ['bar'] as const,
   billable: ['billable'] as const,
   invoice: (id: number) => ['invoice', id] as const,
+  invoices: (q: string) => ['invoices', q] as const,
+  product: (id: number) => ['product', id] as const,
+  allProducts: ['products', 'all'] as const,
+  movements: (id: number) => ['movements', id] as const,
+  categories: ['categories'] as const,
+  inventory: ['inventory'] as const,
+  suggestions: ['suggestions'] as const,
+  suppliers: (all: boolean) => ['suppliers', all] as const,
+  supplier: (id: number) => ['supplier', id] as const,
+  purchases: (p: object) => ['purchases', p] as const,
+  bySupplier: (p: object) => ['purchases', 'by-supplier', p] as const,
+  expenses: (p: object) => ['expenses', p] as const,
+  summary: (p: object) => ['summary', p] as const,
 };
 
 // Los cambios llegan por Socket.IO (use-realtime). Esto es solo una red de seguridad
@@ -26,6 +39,29 @@ export const useProducts = () => useQuery({ queryKey: keys.products, queryFn: ap
 export const useBarQueue = () => useQuery({ queryKey: keys.bar, queryFn: api.barQueue, refetchInterval: LIVE });
 export const useBillable = () => useQuery({ queryKey: keys.billable, queryFn: api.billable, refetchInterval: LIVE });
 export const useInvoice = (id: number) => useQuery({ queryKey: keys.invoice(id), queryFn: () => api.invoice(id), enabled: Number.isFinite(id) });
+export const useInvoices = (q: string) => useQuery({ queryKey: keys.invoices(q), queryFn: () => api.invoices(q) });
+export const useProduct = (id: number) => useQuery({ queryKey: keys.product(id), queryFn: () => api.product(id), enabled: Number.isFinite(id) });
+export const useAllProducts = () => useQuery({ queryKey: keys.allProducts, queryFn: api.allProducts });
+export const useMovements = (id: number, enabled = true) => useQuery({ queryKey: keys.movements(id), queryFn: () => api.movements(id), enabled: enabled && Number.isFinite(id) });
+export const useCategories = () => useQuery({ queryKey: keys.categories, queryFn: api.categories });
+export const useInventory = () => useQuery({ queryKey: keys.inventory, queryFn: api.inventory, refetchInterval: LIVE });
+export const useSuggestions = () => useQuery({ queryKey: keys.suggestions, queryFn: api.suggestions });
+export const useSuppliers = (all = false) => useQuery({ queryKey: keys.suppliers(all), queryFn: () => api.suppliers(all) });
+export const useSupplier = (id: number) => useQuery({ queryKey: keys.supplier(id), queryFn: () => api.supplier(id), enabled: Number.isFinite(id) });
+export const usePurchases = (p: { from?: string; to?: string; supplierId?: number }) => useQuery({ queryKey: keys.purchases(p), queryFn: () => api.purchases(p) });
+export const usePurchasesBySupplier = (p: { from?: string; to?: string }) => useQuery({ queryKey: keys.bySupplier(p), queryFn: () => api.purchasesBySupplier(p) });
+export const useExpenses = (p: { from?: string; to?: string }) => useQuery({ queryKey: keys.expenses(p), queryFn: () => api.expenses(p) });
+export const useSummary = (p: { from: string; to: string }) => useQuery({ queryKey: keys.summary(p), queryFn: () => api.summary(p), refetchInterval: LIVE });
+
+/** Tras un cambio de inventario o surtido se refresca todo lo que muestra stock o costos. */
+export function useInvalidateStock() {
+  const qc = useQueryClient();
+  return () => {
+    for (const k of ['products', 'product', 'movements', 'inventory', 'suggestions', 'purchases', 'suppliers', 'supplier', 'categories', 'summary', 'expenses'])
+      qc.invalidateQueries({ queryKey: [k] });
+  };
+}
+
 export const useSettings = () => useQuery({ queryKey: keys.settings, queryFn: api.settings, staleTime: 60000 });
 
 /**

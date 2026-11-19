@@ -27,6 +27,10 @@ const DEFAULT_SETTINGS: Settings = {
   maxPinAttempts: 3,
   lockMinutes: 5,
   idleLogoutMinutes: 10,
+  // Aproximada: km 3 vía Belalcázar – La Virginia (Caldas). Confirmar con el cliente.
+  barLat: 4.9925,
+  barLng: -75.8195,
+  barAddress: 'Km 3 vía Belalcázar – La Virginia, vereda La Alemania',
 };
 
 export function getSettings(db: DB): Settings {
